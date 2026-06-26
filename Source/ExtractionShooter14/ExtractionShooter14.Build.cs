@@ -8,7 +8,14 @@ public class ExtractionShooter14 : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
+			
+			"UMG", "Slate", "SlateCore",
+			
+			"OnlineSubsystem", "OnlineSubsystemUtils"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
