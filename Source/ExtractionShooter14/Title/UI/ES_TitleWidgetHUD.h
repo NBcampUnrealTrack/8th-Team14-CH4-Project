@@ -15,15 +15,17 @@ class EXTRACTIONSHOOTER14_API UES_TitleWidgetHUD : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 	
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnClickedPlayButton();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void OnClickedExitButton();
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
-	TObjectPtr<UButton> PlayinButton;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
-	TObjectPtr<UButton> ExitoutButton;
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
+	// TObjectPtr<UButton> PlayinButton;
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
+	// TObjectPtr<UButton> ExitoutButton;
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
+	// TObjectPtr<UUserWidget> WBP_TitleMenu;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
 	TObjectPtr<UTextBlock> IPTextBlock;

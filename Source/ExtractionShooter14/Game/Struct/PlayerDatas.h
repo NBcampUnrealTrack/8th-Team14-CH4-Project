@@ -9,7 +9,9 @@ struct FPlayerDatas
 	GENERATED_BODY()
 public:
 	UPROPERTY()
-	int32 Gold;
+	FString PlayerNickName = TEXT("Player");
 	UPROPERTY()
-	TArray<FName> ItemIDs;
+	int32 Gold = 0;
+	UPROPERTY()
+	TArray<FName> ItemNames;
 };

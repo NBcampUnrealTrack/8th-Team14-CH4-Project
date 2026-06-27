@@ -1,9 +1,0 @@
-diff a/Config/DefaultEngine.ini b/Config/DefaultEngine.ini	(rejected hunks)
-@@ -3,6 +3,7 @@
- +DefaultPlatformService=Null
-  
-  [/Script/EngineSettings.GameMapsSettings]
-++<<<<<<< HEAD
- +GameDefaultMap=/Game/LJW/Title/Maps/TitleMap.TitleMap
- +ServerDefaultMap=/Game/TestLevel/LV_KMS_TestLevel.LV_KMS_TestLevel
- +EditorStartupMap=/Game/LJW/Title/Maps/TitleMap.TitleMap

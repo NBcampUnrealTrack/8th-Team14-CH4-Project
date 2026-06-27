@@ -78,4 +78,7 @@ protected:
 	void Look(const FInputActionValue& Value);
 	void StartSprint(const FInputActionValue& Value);
 	void StopSprint(const FInputActionValue& Value);
+	
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SetWalkSpeed(float NewWalkSpeed);
 };

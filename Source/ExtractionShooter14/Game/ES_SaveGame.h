@@ -11,5 +11,5 @@ class EXTRACTIONSHOOTER14_API UES_SaveGame : public USaveGame
 	GENERATED_BODY()
 public:
 	UPROPERTY()
-	TMap<FGuid, FPlayerDatas> PlayerDataMap;
+	TMap<FString, FPlayerDatas> PlayerDataMap;
 };

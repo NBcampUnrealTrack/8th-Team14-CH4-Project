@@ -1,4 +1,6 @@
 ﻿#include "ES_TitleWidgetHUD.h"
+
+#include "Animation/WidgetAnimation.h"
 #include "Components/Button.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/TextBlock.h"
@@ -17,8 +19,9 @@ void UES_TitleWidgetHUD::NativeConstruct()
 	
 	PlayAnimation(BlackFadeOut);
 	
-	PlayinButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedPlayButton);
-	ExitoutButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedExitButton);
+	// PlayinButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedPlayButton);
+	// ExitoutButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedExitButton);
+	
 }
 
 void UES_TitleWidgetHUD::OnClickedPlayButton()
