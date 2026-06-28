@@ -7,6 +7,8 @@ void UES_GameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 	
 	LoadOrCreateSaveGame();
+	
+	UE_LOG(LogTemp, Error, TEXT("GameInstanceSubsystem Init."));
 }
 
 void UES_GameInstanceSubsystem::LoadOrCreateSaveGame()

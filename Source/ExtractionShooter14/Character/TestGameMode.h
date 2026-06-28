@@ -12,7 +12,6 @@ class EXTRACTIONSHOOTER14_API ATestGameMode : public AGameModeBase
 public:
 
 	ATestGameMode();
-	
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 };

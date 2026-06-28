@@ -10,11 +10,10 @@ public class ExtractionShooter14 : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
+			//Basic
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
 			//UI
 			"UMG", "Slate", "SlateCore",
-			//Online
-			"OnlineSubsystem", "OnlineSubsystemUtils",
 			//AI
 			"AIModule", "NavigationSystem",
 
