@@ -14,7 +14,12 @@ public class ExtractionShooter14 : ModuleRules
 			
 			"UMG", "Slate", "SlateCore",
 			
+
 			"OnlineSubsystem", "OnlineSubsystemUtils", "AnimGraphRuntime"
+
+
+			// AI
+			"AIModule", "GameplayTasks"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
