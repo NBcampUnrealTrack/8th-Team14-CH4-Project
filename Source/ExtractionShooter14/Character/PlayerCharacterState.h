@@ -21,8 +21,11 @@ public:
 	
 	FPlayerInfoChanged OnPlayerDataChanged;
 	
+#pragma region Cheat
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void PlusPlayerCoin();
+#pragma endregion 
+	
 protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInfo)
 	FPlayerDatas PlayerInfo;

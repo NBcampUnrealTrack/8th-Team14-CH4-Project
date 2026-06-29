@@ -24,11 +24,6 @@ const FPlayerDatas& APlayerCharacterState::GetPlayerInfo() const
 	return PlayerInfo;
 }
 
-void APlayerCharacterState::PlusPlayerCoin_Implementation()
-{
-	PlayerInfo.Gold += 100;
-}
-
 void APlayerCharacterState::OnRep_PlayerInfo()
 {
 	//todo:: ui, inventory update
@@ -44,3 +39,10 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 	
 	OnPlayerDataChanged.Broadcast(PlayerInfo);
 }
+
+#pragma region Cheat
+void APlayerCharacterState::PlusPlayerCoin_Implementation()
+{
+	PlayerInfo.Gold -= 100;
+}
+#pragma endregion 
