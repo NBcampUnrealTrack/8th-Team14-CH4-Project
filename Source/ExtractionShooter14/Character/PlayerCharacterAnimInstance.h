@@ -6,9 +6,15 @@
 #include "Animation/AnimInstance.h"
 #include "PlayerCharacterAnimInstance.generated.h"
 
-/**
- * 
- */
+UENUM(BlueprintType)
+enum class ECharacterMovementDirection : uint8
+{
+    Forward     UMETA(DisplayName = "Forward"),
+    Backward    UMETA(DisplayName = "Backward"),
+    Left        UMETA(DisplayName = "Left"),
+    Right       UMETA(DisplayName = "Right")
+};
+
 UCLASS()
 class EXTRACTIONSHOOTER14_API UPlayerCharacterAnimInstance : public UAnimInstance
 {
@@ -33,4 +39,10 @@ protected:
     
     UPROPERTY(BlueprintReadOnly, Category = "Movement")
     class APlayerCharacter* Character;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Movement")
+    float Direction;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Movement")
+    ECharacterMovementDirection CustomCardinalDirection;
 };

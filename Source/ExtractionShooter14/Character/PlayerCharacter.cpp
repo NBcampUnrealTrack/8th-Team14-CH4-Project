@@ -9,6 +9,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -38,6 +39,8 @@ APlayerCharacter::APlayerCharacter()
     {
         GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     }
+
+    bIsSprinting = false;
 }
 
 void APlayerCharacter::BeginPlay()
@@ -127,17 +130,27 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 
 void APlayerCharacter::StartSprint(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement())
+    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
     {
-        GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+        MovementComp->MaxWalkSpeed = 600.f;
+    }
+
+    if (IsLocallyControlled())
+    {
+        ServerStartSprint();
     }
 }
 
 void APlayerCharacter::StopSprint(const FInputActionValue& Value)
 {
-    if (GetCharacterMovement())
+    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
     {
-        GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+        MovementComp->MaxWalkSpeed = 300.f;
+    }
+
+    if (IsLocallyControlled())
+    {
+        ServerStopSprint();
     }
 }
 
@@ -149,4 +162,32 @@ void APlayerCharacter::PossessedBy(AController* NewController)
     {
         SetupPlayerInputComponent(InputComponent);
     }
+}
+
+void APlayerCharacter::ServerStartSprint_Implementation()
+{
+    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+    {
+        
+        MovementComp->MaxWalkSpeed = 600.f;
+        bIsSprinting = true;
+    }
+}
+
+
+void APlayerCharacter::ServerStopSprint_Implementation()
+{
+    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+    {
+        
+        MovementComp->MaxWalkSpeed = 300.f;
+        bIsSprinting = false;
+    }
+}
+
+void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(APlayerCharacter, bIsSprinting);
 }

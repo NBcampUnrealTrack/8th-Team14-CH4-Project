@@ -14,8 +14,8 @@ public class ExtractionShooter14 : ModuleRules
 			
 			"UMG", "Slate", "SlateCore",
 			
-			"OnlineSubsystem", "OnlineSubsystemUtils"
-		});
+			"OnlineSubsystem", "OnlineSubsystemUtils", "AnimGraphRuntime"
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

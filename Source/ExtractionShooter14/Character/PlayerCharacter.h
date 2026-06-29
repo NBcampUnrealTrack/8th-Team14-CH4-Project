@@ -25,6 +25,15 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(Server, Reliable)
+	void ServerStartSprint();
+
+	
+	UFUNCTION(Server, Reliable)
+	void ServerStopSprint();
+
 public:	
 
 	virtual void Tick(float DeltaTime) override;
@@ -62,6 +71,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float SprintSpeed = 600.f;
 
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Movement")
+	bool bIsSprinting;
 	
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
