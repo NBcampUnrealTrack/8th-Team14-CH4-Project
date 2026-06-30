@@ -18,9 +18,6 @@ void UPlayerCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
     Super::NativeUpdateAnimation(DeltaSeconds);
 
-    
-    Super::NativeUpdateAnimation(DeltaSeconds);
-
     if (Character == nullptr)
     {
         Character = Cast<APlayerCharacter>(TryGetPawnOwner());
@@ -31,14 +28,18 @@ void UPlayerCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     
     FVector Velocity = Character->GetVelocity();
     Velocity.Z = 0.f;
+
+    PreviousSpeed = Speed;
+
     Speed = Velocity.Size();
 
+    const bool bIsMovingNow = Speed > 10.0f;
+    bShouldPlayStop = bWasMovingLastFrame && !bIsMovingNow;
+    bWasMovingLastFrame = bIsMovingNow;
     
-    FRotator AimRotation = Character->GetBaseAimRotation();
-
-    
-
-    Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, Character->GetBaseAimRotation());
+    Direction = UKismetAnimationLibrary::CalculateDirection(
+        Velocity,
+        Character->GetBaseAimRotation());
 
     
     if (UCharacterMovementComponent* MovementComp = Character->GetCharacterMovement())

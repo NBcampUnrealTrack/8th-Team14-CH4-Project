@@ -29,12 +29,23 @@ public:
 
 protected:
     
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
     float Speed;
 
     
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
     bool bIsInAir;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Movement")
+    float PreviousSpeed;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+    bool bWasMovingLastFrame = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+    bool bShouldPlayStop = false;
+
+
 
     
     UPROPERTY(BlueprintReadOnly, Category = "Movement")
