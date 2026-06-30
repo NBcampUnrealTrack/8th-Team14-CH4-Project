@@ -8,7 +8,10 @@
 #include "Components/InputComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "MyPlayerController.h"
+#include "Blueprint/UserWidget.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 APlayerCharacter::APlayerCharacter()
@@ -88,13 +91,17 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
             
             EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
         }
+        
+        if (OptionAction)
+        {
+            EnhancedInputComponent->BindAction(OptionAction, ETriggerEvent::Started, this, &ThisClass::OpenOptionUI);
+        }
     }
 
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-    
     FVector2D MovementVector = Value.Get<FVector2D>();
 
     if (Controller != nullptr)
@@ -151,6 +158,21 @@ void APlayerCharacter::StopSprint(const FInputActionValue& Value)
     if (IsLocallyControlled())
     {
         ServerStopSprint();
+    }
+}
+
+void APlayerCharacter::OpenOptionUI(const FInputActionValue& Value)
+{
+    AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
+    if (!IsValid(PlayerControllerES)) return;
+    
+    if (PlayerControllerES->IsOpenOptionUI)
+    {
+        PlayerControllerES->CloseOptionUI();
+    }
+    else
+    {
+        PlayerControllerES->OpenOptionUI();
     }
 }
 
