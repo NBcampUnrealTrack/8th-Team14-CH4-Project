@@ -2,6 +2,7 @@
 
 
 #include "PlayerCharacter.h"
+#include "Components/TimelineComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -13,11 +14,13 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "Curves/CurveFloat.h"
 
 APlayerCharacter::APlayerCharacter()
 {
  	
-	PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bStartWithTickEnabled = false;
 
     if (GetMesh())
     {
@@ -49,12 +52,27 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-}
 
-void APlayerCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+    if (CameraBoom)
+    {
+        DefaultArmLength = CameraBoom->TargetArmLength;
+        DefaultSocketOffset = CameraBoom->SocketOffset;
 
+        if (AimCameraCurve)
+        {
+            FOnTimelineFloat TimelineProgress;
+            TimelineProgress.BindUFunction(this, FName("UpdateAimCamera"));
+            AimCameraTimeline.AddInterpFloat(AimCameraCurve, TimelineProgress);
+
+            FOnTimelineEvent TimelineFinished;
+            TimelineFinished.BindUFunction(this, FName("FinishAimCamera"));
+            AimCameraTimeline.SetTimelineFinishedFunc(TimelineFinished);
+
+            AimCameraTimeline.SetLooping(false);
+        }
+    }
+
+    ApplyWeaponVisuals();
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -96,27 +114,48 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         {
             EnhancedInputComponent->BindAction(OptionAction, ETriggerEvent::Started, this, &ThisClass::OpenOptionUI);
         }
+        
+        if (AimAction)
+        {
+            EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &APlayerCharacter::StartAim);
+
+            EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopAim);
+        }
     }
 
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-    FVector2D MovementVector = Value.Get<FVector2D>();
+    const FVector2D MovementVector = Value.Get<FVector2D>();
 
     if (Controller != nullptr)
     {
-       
         const FRotator Rotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0, Rotation.Yaw, 0);
+        const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 
-        
         const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-        AddMovementInput(ForwardDirection, MovementVector.X);
+        const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
         
-        const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+        AddMovementInput(ForwardDirection, MovementVector.X);
         AddMovementInput(RightDirection, MovementVector.Y);
+    }
+
+    if (FMath::Abs(MovementVector.X) > 0.1f || FMath::Abs(MovementVector.Y) > 0.1f)
+    {
+        if (FMath::Abs(MovementVector.X) >= FMath::Abs(MovementVector.Y))
+        {
+            LastInputDirection = MovementVector.X > 0.f
+                ? ECharacterMovementDirection::Forward
+                : ECharacterMovementDirection::Backward;
+        }
+        else
+        {
+            LastInputDirection = MovementVector.Y > 0.f
+                ? ECharacterMovementDirection::Right
+                : ECharacterMovementDirection::Left;
+        }
     }
 }
 
@@ -211,5 +250,142 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+    DOREPLIFETIME(APlayerCharacter, CurrentWeaponType);
     DOREPLIFETIME(APlayerCharacter, bIsSprinting);
+}
+
+void APlayerCharacter::StartAim()
+{
+    bIsAiming = true;
+
+    SetActorTickEnabled(true);
+
+    if (AimCameraCurve)
+    {
+        AimCameraTimeline.Play();
+    }
+    else
+    {
+        UpdateAimCamera(1.0f);
+        SetActorTickEnabled(false);
+    }
+}
+
+void APlayerCharacter::StopAim()
+{
+    bIsAiming = false;
+
+    SetActorTickEnabled(true);
+
+    if (AimCameraCurve)
+    {
+        AimCameraTimeline.Reverse();
+    }
+    else
+    {
+        UpdateAimCamera(0.0f);
+        SetActorTickEnabled(false);
+    }
+}
+
+void APlayerCharacter::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+
+    AimCameraTimeline.TickTimeline(DeltaSeconds);
+}
+
+void APlayerCharacter::UpdateAimCamera(float Alpha)
+{
+    if (!CameraBoom)
+    {
+        return;
+    }
+
+    CameraBoom->TargetArmLength = FMath::Lerp(
+        DefaultArmLength,
+        AimArmLength,
+        Alpha
+    );
+
+    CameraBoom->SocketOffset = FMath::Lerp(
+        DefaultSocketOffset,
+        AimSocketOffset,
+        Alpha
+    );
+}
+
+void APlayerCharacter::FinishAimCamera()
+{
+    SetActorTickEnabled(false);
+}
+
+void APlayerCharacter::EquipWeapon(EWeaponType NewWeaponType)
+{
+    if (CurrentWeaponType == NewWeaponType) return;
+
+    if (bIsAiming)
+    {
+        CancelAimInstant();
+    }
+
+    if (HasAuthority())
+    {
+        ServerSetWeaponType_Implementation(NewWeaponType);
+    }
+    else
+    {
+        ServerSetWeaponType(NewWeaponType);
+    }
+}
+
+void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponType NewWeaponType)
+{
+    if (CurrentWeaponType == NewWeaponType) return;
+
+    bIsAiming = false;
+
+    CurrentWeaponType = NewWeaponType;
+    ApplyWeaponVisuals();
+
+    MulticastPlayEquipMontage(NewWeaponType);
+}
+
+void APlayerCharacter::OnRep_CurrentWeaponType()
+{
+    ApplyWeaponVisuals();
+}
+
+void APlayerCharacter::MulticastPlayEquipMontage_Implementation(EWeaponType NewWeaponType)
+{
+    UAnimMontage* MontageToPlay = nullptr;
+
+    switch (NewWeaponType)
+    {
+    case EWeaponType::Pistol:
+        MontageToPlay = PistolEquipMontage;
+        break;
+
+    case EWeaponType::Rifle:
+        MontageToPlay = RifleEquipMontage;
+        break;
+
+    case EWeaponType::Shotgun:
+        MontageToPlay = RifleEquipMontage;
+        break;
+    }
+
+    if (MontageToPlay && GetMesh() && GetMesh()->GetAnimInstance())
+    {
+        GetMesh()->GetAnimInstance()->Montage_Play(MontageToPlay);
+    }
+}
+
+void APlayerCharacter::CancelAimInstant()
+{
+    bIsAiming = false;
+
+    AimCameraTimeline.Stop();
+    UpdateAimCamera(0.0f);
+    SetActorTickEnabled(false);
 }

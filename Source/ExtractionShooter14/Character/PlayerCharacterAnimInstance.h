@@ -32,7 +32,12 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
     float Speed;
 
-    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+    float AnimSpeed = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+    float SpeedInterpRate = 10.0f;
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
     bool bIsInAir;
 
@@ -45,8 +50,6 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
     bool bShouldPlayStop = false;
 
-
-
     
     UPROPERTY(BlueprintReadOnly, Category = "Movement")
     class APlayerCharacter* Character;
@@ -56,4 +59,10 @@ protected:
 
     UPROPERTY(BlueprintReadOnly, Category = "Movement")
     ECharacterMovementDirection CustomCardinalDirection;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Movement")
+    float LocomotionAngle = 0.0f;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Movement")
+    FVector LocomotionDirection = FVector::ForwardVector;
 };
