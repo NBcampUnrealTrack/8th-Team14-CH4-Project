@@ -15,7 +15,7 @@ class UInputMappingContext;
 class UInputAction;
 
 UENUM(BlueprintType)
-enum class EWeaponType : uint8
+enum class EWeaponTypes : uint8
 {
 	Pistol  UMETA(DisplayName = "Pistol"),
 	Rifle   UMETA(DisplayName = "Rifle"),
@@ -134,22 +134,22 @@ protected:
 	UCurveFloat* AimCameraCurve = nullptr;
 
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponType, BlueprintReadOnly, Category = "Weapon")
-	EWeaponType CurrentWeaponType = EWeaponType::Pistol;
+	EWeaponTypes CurrentWeaponType = EWeaponTypes::Pistol;
 
 	UFUNCTION()
 	void OnRep_CurrentWeaponType();
 
 	UFUNCTION(Server, Reliable)
-	void ServerSetWeaponType(EWeaponType NewWeaponType);
+	void ServerSetWeaponType(EWeaponTypes NewWeaponType);
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void EquipWeapon(EWeaponType NewWeaponType);
+	void EquipWeapon(EWeaponTypes NewWeaponType);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
 	void ApplyWeaponVisuals();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayEquipMontage(EWeaponType NewWeaponType);
+	void MulticastPlayEquipMontage(EWeaponTypes NewWeaponType);
 
 	void CancelAimInstant();
 

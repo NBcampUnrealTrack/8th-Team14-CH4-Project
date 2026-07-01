@@ -320,7 +320,7 @@ void APlayerCharacter::FinishAimCamera()
     SetActorTickEnabled(false);
 }
 
-void APlayerCharacter::EquipWeapon(EWeaponType NewWeaponType)
+void APlayerCharacter::EquipWeapon(EWeaponTypes NewWeaponType)
 {
     if (CurrentWeaponType == NewWeaponType) return;
 
@@ -339,7 +339,7 @@ void APlayerCharacter::EquipWeapon(EWeaponType NewWeaponType)
     }
 }
 
-void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponType NewWeaponType)
+void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponTypes NewWeaponType)
 {
     if (CurrentWeaponType == NewWeaponType) return;
 
@@ -356,21 +356,21 @@ void APlayerCharacter::OnRep_CurrentWeaponType()
     ApplyWeaponVisuals();
 }
 
-void APlayerCharacter::MulticastPlayEquipMontage_Implementation(EWeaponType NewWeaponType)
+void APlayerCharacter::MulticastPlayEquipMontage_Implementation(EWeaponTypes NewWeaponType)
 {
     UAnimMontage* MontageToPlay = nullptr;
 
     switch (NewWeaponType)
     {
-    case EWeaponType::Pistol:
+    case EWeaponTypes::Pistol:
         MontageToPlay = PistolEquipMontage;
         break;
 
-    case EWeaponType::Rifle:
+    case EWeaponTypes::Rifle:
         MontageToPlay = RifleEquipMontage;
         break;
 
-    case EWeaponType::Shotgun:
+    case EWeaponTypes::Shotgun:
         MontageToPlay = RifleEquipMontage;
         break;
     }
