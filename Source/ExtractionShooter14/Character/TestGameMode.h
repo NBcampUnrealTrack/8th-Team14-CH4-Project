@@ -4,6 +4,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "TestGameMode.generated.h"
 
+class AMyPlayerController;
+
 UCLASS()
 class EXTRACTIONSHOOTER14_API ATestGameMode : public AGameModeBase
 {
@@ -14,4 +16,24 @@ public:
 	ATestGameMode();
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+	
+	int32 GetAvailableStartIndex() const;
+	// virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	
+	int32 GetInGamePlayerCount() const;
+	void SetInGamePlayerCount(int32 InNewPlayerCount);
+	int32 GetMaxInGamePlayerCount() const;
+	void SetMaxInGamePlayerCount(int32 InNewMaxPlayerCount);
+	
+private:
+	UPROPERTY()
+	int32 InGamePlayerCount = 0;
+	UPROPERTY()
+	int32 MaxInGamePlayerCount = 3;
+	
+	UPROPERTY()
+	TArray<AActor*> LobbyPlayerStartPoints;
+	UPROPERTY()
+	TMap<TWeakObjectPtr<APlayerController>, int32> LobbyPlayerStartPointMap;
+
 };

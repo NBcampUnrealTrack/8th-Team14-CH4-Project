@@ -8,28 +8,41 @@
 #include "PlayerCharacterState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerInfoChanged, FPlayerDatas, PlayerData);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API APlayerCharacterState : public APlayerState
 {
 	GENERATED_BODY()
 public:
+	APlayerCharacterState();
+	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	void ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData);
 	
 	const FPlayerDatas& GetPlayerInfo() const;
 	
 	FPlayerInfoChanged OnPlayerDataChanged;
+	FPlayerReadyChanged OnPlayerReadyChanged;
 	
+	UFUNCTION()
+	void OnRep_PlayerInfo();
+	UFUNCTION()
+	void OnRep_bIsReady();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_SetPlayerReady(bool bReady);
+	bool IsPlayerReady() const { return bIsReady; }
 #pragma region Cheat
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void PlusPlayerCoin();
 #pragma endregion 
-	
 protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInfo)
 	FPlayerDatas PlayerInfo;
-	UFUNCTION()
-	void OnRep_PlayerInfo();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_bIsReady)
+	uint8 bIsReady : 1;
+	
 private:
 };

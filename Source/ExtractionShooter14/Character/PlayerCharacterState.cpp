@@ -3,11 +3,17 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
+APlayerCharacterState::APlayerCharacterState()
+	:bIsReady(false)
+{
+}
+
 void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
+	DOREPLIFETIME(ThisClass, bIsReady);
 }
 
 void APlayerCharacterState::ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData)
@@ -38,6 +44,16 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 		);
 	
 	OnPlayerDataChanged.Broadcast(PlayerInfo);
+}
+
+void APlayerCharacterState::OnRep_bIsReady()
+{
+	OnPlayerReadyChanged.Broadcast(bIsReady);
+}
+
+void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
+{
+	bIsReady = bReady;
 }
 
 #pragma region Cheat

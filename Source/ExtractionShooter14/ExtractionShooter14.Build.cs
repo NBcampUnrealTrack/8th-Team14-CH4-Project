@@ -14,6 +14,7 @@ public class ExtractionShooter14 : ModuleRules
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
 			//UI
 			"UMG", "Slate", "SlateCore",
+			"CinematicCamera",
 			//AI
 			"AIModule", "NavigationSystem",
 

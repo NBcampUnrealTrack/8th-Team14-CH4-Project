@@ -22,7 +22,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
+public:
+	void Find_ApplyLobbyCamera();
 	
+	UFUNCTION(BlueprintCallable)
+	void SetAutoManageCamera(bool bEnable);
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
 	TSubclassOf<UUserWidget> ResultWidgetClass;
@@ -43,4 +47,9 @@ public:
 	void OpenOptionUI();
 	UFUNCTION()
 	void CloseOptionUI();
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Lobby")
+	TSubclassOf<UUserWidget> LobbyWidgetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Lobby")
+	TObjectPtr<UUserWidget> LobbyWidgetInstance;
 };
