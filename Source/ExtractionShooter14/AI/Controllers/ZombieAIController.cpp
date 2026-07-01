@@ -3,8 +3,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
-
-#include "../../Characters/Zombie/ZombieCharacter.h"
+#include "Engine/Engine.h"
 
 AZombieAIController::AZombieAIController()
 {
@@ -19,25 +18,29 @@ AZombieAIController::AZombieAIController()
 
 void AZombieAIController::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
+    GEngine->AddOnScreenDebugMessage(
+        -1,
+        5.f,
+        FColor::Red,
+        TEXT("ZombieAIController BeginPlay"));
+    if (BehaviorTree)
+    {
+        GEngine->AddOnScreenDebugMessage(
+            -1,
+            5.f,
+            FColor::Green,
+            TEXT("Run Behavior Tree"));
+        RunBehaviorTree(BehaviorTree);
 
-	AZombieCharacter* Zombie = Cast<AZombieCharacter>(GetPawn());
-
-	if (Zombie == nullptr)
-	{
-		return;
-	}
-
-	if (Zombie->BehaviorTree == nullptr)
-	{
-		return;
-	}
-
-	UseBlackboard(
-		Zombie->BehaviorTree->BlackboardAsset,
-		BlackboardComponent);
-
-	RunBehaviorTree(Zombie->BehaviorTree);
+        // 빙의한 좀비의 스폰 위치를 HomeLocation 키에 저장
+        if (BlackboardComponent && GetPawn())
+        {
+            BlackboardComponent->SetValueAsVector(
+                TEXT("HomeLocation"),
+                GetPawn()->GetActorLocation());
+        }
+    }
 }
 
 void AZombieAIController::Tick(float DeltaSeconds)
