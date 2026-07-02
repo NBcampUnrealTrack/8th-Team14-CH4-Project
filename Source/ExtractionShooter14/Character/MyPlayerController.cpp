@@ -88,7 +88,7 @@ void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
     
     if (!IsValid(PlayerStateES)) return;
     if (!IsValid(LobbyWidgetClass)) return;
-    if (IsValid(LobbyWidgetInstance)) return;
+    if (!IsValid(LobbyWidgetInstance)) return;
     
     LobbyWidgetInstance = CreateWidget<UES_LobbyWidgetHUD>(this, LobbyWidgetClass);
     
