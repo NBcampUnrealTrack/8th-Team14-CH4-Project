@@ -40,8 +40,16 @@ void UES_LobbyWidgetHUD::NativeDestruct()
 	}
 }
 
+
+
 void UES_LobbyWidgetHUD::RefreshPlayerUserIcon()
 {
+	//if (!IsValid(OwningPlayerState)) return;
+	
+	if (!IsValid(OwningPlayerState))
+	{
+		OwningPlayerState = GetOwningPlayer()->GetPlayerState<APlayerCharacterState>();
+	}
 	if (!IsValid(OwningPlayerState)) return;
 	if (!IsValid(OwningGameState)) return;
 	if (!IsValid(UserIconClass)) return;
@@ -53,7 +61,7 @@ void UES_LobbyWidgetHUD::RefreshPlayerUserIcon()
 		if (!IsValid(EachPlayerState)) continue;
 		
 		APlayerCharacterState* EachPlayerStateES = Cast<APlayerCharacterState>(EachPlayerState);
-		if (!IsValid(EachPlayerStateES)) return;
+		if (!IsValid(EachPlayerStateES)) continue;
 		
 		UES_LobbyUserIconWidget* UserIconInstance =
 			CreateWidget<UES_LobbyUserIconWidget>(GetOwningPlayer(), UserIconClass);
