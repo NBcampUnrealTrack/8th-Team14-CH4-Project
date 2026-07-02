@@ -62,3 +62,5 @@ void APlayerCharacterState::PlusPlayerCoin_Implementation()
 	PlayerInfo.Gold -= 100;
 }
 #pragma endregion 
+
+

@@ -43,13 +43,7 @@ void AMyPlayerController::BeginPlay()
         LobbyWidgetInstance = CreateWidget<UES_LobbyWidgetHUD>(this, LobbyWidgetClass);
         if (!IsValid(LobbyWidgetInstance)) return;
         LobbyWidgetInstance->AddToViewport();
-       
-        TArray<AActor*> FoundActors;
-        UGameplayStatics::GetAllActorsWithTag(
-            GetWorld(),
-            FName("LobbyCamera"),
-            FoundActors
-        );
+      
         
         Find_ApplyLobbyCamera();
         

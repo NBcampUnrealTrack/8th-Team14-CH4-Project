@@ -15,6 +15,11 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Curves/CurveFloat.h"
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
+#include "Components/CapsuleComponent.h"
+#include "MainPlayerCharacterState.h"
+
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -120,6 +125,11 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
             EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &APlayerCharacter::StartAim);
 
             EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopAim);
+        }
+
+        if (FireAction)
+        {
+            EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &APlayerCharacter::Fire);
         }
     }
 
@@ -252,6 +262,7 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
     DOREPLIFETIME(APlayerCharacter, CurrentWeaponType);
     DOREPLIFETIME(APlayerCharacter, bIsSprinting);
+    DOREPLIFETIME(APlayerCharacter, bIsDead);
 }
 
 void APlayerCharacter::StartAim()
@@ -388,4 +399,105 @@ void APlayerCharacter::CancelAimInstant()
     AimCameraTimeline.Stop();
     UpdateAimCamera(0.0f);
     SetActorTickEnabled(false);
+}
+
+void APlayerCharacter::Fire()
+{
+    if (!IsLocallyControlled()) return;
+
+    ServerFire();
+}
+
+void APlayerCharacter::ServerFire_Implementation()
+{
+    AController* OwnerController = GetController();
+    if (!OwnerController) return;
+
+    FVector ViewLocation;
+    FRotator ViewRotation;
+    OwnerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
+
+    const FVector TraceStart = ViewLocation;
+    const FVector TraceEnd = TraceStart + ViewRotation.Vector() * FireRange;
+
+    FHitResult HitResult;
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    const bool bHit = GetWorld()->LineTraceSingleByChannel(
+        HitResult,
+        TraceStart,
+        TraceEnd,
+        ECC_Visibility,
+        Params
+    );
+
+    DrawDebugLine(
+        GetWorld(),
+        TraceStart,
+        TraceEnd,
+        FColor::Red,
+        false,
+        2.0f,
+        0,
+        1.0f
+    );
+
+    if (bHit && HitResult.GetActor())
+    {
+        UGameplayStatics::ApplyDamage(
+            HitResult.GetActor(),
+            TestDamage,
+            OwnerController,
+            this,
+            UDamageType::StaticClass()
+        );
+    }
+}
+
+void APlayerCharacter::Die()
+{
+    if (!HasAuthority()) return;
+    if (bIsDead) return;
+
+    bIsDead = true;
+    MulticastDie();
+
+    SetLifeSpan(5.0f);
+}
+
+void APlayerCharacter::MulticastDie_Implementation()
+{
+    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+    {
+        MovementComp->DisableMovement();
+        MovementComp->StopMovementImmediately();
+    }
+
+    if (AController* MyController = GetController())
+    {
+        DisableInput(Cast<APlayerController>(MyController));
+    }
+
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+    if (DeathMontage && GetMesh() && GetMesh()->GetAnimInstance())
+    {
+        GetMesh()->GetAnimInstance()->Montage_Play(DeathMontage);
+    }
+}
+
+void APlayerCharacter::CheckDeath()
+{
+    if (!HasAuthority()) return;
+    if (bIsDead) return;
+
+    AMainPlayerCharacterState* PS = GetPlayerState<AMainPlayerCharacterState>();
+    if (!PS) return;
+
+    if (PS->GetCurrentHealth() <= 0.0f)
+    {
+        Die();
+    }
 }

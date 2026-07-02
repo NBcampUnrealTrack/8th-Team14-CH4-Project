@@ -55,6 +55,9 @@ public:
 
 	virtual void PossessedBy(AController* NewController) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Death")
+	void Die();
+
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -84,6 +87,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* AimAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* FireAction;
+
+	UFUNCTION(Server, Reliable)
+	void ServerFire();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	float TestDamage = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	float FireRange = 10000.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float WalkSpeed = 300.f;
 
@@ -102,6 +117,7 @@ protected:
 	void StopSprint(const FInputActionValue& Value);
 	void StartAim();
 	void StopAim();
+	void Fire();
 	
 	void OpenOptionUI(const FInputActionValue& Value);
 
@@ -158,4 +174,16 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon|Montage")
 	UAnimMontage* RifleEquipMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Death")
+	UAnimMontage* DeathMontage;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Death")
+	bool bIsDead = false;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDie();
+
+	UFUNCTION(BlueprintCallable, Category = "Death")
+	void CheckDeath();
 };
