@@ -66,12 +66,28 @@ void AZombieCharacter::Die()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCharacterMovement()->DisableMovement();
 
-	// 사망 몽타주 재생
+	// 사망 몽타주 재생 후 길이만큼 대기하다가 Destroy
+	float DestroyDelay = 2.0f;
 	if (DeathMontage)
 	{
 		PlayAnimMontage(DeathMontage);
+		DestroyDelay = DeathMontage->GetPlayLength();
 	}
 
+	// 몽타주 재생 시간 이후 액터 제거
+	FTimerHandle DestroyTimerHandle;
+	GetWorldTimerManager().SetTimer(
+		DestroyTimerHandle,
+		this,
+		&AZombieCharacter::DestroyZombie,
+		DestroyDelay,
+		false);
+
 	OnZombieDeath();
+}
+
+void AZombieCharacter::DestroyZombie()
+{
+	Destroy();
 }
 

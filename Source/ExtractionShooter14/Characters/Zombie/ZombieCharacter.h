@@ -72,4 +72,8 @@ public:
 
 protected:
 	void Die();
+
+private:
+	UFUNCTION()
+	void DestroyZombie();
 };
