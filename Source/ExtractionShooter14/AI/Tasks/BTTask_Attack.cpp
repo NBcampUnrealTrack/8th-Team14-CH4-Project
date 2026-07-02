@@ -4,6 +4,7 @@
 #include "AIController.h"
 #include "Characters/Zombie/ZombieCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/Engine.h"
 
 UBTTask_Attack::UBTTask_Attack()
 {
@@ -23,6 +24,13 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(
 	FBTAttackMemory* MyMemory = reinterpret_cast<FBTAttackMemory*>(NodeMemory);
 	MyMemory->ElapsedTime = 0.0f;
 
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1, 2.f, FColor::Yellow,
+			TEXT("BTTask_Attack: ExecuteTask Called"));
+	}
+
 	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
 	if (BB)
 	{
@@ -34,16 +42,20 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(
 
 	if (!Zombie || Zombie->bIsDead)
 	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1, 2.f, FColor::Orange,
+				TEXT("BTTask_Attack: Zombie is NULL or Dead"));
+		}
 		return EBTNodeResult::Failed;
 	}
 
-	// 공격 애니메이션 몽타주 재생
 	if (Zombie->AttackMontage)
 	{
 		Zombie->PlayAnimMontage(Zombie->AttackMontage);
 	}
 
-	// 데미지 적용
 	AActor* Target = BB ? Cast<AActor>(BB->GetValueAsObject(TEXT("TargetActor"))) : nullptr;
 	if (Target)
 	{
@@ -53,6 +65,24 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(
 			AIController,
 			Zombie,
 			UDamageType::StaticClass());
+
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1, 2.f, FColor::Red,
+				FString::Printf(TEXT("[%s] Attack! Damage: %.1f"),
+					*Zombie->ZombieName.ToString(),
+					Zombie->AttackDamage));
+		}
+	}
+	else
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1, 2.f, FColor::Orange,
+				TEXT("BTTask_Attack: Target is NULL"));
+		}
 	}
 
 	return EBTNodeResult::InProgress;

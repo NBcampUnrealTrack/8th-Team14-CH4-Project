@@ -4,6 +4,7 @@
 #include "AIController.h"
 #include "GameFramework/Pawn.h"
 #include "Characters/Zombie/ZombieCharacter.h"
+#include "Engine/Engine.h"
 
 UBTDecorator_InAttackRange::UBTDecorator_InAttackRange()
 {
@@ -38,7 +39,17 @@ bool UBTDecorator_InAttackRange::CalculateRawConditionValue(
 		return false;
 	}
 
-	const float Distance = FVector::Dist(Zombie->GetActorLocation(), TargetActor->GetActorLocation());
+	const float Distance = FVector::Dist(
+		Zombie->GetActorLocation(),
+		TargetActor->GetActorLocation());
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1, 0.1f, FColor::Cyan,
+			FString::Printf(TEXT("Distance: %.1f / AttackRange: %.1f"),
+				Distance, Zombie->AttackRange));
+	}
 
 	return Distance <= Zombie->AttackRange;
 }

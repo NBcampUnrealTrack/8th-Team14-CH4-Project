@@ -29,11 +29,9 @@ protected:
 
 	virtual uint16 GetInstanceMemorySize() const override;
 
-	// IsAttack 블랙보드 키 (공격 모션/락 표시용)
 	UPROPERTY(EditAnywhere, Category = "Blackboard")
 	FName IsAttackKey = "IsAttack";
 
-	// 공격 1회 모션이 끝나는 데 걸리는 시간 (애님 길이에 맞춰 조정)
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	float AttackDuration = 0.5f;
 };
