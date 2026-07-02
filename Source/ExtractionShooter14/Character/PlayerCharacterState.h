@@ -33,6 +33,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerReady(bool bReady);
 	bool IsPlayerReady() const { return bIsReady; }
+	
+	void SetPlayerReady(bool SetReady);
 #pragma region Cheat
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void PlusPlayerCoin();

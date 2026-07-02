@@ -4,6 +4,25 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Title/UI/ES_LobbyWidgetHUD.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+
+void AMyPlayerController::OnUnPossess()
+{
+    Super::OnUnPossess();
+    UE_LOG(LogTemp, Warning, TEXT("[SERVER? %d] OnUnPossess PC=%s PawnBefore=%s"),
+    HasAuthority(),
+    *GetNameSafe(this),
+    *GetNameSafe(GetPawn()));
+}
+
+void AMyPlayerController::OnPossess(APawn* InPawn)
+{
+    Super::OnPossess(InPawn);
+    UE_LOG(LogTemp, Warning, TEXT("[SERVER? %d] OnPossess PC=%s Pawn=%s"),
+    HasAuthority(),
+    *GetNameSafe(this),
+    *GetNameSafe(InPawn));
+}
 
 AMyPlayerController::AMyPlayerController()
     :IsOpenOptionUI(false)
@@ -91,6 +110,30 @@ void AMyPlayerController::OnRep_PlayerState()
     
 }
 
+void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
+{
+    if (IsLocalController())
+    {
+        UWidgetLayoutLibrary::RemoveAllWidgets(this);
+    
+        FInputModeGameOnly GameMode;
+        SetInputMode(GameMode);
+        bShowMouseCursor = false;
+    
+        SetViewTargetWithBlend(GetPawn(), 0.f);
+        SetAutoManageCamera(true);
+    
+        if (!IsValid(StageWidgetClass)) return;
+        StageWidgetInstance = CreateWidget<UUserWidget>(this, StageWidgetClass);
+        if (!IsValid(StageWidgetInstance)) return;
+        StageWidgetInstance->AddToViewport();
+    
+        // ULocalPlayer* LP = GetLocalPlayer();
+        // APawn* PPawn = GetPawn();
+
+    }
+}
+
 void AMyPlayerController::OpenOptionUI()
 {
     if (!IsValid(OptionWidgetInstance)) return;
@@ -114,6 +157,16 @@ void AMyPlayerController::CloseOptionUI()
 
 void AMyPlayerController::Client_OpenResultUI_Implementation()
 {
+    UWidgetLayoutLibrary::RemoveAllWidgets(this);
+    
     if (!IsValid(ResultWidgetInstance)) return;
     ResultWidgetInstance->AddToViewport();
+    
+    FInputModeUIOnly UIOnlyMode;
+    SetInputMode(UIOnlyMode);
+    bShowMouseCursor = true;
+    
+    SetAutoManageCamera(false);
+    Find_ApplyLobbyCamera();
+
 }

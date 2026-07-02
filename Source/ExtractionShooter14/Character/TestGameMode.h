@@ -21,13 +21,15 @@ public:
 	
 	int32 GetAvailableStartIndex() const;
 	// virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	FTransform GetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
 	
 	int32 GetInGamePlayerCount() const;
 	void SetInGamePlayerCount(int32 InNewPlayerCount);
 	int32 GetMaxInGamePlayerCount() const;
 	void SetMaxInGamePlayerCount(int32 InNewMaxPlayerCount);
 	
-	bool CheckAllPlayerisReady();
+	void HandleAllPlayerisReady();
+	bool IsAllPlayersReady();
 private:
 	UPROPERTY()
 	int32 InGamePlayerCount = 0;
@@ -43,5 +45,6 @@ private:
 	TArray<AActor*> LobbyPlayerStartPoints;
 	UPROPERTY()
 	TMap<TWeakObjectPtr<APlayerController>, int32> LobbyPlayerStartPointMap;
-
+	UPROPERTY()
+	TArray<AActor*> StageSpawnLocationActors;
 };

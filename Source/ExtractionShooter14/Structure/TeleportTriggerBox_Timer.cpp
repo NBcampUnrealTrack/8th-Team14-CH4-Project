@@ -2,6 +2,7 @@
 #include "Character/MyPlayerController.h"
 // #include "Components/StaticMeshComponent.h"
 // #include "Components/BoxComponent.h"
+#include "Character/TestGameMode.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 ATeleportTriggerBox_Timer::ATeleportTriggerBox_Timer()
@@ -100,12 +101,15 @@ void ATeleportTriggerBox_Timer::UpdatePlayerCountdown(AMyPlayerController* InPla
 		//InPlayer->Client_ShowCountdown(Info->RemainingTime);
 	}
 	
+	ATestGameMode* GameModeES = Cast<ATestGameMode>(InPlayer->GetWorld()->GetAuthGameMode());
+	if (!IsValid(GameModeES)) return;
+	FTransform SetPlayerTransform = GameModeES->GetPlayerLobbyStartPoint(InPlayer);
 	if (Info->RemainingTime <= 0)
 	{
 		GetWorldTimerManager().ClearTimer(Info->TimerHandle);
 		if (APawn* Pawn = InPlayer->GetPawn())
 		{
-			Pawn->TeleportTo(MoveToLocation, MoveToRotation);
+			Pawn->TeleportTo(SetPlayerTransform.GetLocation(), SetPlayerTransform.Rotator()+FRotator(0.f,180.f, 0.f));
 			InPlayer->Client_OpenResultUI();
 		}
 		

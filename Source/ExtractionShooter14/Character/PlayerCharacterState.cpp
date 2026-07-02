@@ -52,6 +52,12 @@ void APlayerCharacterState::OnRep_bIsReady()
 	OnPlayerReadyChanged.Broadcast(bIsReady);
 }
 
+void APlayerCharacterState::SetPlayerReady(bool SetReady)
+{
+	// init only server
+	bIsReady = SetReady;
+}
+
 void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
 {
 	// in server
@@ -61,7 +67,7 @@ void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
 	ATestGameMode* GameModeBaseES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
 	if (!IsValid(GameModeBaseES)) return;
 	
-	GameModeBaseES->CheckAllPlayerisReady();
+	GameModeBaseES->HandleAllPlayerisReady();
 	
 }
 

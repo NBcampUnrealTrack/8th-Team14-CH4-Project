@@ -14,7 +14,9 @@ UCLASS()
 class EXTRACTIONSHOOTER14_API AMyPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-	
+public:
+	virtual void OnUnPossess() override;
+	virtual void OnPossess(APawn* InPawn) override;
 protected:
 	AMyPlayerController();
 	virtual void BeginPlay() override;
@@ -31,6 +33,9 @@ public:
 	void SetAutoManageCamera(bool bEnable);
 	
 	virtual void OnRep_PlayerState() override;
+	
+	UFUNCTION(Client, Reliable)
+	void Client_WhenMoveToStagePopUpUI();
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
 	TSubclassOf<UUserWidget> ResultWidgetClass;
@@ -56,4 +61,9 @@ public:
 	TSubclassOf<UES_LobbyWidgetHUD> LobbyWidgetClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Lobby")
 	TObjectPtr<UES_LobbyWidgetHUD> LobbyWidgetInstance;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Stage")
+	TSubclassOf<UUserWidget> StageWidgetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
+	TObjectPtr<UUserWidget> StageWidgetInstance;
 };
