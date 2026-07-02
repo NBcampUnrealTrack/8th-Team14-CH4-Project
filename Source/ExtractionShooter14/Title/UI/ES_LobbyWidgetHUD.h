@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "ES_LobbyWidgetHUD.generated.h"
 
+class ATestGameState;
 class APlayerCharacterState;
 class UTextBlock;
 class UES_LobbyUserIconWidget;
@@ -23,7 +24,11 @@ public:
 	UFUNCTION()
 	void SetLobbyCountPlayer(const int32 InNewPlayer);
 	UFUNCTION()
+	void RefreshPlayerUserIcon();
+	UFUNCTION()
 	void AddUserIcon();
+	
+	void CachedPlayerState(APlayerCharacterState* InPlayerState);
 public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> LobbyCountPlayer;
@@ -31,9 +36,11 @@ public:
 	TObjectPtr<UHorizontalBox> PlayerIconHorizontal;
 	UPROPERTY(EditDefaultsOnly, blueprintReadOnly, Category = "Lobby|Icon")
 	TSubclassOf<UES_LobbyUserIconWidget> UserIconClass;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lobby|Icon")
-	TObjectPtr<UES_LobbyUserIconWidget> UserIconInstance;
 	
 	UPROPERTY()
 	TObjectPtr<APlayerCharacterState> OwningPlayerState;
+	UPROPERTY()
+	TObjectPtr<ATestGameState> OwningGameState;
+	
+	FDelegateHandle PlayerStateChangedHandle;
 };

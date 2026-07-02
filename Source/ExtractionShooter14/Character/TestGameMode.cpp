@@ -7,6 +7,7 @@
 #include "GameFramework/OnlineReplStructs.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
+#include "HAL/PlatformProcess.h"
 
 ATestGameMode::ATestGameMode()
 {
@@ -14,6 +15,13 @@ ATestGameMode::ATestGameMode()
 
     
     PlayerControllerClass = AMyPlayerController::StaticClass();
+}
+
+void ATestGameMode::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    RemainingTime = WaitingTime;
 }
 
 void ATestGameMode::PostLogin(APlayerController* NewPlayer)
@@ -41,6 +49,7 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
         );
     }
     
+    UE_LOG(LogTemp, Warning, TEXT("GameMode PID = %d"), FPlatformProcess::GetCurrentProcessId());
     // const FString PlayerKey =
     //     PS->GetUniqueId().ToString();
     const FString PlayerKey = PS->GetUniqueId()->ToString();;
@@ -86,6 +95,7 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
         ATestGameState* GameState_Test = GetGameState<ATestGameState>();
         if (!IsValid(GameState_Test)) return;
         GameState_Test->SetPlayerInGameCount_GS(LobbyPlayerStartPointMap.Num());
+        GameState_Test->AddLobbyPlayerStates(PS);
     }
     
     
@@ -93,25 +103,27 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
 
 void ATestGameMode::Logout(AController* Exiting)
 {
-    if (APlayerCharacterState* PS = Exiting->GetPlayerState<APlayerCharacterState>())
-    {
-        const FString PlayerKey = PS->GetUniqueId()->ToString();
+    APlayerCharacterState* PS = Exiting->GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PS)) return;
 
-        if (UES_GameInstanceSubsystem* SaveSubsystem =
-            GetGameInstance()->GetSubsystem<UES_GameInstanceSubsystem>())
-        {
-            SaveSubsystem->SavePlayerData(PlayerKey, PS->GetPlayerInfo());
-        }
+    const FString PlayerKey = PS->GetUniqueId()->ToString();
+
+    if (UES_GameInstanceSubsystem* SaveSubsystem =
+        GetGameInstance()->GetSubsystem<UES_GameInstanceSubsystem>())
+    {
+        SaveSubsystem->SavePlayerData(PlayerKey, PS->GetPlayerInfo());
     }
+
 
     APlayerController* PlayerControllerES = Cast<APlayerController>(Exiting);
     if (!IsValid(PlayerControllerES)) return;
     
     LobbyPlayerStartPointMap.Remove(PlayerControllerES);
     ATestGameState* GameState_Test = GetGameState<ATestGameState>();
+    
     if (!IsValid(GameState_Test)) return;
     GameState_Test->SetPlayerInGameCount_GS(LobbyPlayerStartPointMap.Num());
-    
+    GameState_Test->RemoveLobbyPlayerStates(PS);
     
     Super::Logout(Exiting);
 }
@@ -139,6 +151,11 @@ int32 ATestGameMode::GetMaxInGamePlayerCount() const
 void ATestGameMode::SetMaxInGamePlayerCount(int32 InNewMaxPlayerCount)
 {
     MaxInGamePlayerCount = InNewMaxPlayerCount;
+}
+
+bool ATestGameMode::CheckAllPlayerisReady()
+{
+    return true;
 }
 
 int32 ATestGameMode::GetAvailableStartIndex() const

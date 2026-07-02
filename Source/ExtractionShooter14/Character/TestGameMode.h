@@ -14,6 +14,8 @@ class EXTRACTIONSHOOTER14_API ATestGameMode : public AGameModeBase
 public:
 
 	ATestGameMode();
+	virtual void BeginPlay() override;
+	
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	
@@ -25,11 +27,17 @@ public:
 	int32 GetMaxInGamePlayerCount() const;
 	void SetMaxInGamePlayerCount(int32 InNewMaxPlayerCount);
 	
+	bool CheckAllPlayerisReady();
 private:
 	UPROPERTY()
 	int32 InGamePlayerCount = 0;
 	UPROPERTY()
 	int32 MaxInGamePlayerCount = 3;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
+	int32 WaitingTime = 15;
+	int32 RemainingTime;
+	
 	
 	UPROPERTY()
 	TArray<AActor*> LobbyPlayerStartPoints;

@@ -1,5 +1,6 @@
 #include "MyPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "PlayerCharacterState.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Title/UI/ES_LobbyWidgetHUD.h"
@@ -62,9 +63,32 @@ void AMyPlayerController::Find_ApplyLobbyCamera()
     SetViewTargetWithBlend(FoundActors[0], 0.f);
 }
 
+void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
+{
+    APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
+    
+    if (!IsValid(PlayerStateES)) return;
+    if (!IsValid(LobbyWidgetClass)) return;
+    if (IsValid(LobbyWidgetInstance)) return;
+    
+    LobbyWidgetInstance = CreateWidget<UES_LobbyWidgetHUD>(this, LobbyWidgetClass);
+    
+    LobbyWidgetInstance->CachedPlayerState(PlayerStateES);
+    
+    LobbyWidgetInstance->AddToViewport();
+}
+
 void AMyPlayerController::SetAutoManageCamera(bool bEnable)
 {
     bAutoManageActiveCameraTarget = bEnable;
+}
+
+void AMyPlayerController::OnRep_PlayerState()
+{
+    Super::OnRep_PlayerState();
+    
+    InitLobbyWidgetandCachedPlayerState();
+    
 }
 
 void AMyPlayerController::OpenOptionUI()

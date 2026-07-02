@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"
 
+class UES_LobbyWidgetHUD;
 class UInputMappingContext;
 class UUserWidget;
 
@@ -24,9 +25,12 @@ protected:
 	UInputMappingContext* DefaultMappingContext;
 public:
 	void Find_ApplyLobbyCamera();
+	void InitLobbyWidgetandCachedPlayerState();
 	
 	UFUNCTION(BlueprintCallable)
 	void SetAutoManageCamera(bool bEnable);
+	
+	virtual void OnRep_PlayerState() override;
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
 	TSubclassOf<UUserWidget> ResultWidgetClass;
@@ -49,7 +53,7 @@ public:
 	void CloseOptionUI();
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Lobby")
-	TSubclassOf<UUserWidget> LobbyWidgetClass;
+	TSubclassOf<UES_LobbyWidgetHUD> LobbyWidgetClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Lobby")
-	TObjectPtr<UUserWidget> LobbyWidgetInstance;
+	TObjectPtr<UES_LobbyWidgetHUD> LobbyWidgetInstance;
 };

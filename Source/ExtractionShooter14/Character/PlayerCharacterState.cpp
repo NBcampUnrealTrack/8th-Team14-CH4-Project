@@ -1,5 +1,6 @@
 ﻿#include "PlayerCharacterState.h"
 
+#include "TestGameMode.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
@@ -53,7 +54,15 @@ void APlayerCharacterState::OnRep_bIsReady()
 
 void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
 {
+	// in server
 	bIsReady = bReady;
+	OnRep_bIsReady();
+	
+	ATestGameMode* GameModeBaseES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
+	if (!IsValid(GameModeBaseES)) return;
+	
+	GameModeBaseES->CheckAllPlayerisReady();
+	
 }
 
 #pragma region Cheat

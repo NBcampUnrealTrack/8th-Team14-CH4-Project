@@ -4,7 +4,18 @@
 #include "GameFramework/GameStateBase.h"
 #include "TestGameState.generated.h"
 
+class APlayerCharacterState;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FChanedPlayerInGameCount, int32, InNewPlayerCount);
+DECLARE_MULTICAST_DELEGATE(FChangedLobbyPlayerStates);
+
+UENUM()
+enum class EGameState : uint8
+{
+	None,
+	Lobby,
+	Stage
+};
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API ATestGameState : public AGameStateBase
@@ -12,13 +23,26 @@ class EXTRACTIONSHOOTER14_API ATestGameState : public AGameStateBase
 	GENERATED_BODY()
 public:	
 	FChanedPlayerInGameCount OnChangedPlayerInGameCount;
+	FChangedLobbyPlayerStates OnChangedPlayerStates;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	void SetPlayerInGameCount_GS(int32 InNewPlayerInGameCount);
 	int32 GetPlayerInGameCount_GS() const;
+	
+	void AddLobbyPlayerStates(APlayerCharacterState* InNewPlayerState);
+	void RemoveLobbyPlayerStates(APlayerCharacterState* InOutPlayerState);
+	
+	const TArray<APlayerCharacterState*>& GetLobbyPlayerStates() const;
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInGameCount_GS)
 	int32 PlayerInGameCount_GS;
 	UFUNCTION()
 	void OnRep_PlayerInGameCount_GS();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_LobbyPlayerStates)
+	TArray<APlayerCharacterState*> LobbyPlayerStates;
+	UFUNCTION()
+	void OnRep_LobbyPlayerStates();
+private:
+	EGameState GameStateEnum = EGameState::Lobby;
 };
