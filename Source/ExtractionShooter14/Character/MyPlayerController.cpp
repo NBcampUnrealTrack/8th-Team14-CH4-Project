@@ -1,10 +1,14 @@
 #include "MyPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "PlayerCharacter.h"
 #include "PlayerCharacterState.h"
+#include "TestGameMode.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Title/UI/ES_LobbyWidgetHUD.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+
+class APlayerCharacter;
 
 void AMyPlayerController::OnUnPossess()
 {
@@ -75,6 +79,7 @@ void AMyPlayerController::BeginPlay()
 
 void AMyPlayerController::Find_ApplyLobbyCamera()
 {
+    SetAutoManageCamera(false);
     TArray<AActor*> FoundActors;
     UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("LobbyMainCamera"), FoundActors);
     ensureMsgf(FoundActors.Num() > 0, TEXT("None Camera"));
@@ -84,6 +89,8 @@ void AMyPlayerController::Find_ApplyLobbyCamera()
 
 void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
 {
+    UWidgetLayoutLibrary::RemoveAllWidgets(this);
+
     APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
     
     if (!IsValid(PlayerStateES)) return;
@@ -108,6 +115,49 @@ void AMyPlayerController::OnRep_PlayerState()
     
     InitLobbyWidgetandCachedPlayerState();
     
+}
+
+void AMyPlayerController::Client_WhenMoveToLobbyUI_Implementation()
+{
+    InitLobbyWidgetandCachedPlayerState();
+    Find_ApplyLobbyCamera();
+}
+
+void AMyPlayerController::Server_OnClickedResultUI_Implementation()
+{// Die -> Goto Lobby and Client_WhenMoveTo // Live -> Client_WhenMoveTo
+    // APlayerCharacter* PlayerCharacterES = Cast<APlayerCharacter>(GetPawn());
+    // ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
+    // if (!IsValid(GameModeES)) return;
+    // if (!IsValid(PlayerCharacterES)) return;
+    //
+    // if (PlayerCharacterES->GetbIsDead())
+    // {
+    //     GameModeES->RespawnPlayerAtLobbyStartPoint(this);
+    // }
+    // else
+    // {
+    //     Client_WhenMoveToLobbyUI();
+    //     //Client_OpenResultUI();
+    // }
+    APlayerCharacter* PlayerCharacterES = Cast<APlayerCharacter>(GetPawn());
+    ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
+    if (!IsValid(GameModeES)) return;
+    if (!IsValid(PlayerCharacterES)) return;
+    
+    if (PlayerCharacterES->GetbIsDead())
+    {
+        GameModeES->RespawnPlayerAtLobbyStartPoint(this);
+    }
+    
+    
+}
+
+void AMyPlayerController::Server_MoveToLobbyLocation_Implementation()
+{
+    ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
+    if (!IsValid(GameModeES)) return;
+    
+    GameModeES->SetPlayerLobbyStartPoint(this);
 }
 
 void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
@@ -157,10 +207,10 @@ void AMyPlayerController::CloseOptionUI()
 
 void AMyPlayerController::Client_OpenResultUI_Implementation()
 {
-    UWidgetLayoutLibrary::RemoveAllWidgets(this);
+    //UWidgetLayoutLibrary::RemoveAllWidgets(this);
     
     if (!IsValid(ResultWidgetInstance)) return;
-    ResultWidgetInstance->AddToViewport();
+    ResultWidgetInstance->AddToViewport(1);
     
     FInputModeUIOnly UIOnlyMode;
     SetInputMode(UIOnlyMode);

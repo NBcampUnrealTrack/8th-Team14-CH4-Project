@@ -57,7 +57,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Death")
 	void Die();
-
+	
+	bool GetbIsDead() const;
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))

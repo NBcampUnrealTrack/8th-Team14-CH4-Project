@@ -18,10 +18,12 @@ public:
 	
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
-	
+
 	int32 GetAvailableStartIndex() const;
 	// virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	FTransform GetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
+	void SetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
+	void RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetController);
 	
 	int32 GetInGamePlayerCount() const;
 	void SetInGamePlayerCount(int32 InNewPlayerCount);

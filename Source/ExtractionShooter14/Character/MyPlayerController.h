@@ -28,7 +28,7 @@ protected:
 public:
 	void Find_ApplyLobbyCamera();
 	void InitLobbyWidgetandCachedPlayerState();
-	
+
 	UFUNCTION(BlueprintCallable)
 	void SetAutoManageCamera(bool bEnable);
 	
@@ -36,6 +36,12 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_WhenMoveToStagePopUpUI();
+	UFUNCTION(Client, Reliable)
+	void Client_WhenMoveToLobbyUI();
+	UFUNCTION(Server, Reliable)
+	void Server_MoveToLobbyLocation();
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_OnClickedResultUI();
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
 	TSubclassOf<UUserWidget> ResultWidgetClass;

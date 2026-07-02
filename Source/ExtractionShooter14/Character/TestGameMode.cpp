@@ -271,3 +271,19 @@ FTransform ATestGameMode::GetPlayerLobbyStartPoint(AMyPlayerController* TargetCo
     FTransform PlayerLobbyStartPoint = LobbyPlayerStartPoints[LobbyPlayerStartPointMap[TargetController]]->GetActorTransform();
     return PlayerLobbyStartPoint;
 }
+
+void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetController)
+{
+    FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
+    TargetController->GetPawn()->TeleportTo(MovePoint.GetLocation(), MovePoint.Rotator());
+    TargetController->Client_WhenMoveToLobbyUI();
+    TargetController->Client_OpenResultUI();
+}
+
+void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetController)
+{
+    FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
+    RestartPlayerAtTransform(TargetController, MovePoint);
+    TargetController->Client_WhenMoveToLobbyUI();
+    TargetController->Client_OpenResultUI();
+}

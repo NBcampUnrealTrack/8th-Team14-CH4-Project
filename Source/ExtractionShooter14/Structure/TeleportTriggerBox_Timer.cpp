@@ -101,17 +101,19 @@ void ATeleportTriggerBox_Timer::UpdatePlayerCountdown(AMyPlayerController* InPla
 		//InPlayer->Client_ShowCountdown(Info->RemainingTime);
 	}
 	
-	ATestGameMode* GameModeES = Cast<ATestGameMode>(InPlayer->GetWorld()->GetAuthGameMode());
-	if (!IsValid(GameModeES)) return;
-	FTransform SetPlayerTransform = GameModeES->GetPlayerLobbyStartPoint(InPlayer);
+
+	//FTransform SetPlayerTransform = GameModeES->GetPlayerLobbyStartPoint(InPlayer);
 	if (Info->RemainingTime <= 0)
 	{
+		ATestGameMode* GameModeES = Cast<ATestGameMode>(InPlayer->GetWorld()->GetAuthGameMode());
+		if (!IsValid(GameModeES)) return;
 		GetWorldTimerManager().ClearTimer(Info->TimerHandle);
-		if (APawn* Pawn = InPlayer->GetPawn())
-		{
-			Pawn->TeleportTo(SetPlayerTransform.GetLocation(), SetPlayerTransform.Rotator()+FRotator(0.f,180.f, 0.f));
-			InPlayer->Client_OpenResultUI();
-		}
+		// if (APawn* Pawn = InPlayer->GetPawn())
+		// {
+		GameModeES->SetPlayerLobbyStartPoint(InPlayer);
+			//Pawn->TeleportTo(SetPlayerTransform.GetLocation(), SetPlayerTransform.Rotator()+FRotator(0.f,180.f, 0.f));
+		//InPlayer->Client_OpenResultUI();
+		// }
 		
 		CountdownPlayerListMap.Remove(InPlayer);
 	}

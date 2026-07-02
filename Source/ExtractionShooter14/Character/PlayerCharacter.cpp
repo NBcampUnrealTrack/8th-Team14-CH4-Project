@@ -461,10 +461,20 @@ void APlayerCharacter::Die()
     if (!HasAuthority()) return;
     if (bIsDead) return;
 
-    bIsDead = true;
+    bIsDead = true; // Server's bIsDead is Changed ?
     MulticastDie();
-
+    
     SetLifeSpan(1.0f);
+    
+    AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
+    if (!IsValid(PlayerControllerES)) return;
+    PlayerControllerES->Client_OpenResultUI();
+    //PlayerControllerES->Server_HandleMoveToLobbyCaseBybIsDead();
+}
+
+bool APlayerCharacter::GetbIsDead() const
+{
+    return bIsDead;
 }
 
 void APlayerCharacter::MulticastDie_Implementation()
