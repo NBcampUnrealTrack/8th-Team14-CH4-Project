@@ -464,7 +464,7 @@ void APlayerCharacter::Die()
     bIsDead = true;
     MulticastDie();
 
-    SetLifeSpan(5.0f);
+    SetLifeSpan(1.0f);
 }
 
 void APlayerCharacter::MulticastDie_Implementation()
