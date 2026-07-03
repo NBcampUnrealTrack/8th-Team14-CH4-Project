@@ -24,6 +24,7 @@ public:
 	FTransform GetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
 	void SetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
 	void RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetController);
+	void InitiatePlayerStats(AMyPlayerController* TargetController);
 	
 	int32 GetInGamePlayerCount() const;
 	void SetInGamePlayerCount(int32 InNewPlayerCount);

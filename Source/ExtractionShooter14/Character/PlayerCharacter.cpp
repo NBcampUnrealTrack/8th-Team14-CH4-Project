@@ -268,15 +268,17 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
     // run on server and local client
     if (USkeletalMeshComponent* MeshComp = GetMesh())
     {
-        MeshComp->bPauseAnims = true;
-        MeshComp->SetComponentTickEnabled(false);
+
+        //MeshComp->SetVisibility(false);
     }
-    if (HasAuthority())
-    { // only do it in server
+    
+    if (IsLocallyControlled())
+    {
         AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
         if (!IsValid(PlayerControllerES)) return;
         PlayerControllerES->Client_OpenResultUI();
-        Destroy();
+        
+        //Destroy();
     }
 }
 

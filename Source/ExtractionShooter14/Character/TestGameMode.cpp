@@ -274,6 +274,7 @@ FTransform ATestGameMode::GetPlayerLobbyStartPoint(AMyPlayerController* TargetCo
 
 void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetController)
 {
+    InitiatePlayerStats(TargetController);
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     TargetController->GetPawn()->TeleportTo(MovePoint.GetLocation(), MovePoint.Rotator());
     TargetController->Client_WhenMoveToLobbyUI();
@@ -282,8 +283,26 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
 
 void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetController)
 {
+    if (!IsValid(TargetController)) return;
+
+    APawn* OldPawn = TargetController->GetPawn();
+
+    InitiatePlayerStats(TargetController);
+
+    if (IsValid(OldPawn))
+    {
+        OldPawn->Destroy();
+    }
+    //InitiatePlayerStats(TargetController);
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     RestartPlayerAtTransform(TargetController, MovePoint);
     TargetController->Client_WhenMoveToLobbyUI();
     //TargetController->Client_OpenResultUI();
+}
+
+void ATestGameMode::InitiatePlayerStats(AMyPlayerController* TargetController)
+{
+    APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PlayerStateES)) return;
+    PlayerStateES->InitiateStats();
 }
