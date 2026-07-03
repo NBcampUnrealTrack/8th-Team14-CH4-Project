@@ -19,6 +19,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "MainPlayerCharacterState.h"
+#include "PlayerCharacterState.h"
 
 
 APlayerCharacter::APlayerCharacter()
@@ -503,7 +504,7 @@ void APlayerCharacter::CheckDeath()
     if (!HasAuthority()) return;
     if (bIsDead) return;
 
-    AMainPlayerCharacterState* PS = GetPlayerState<AMainPlayerCharacterState>();
+    APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
     if (!PS) return;
 
     if (PS->GetCurrentHealth() <= 0.0f)
