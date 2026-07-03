@@ -20,7 +20,7 @@
 #include "Components/CapsuleComponent.h"
 #include "MainPlayerCharacterState.h"
 #include "ESHUDWidget.h"
-#include "MainPlayerCharacterState.h"
+#include "PlayerCharacterState.h"
 
 
 APlayerCharacter::APlayerCharacter()
@@ -505,7 +505,7 @@ void APlayerCharacter::CheckDeath()
     if (!HasAuthority()) return;
     if (bIsDead) return;
 
-    AMainPlayerCharacterState* PS = GetPlayerState<AMainPlayerCharacterState>();
+    APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
     if (!PS) return;
 
     if (PS->GetCurrentHealth() <= 0.0f)
@@ -528,7 +528,7 @@ float APlayerCharacter::TakeDamage(
         DamageCauser
     );
 
-    AMainPlayerCharacterState* PS = GetPlayerState<AMainPlayerCharacterState>();
+    APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
     if (PS)
     {
         PS->ApplyDamage(ActualDamage);

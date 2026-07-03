@@ -1,8 +1,8 @@
 ﻿#include "PlayerCharacterState.h"
-
 #include "TestGameMode.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "PlayerCharacter.h"
 
 APlayerCharacterState::APlayerCharacterState()
 	:bIsReady(false)
@@ -15,6 +15,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
 	DOREPLIFETIME(ThisClass, bIsReady);
+	DOREPLIFETIME(ThisClass, CurrentHealth);
 }
 
 void APlayerCharacterState::ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData)
@@ -78,4 +79,23 @@ void APlayerCharacterState::PlusPlayerCoin_Implementation()
 }
 #pragma endregion 
 
+// =========================================================== MainPlayerCharacterState
 
+void APlayerCharacterState::OnRep_Health()
+{
+}
+
+void APlayerCharacterState::ApplyDamage(float DamageAmount)
+{
+	if (!HasAuthority()) return;
+
+	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.0f, MaxHealth);
+
+	if (CurrentHealth <= 0.0f)
+	{
+		if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(GetPawn()))
+		{
+			PlayerCharacter->Die();
+		}
+	}
+}
