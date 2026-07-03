@@ -1,21 +1,30 @@
 #include "ZombieCharacter.h"
+
 #include "AI/Controllers/ZombieAIController.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "Engine/EngineTypes.h"
+
 #include "AIController.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 
 AZombieCharacter::AZombieCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
 	AIControllerClass = AZombieAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	// Replication
+	bReplicates = true;
+	SetReplicateMovement(true);
 }
 
 void AZombieCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
 	CurrentHP = MaxHP;
+
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
 }
 
@@ -24,27 +33,84 @@ void AZombieCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+void AZombieCharacter::GetLifetimeReplicatedProps(
+	TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AZombieCharacter, CurrentHP);
+	DOREPLIFETIME(AZombieCharacter, bIsDead);
+}
+
 float AZombieCharacter::TakeDamage(
 	float DamageAmount,
 	FDamageEvent const& DamageEvent,
 	AController* EventInstigator,
 	AActor* DamageCauser)
 {
-	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	// 데미지는 서버만 처리
+	if (!HasAuthority())
+	{
+		return 0.f;
+	}
+
+	const float ActualDamage = Super::TakeDamage(
+		DamageAmount,
+		DamageEvent,
+		EventInstigator,
+		DamageCauser);
 
 	if (bIsDead)
 	{
 		return ActualDamage;
 	}
 
-	CurrentHP = FMath::Clamp(CurrentHP - ActualDamage, 0.0f, MaxHP);
+	CurrentHP = FMath::Clamp(
+		CurrentHP - ActualDamage,
+		0.f,
+		MaxHP);
 
-	if (CurrentHP <= 0.0f)
+	if (CurrentHP <= 0.f)
 	{
 		Die();
 	}
 
 	return ActualDamage;
+}
+
+void AZombieCharacter::Multicast_PlayAttackMontage_Implementation()
+{
+	if (AttackMontage)
+	{
+		PlayAnimMontage(AttackMontage);
+	}
+}
+
+void AZombieCharacter::Multicast_PlayDeathMontage_Implementation()
+{
+	if (DeathMontage)
+	{
+		PlayAnimMontage(DeathMontage);
+	}
+}
+
+void AZombieCharacter::OnRep_IsDead()
+{
+	if (!bIsDead)
+	{
+		return;
+	}
+
+	GetCapsuleComponent()->SetCollisionEnabled(
+		ECollisionEnabled::NoCollision);
+
+	GetCharacterMovement()->DisableMovement();
+
+	// OnRep에서는 Multicast를 다시 호출하지 않는다.
+	if (DeathMontage)
+	{
+		PlayAnimMontage(DeathMontage);
+	}
 }
 
 void AZombieCharacter::Die()
@@ -53,29 +119,32 @@ void AZombieCharacter::Die()
 	{
 		return;
 	}
+
 	bIsDead = true;
 
-	// AI 정지
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{
 		AIController->StopMovement();
 		AIController->UnPossess();
 	}
 
-	// 충돌 끄기
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionEnabled(
+		ECollisionEnabled::NoCollision);
+
 	GetCharacterMovement()->DisableMovement();
 
-	// 사망 몽타주 재생 후 길이만큼 대기하다가 Destroy
+	// 서버가 모든 클라이언트에게 사망 몽타주 재생
+	Multicast_PlayDeathMontage();
+
 	float DestroyDelay = 2.0f;
+
 	if (DeathMontage)
 	{
-		PlayAnimMontage(DeathMontage);
 		DestroyDelay = DeathMontage->GetPlayLength();
 	}
 
-	// 몽타주 재생 시간 이후 액터 제거
 	FTimerHandle DestroyTimerHandle;
+
 	GetWorldTimerManager().SetTimer(
 		DestroyTimerHandle,
 		this,
@@ -88,6 +157,9 @@ void AZombieCharacter::Die()
 
 void AZombieCharacter::DestroyZombie()
 {
-	Destroy();
+	if (HasAuthority())
+	{
+		Destroy();
+	}
 }
 

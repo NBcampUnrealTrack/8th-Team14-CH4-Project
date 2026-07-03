@@ -1,10 +1,9 @@
 #include "BTTask_Attack.h"
+#include "AIController.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "AIController.h"
 #include "Characters/Zombie/ZombieCharacter.h"
 #include "Kismet/GameplayStatics.h"
-#include "Engine/Engine.h"
 
 UBTTask_Attack::UBTTask_Attack()
 {
@@ -21,42 +20,43 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(
 	UBehaviorTreeComponent& OwnerComp,
 	uint8* NodeMemory)
 {
-	FBTAttackMemory* MyMemory = reinterpret_cast<FBTAttackMemory*>(NodeMemory);
-	MyMemory->ElapsedTime = 0.0f;
+	FBTAttackMemory* Memory =
+		reinterpret_cast<FBTAttackMemory*>(NodeMemory);
+	Memory->ElapsedTime = 0.0f;
 
-	if (GEngine)
+	UBlackboardComponent* Blackboard =
+		OwnerComp.GetBlackboardComponent();
+	if (Blackboard)
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1, 2.f, FColor::Yellow,
-			TEXT("BTTask_Attack: ExecuteTask Called"));
+		Blackboard->SetValueAsBool(IsAttackKey, true);
 	}
 
-	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-	if (BB)
+	AAIController* AIController =
+		OwnerComp.GetAIOwner();
+	AZombieCharacter* Zombie =
+		AIController
+		? Cast<AZombieCharacter>(AIController->GetPawn())
+		: nullptr;
+
+	if (!Zombie)
 	{
-		BB->SetValueAsBool(IsAttackKey, true);
+		return EBTNodeResult::Failed;
 	}
-
-	AAIController* AIController = OwnerComp.GetAIOwner();
-	AZombieCharacter* Zombie = AIController ? Cast<AZombieCharacter>(AIController->GetPawn()) : nullptr;
-
-	if (!Zombie || Zombie->bIsDead)
+	if (Zombie->IsDead())
 	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1, 2.f, FColor::Orange,
-				TEXT("BTTask_Attack: Zombie is NULL or Dead"));
-		}
 		return EBTNodeResult::Failed;
 	}
 
-	if (Zombie->AttackMontage)
-	{
-		Zombie->PlayAnimMontage(Zombie->AttackMontage);
-	}
+	// 좀비별 AttackCooldown을 이번 공격 지속시간으로 저장
+	Memory->AttackDuration = Zombie->AttackCooldown;
 
-	AActor* Target = BB ? Cast<AActor>(BB->GetValueAsObject(TEXT("TargetActor"))) : nullptr;
+	// 서버에서 모든 클라이언트에게 공격 몽타주 재생
+	Zombie->Multicast_PlayAttackMontage();
+
+	AActor* Target =
+		Blackboard
+		? Cast<AActor>(Blackboard->GetValueAsObject(TEXT("TargetActor")))
+		: nullptr;
 	if (Target)
 	{
 		UGameplayStatics::ApplyDamage(
@@ -65,24 +65,6 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(
 			AIController,
 			Zombie,
 			UDamageType::StaticClass());
-
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1, 2.f, FColor::Red,
-				FString::Printf(TEXT("[%s] Attack! Damage: %.1f"),
-					*Zombie->ZombieName.ToString(),
-					Zombie->AttackDamage));
-		}
-	}
-	else
-	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1, 2.f, FColor::Orange,
-				TEXT("BTTask_Attack: Target is NULL"));
-		}
 	}
 
 	return EBTNodeResult::InProgress;
@@ -93,17 +75,19 @@ void UBTTask_Attack::TickTask(
 	uint8* NodeMemory,
 	float DeltaSeconds)
 {
-	FBTAttackMemory* MyMemory = reinterpret_cast<FBTAttackMemory*>(NodeMemory);
-	MyMemory->ElapsedTime += DeltaSeconds;
+	FBTAttackMemory* Memory =
+		reinterpret_cast<FBTAttackMemory*>(NodeMemory);
+	Memory->ElapsedTime += DeltaSeconds;
 
-	if (MyMemory->ElapsedTime >= AttackDuration)
+	if (Memory->ElapsedTime >= Memory->AttackDuration)
 	{
-		UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-		if (BB)
+		if (UBlackboardComponent* Blackboard =
+			OwnerComp.GetBlackboardComponent())
 		{
-			BB->SetValueAsBool(IsAttackKey, false);
+			Blackboard->SetValueAsBool(IsAttackKey, false);
 		}
-
-		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+		FinishLatentTask(
+			OwnerComp,
+			EBTNodeResult::Succeeded);
 	}
 }
