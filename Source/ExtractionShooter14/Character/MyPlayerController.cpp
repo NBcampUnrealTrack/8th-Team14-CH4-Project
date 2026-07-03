@@ -119,7 +119,7 @@ void AMyPlayerController::Server_OnClickedResultUI_Implementation()
         //if (!IsValid(// PLYAER CAHCHEDD)) return;
         if (PlayerStateES->GetbIsDead())
         {
-            PlayerStateES->InitiateStats();
+            //PlayerStateES->InitiateStats();
             GameModeES->RespawnPlayerAtLobbyStartPoint(this);
         }
     }
