@@ -1,5 +1,6 @@
 #include "MyPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "MainPlayerCharacterState.h"
 #include "PlayerCharacter.h"
 #include "PlayerCharacterState.h"
 #include "TestGameMode.h"
@@ -9,24 +10,6 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 
 class APlayerCharacter;
-
-void AMyPlayerController::OnUnPossess()
-{
-    Super::OnUnPossess();
-    UE_LOG(LogTemp, Warning, TEXT("[SERVER? %d] OnUnPossess PC=%s PawnBefore=%s"),
-    HasAuthority(),
-    *GetNameSafe(this),
-    *GetNameSafe(GetPawn()));
-}
-
-void AMyPlayerController::OnPossess(APawn* InPawn)
-{
-    Super::OnPossess(InPawn);
-    UE_LOG(LogTemp, Warning, TEXT("[SERVER? %d] OnPossess PC=%s Pawn=%s"),
-    HasAuthority(),
-    *GetNameSafe(this),
-    *GetNameSafe(InPawn));
-}
 
 AMyPlayerController::AMyPlayerController()
     :IsOpenOptionUI(false)
@@ -85,6 +68,7 @@ void AMyPlayerController::Find_ApplyLobbyCamera()
     ensureMsgf(FoundActors.Num() > 0, TEXT("None Camera"));
     
     SetViewTargetWithBlend(FoundActors[0], 0.f);
+
 }
 
 void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
@@ -121,34 +105,17 @@ void AMyPlayerController::Client_WhenMoveToLobbyUI_Implementation()
 {
     InitLobbyWidgetandCachedPlayerState();
     Find_ApplyLobbyCamera();
+
 }
 
 void AMyPlayerController::Server_OnClickedResultUI_Implementation()
 {// Die -> Goto Lobby and Client_WhenMoveTo // Live -> Client_WhenMoveTo
-    // APlayerCharacter* PlayerCharacterES = Cast<APlayerCharacter>(GetPawn());
-    // ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
-    // if (!IsValid(GameModeES)) return;
-    // if (!IsValid(PlayerCharacterES)) return;
-    //
-    // if (PlayerCharacterES->GetbIsDead())
-    // {
-    //     GameModeES->RespawnPlayerAtLobbyStartPoint(this);
-    // }
-    // else
-    // {
-    //     Client_WhenMoveToLobbyUI();
-    //     //Client_OpenResultUI();
-    // }
-    APlayerCharacter* PlayerCharacterES = Cast<APlayerCharacter>(GetPawn());
+
     ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
     if (!IsValid(GameModeES)) return;
-    if (!IsValid(PlayerCharacterES)) return;
-    
-    if (PlayerCharacterES->GetbIsDead())
-    {
+    //if (!IsValid(// PLYAER CAHCHEDD)) return;
+
         GameModeES->RespawnPlayerAtLobbyStartPoint(this);
-    }
-    
     
 }
 
@@ -161,7 +128,7 @@ void AMyPlayerController::Server_MoveToLobbyLocation_Implementation()
 }
 
 void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
-{
+{   //  ======================= when stage moved // play animontage ====================== //
     if (IsLocalController())
     {
         UWidgetLayoutLibrary::RemoveAllWidgets(this);
@@ -177,9 +144,6 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
         StageWidgetInstance = CreateWidget<UUserWidget>(this, StageWidgetClass);
         if (!IsValid(StageWidgetInstance)) return;
         StageWidgetInstance->AddToViewport();
-    
-        // ULocalPlayer* LP = GetLocalPlayer();
-        // APawn* PPawn = GetPawn();
 
     }
 }
@@ -215,8 +179,5 @@ void AMyPlayerController::Client_OpenResultUI_Implementation()
     FInputModeUIOnly UIOnlyMode;
     SetInputMode(UIOnlyMode);
     bShowMouseCursor = true;
-    
-    SetAutoManageCamera(false);
-    Find_ApplyLobbyCamera();
-
+    //Find_ApplyLobbyCamera();
 }

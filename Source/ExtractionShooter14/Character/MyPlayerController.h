@@ -15,8 +15,7 @@ class EXTRACTIONSHOOTER14_API AMyPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 public:
-	virtual void OnUnPossess() override;
-	virtual void OnPossess(APawn* InPawn) override;
+
 protected:
 	AMyPlayerController();
 	virtual void BeginPlay() override;
