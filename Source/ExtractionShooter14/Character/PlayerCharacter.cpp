@@ -19,6 +19,8 @@
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "MainPlayerCharacterState.h"
+#include "ESHUDWidget.h"
+#include "MainPlayerCharacterState.h"
 
 
 APlayerCharacter::APlayerCharacter()
@@ -510,4 +512,27 @@ void APlayerCharacter::CheckDeath()
     {
         Die();
     }
+}
+
+float APlayerCharacter::TakeDamage(
+    float DamageAmount,
+    FDamageEvent const& DamageEvent,
+    AController* EventInstigator,
+    AActor* DamageCauser
+)
+{
+    const float ActualDamage = Super::TakeDamage(
+        DamageAmount,
+        DamageEvent,
+        EventInstigator,
+        DamageCauser
+    );
+
+    AMainPlayerCharacterState* PS = GetPlayerState<AMainPlayerCharacterState>();
+    if (PS)
+    {
+        PS->ApplyDamage(ActualDamage);
+    }
+
+    return ActualDamage;
 }

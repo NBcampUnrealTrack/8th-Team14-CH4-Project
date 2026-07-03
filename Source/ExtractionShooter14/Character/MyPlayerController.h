@@ -9,6 +9,9 @@
 class UES_LobbyWidgetHUD;
 class UInputMappingContext;
 class UUserWidget;
+class AMainPlayerCharacterState;
+class UUserWidget;
+class UESHUDWidget;
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API AMyPlayerController : public APlayerController
@@ -42,6 +45,8 @@ public:
 	void Server_MoveToLobbyLocation();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_OnClickedResultUI();
+	UFUNCTION()
+	void OnPlayerHealthChanged(float CurrentHP, float MaxHP);
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
 	TSubclassOf<UUserWidget> ResultWidgetClass;
@@ -70,6 +75,10 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Stage")
 	TSubclassOf<UUserWidget> StageWidgetClass;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
 	TObjectPtr<UUserWidget> StageWidgetInstance;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
+	TObjectPtr<UESHUDWidget> StageHUDWidgetInstance;
 };

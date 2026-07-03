@@ -7,6 +7,7 @@
 
 void AMainPlayerCharacterState::OnRep_Health()
 {
+    OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
 }
 
 void AMainPlayerCharacterState::ApplyDamage(float DamageAmount)
@@ -14,6 +15,8 @@ void AMainPlayerCharacterState::ApplyDamage(float DamageAmount)
     if (!HasAuthority()) return;
 
     CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.0f, MaxHealth);
+
+    OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
 
     if (CurrentHealth <= 0.0f)
     {

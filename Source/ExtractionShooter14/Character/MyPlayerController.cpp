@@ -7,6 +7,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Title/UI/ES_LobbyWidgetHUD.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "ESHUDWidget.h"
+#include "MainPlayerCharacterState.h"
 
 class APlayerCharacter;
 
@@ -162,26 +164,42 @@ void AMyPlayerController::Server_MoveToLobbyLocation_Implementation()
 
 void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
 {
-    if (IsLocalController())
-    {
-        UWidgetLayoutLibrary::RemoveAllWidgets(this);
-    
-        FInputModeGameOnly GameMode;
-        SetInputMode(GameMode);
-        bShowMouseCursor = false;
-    
-        SetViewTargetWithBlend(GetPawn(), 0.f);
-        SetAutoManageCamera(true);
-    
-        if (!IsValid(StageWidgetClass)) return;
-        StageWidgetInstance = CreateWidget<UUserWidget>(this, StageWidgetClass);
-        if (!IsValid(StageWidgetInstance)) return;
-        StageWidgetInstance->AddToViewport();
-    
-        // ULocalPlayer* LP = GetLocalPlayer();
-        // APawn* PPawn = GetPawn();
+    if (!IsLocalController()) return;
 
+    UWidgetLayoutLibrary::RemoveAllWidgets(this);
+
+    FInputModeGameOnly GameMode;
+    SetInputMode(GameMode);
+    bShowMouseCursor = false;
+
+    SetViewTargetWithBlend(GetPawn(), 0.f);
+    SetAutoManageCamera(true);
+
+    if (!IsValid(StageWidgetClass)) return;
+
+    StageWidgetInstance = CreateWidget<UUserWidget>(this, StageWidgetClass);
+    if (!IsValid(StageWidgetInstance)) return;
+
+    StageWidgetInstance->AddToViewport(10);
+
+    StageHUDWidgetInstance = Cast<UESHUDWidget>(StageWidgetInstance);
+
+    if (!IsValid(StageHUDWidgetInstance.Get()))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("StageWidgetInstance is not ESHUDWidget. Check WBP_HUD parent class."));
+        return;
     }
+
+    AMainPlayerCharacterState* PS = GetPlayerState<AMainPlayerCharacterState>();
+    if (!IsValid(PS)) return;
+
+    PS->OnHealthChanged.RemoveDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
+    PS->OnHealthChanged.AddDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
+
+    StageHUDWidgetInstance.Get()->BP_UpdatePlayerHP(
+        PS->GetCurrentHealth(),
+        PS->GetMaxHealth()
+    );
 }
 
 void AMyPlayerController::OpenOptionUI()
@@ -219,4 +237,14 @@ void AMyPlayerController::Client_OpenResultUI_Implementation()
     SetAutoManageCamera(false);
     Find_ApplyLobbyCamera();
 
+}
+
+void AMyPlayerController::OnPlayerHealthChanged(float CurrentHP, float MaxHP)
+{
+    UE_LOG(LogTemp, Warning, TEXT("HP Changed: %.1f / %.1f"), CurrentHP, MaxHP);
+
+    if (!IsValid(StageHUDWidgetInstance.Get())) return;
+
+    StageHUDWidgetInstance.Get()->BP_UpdatePlayerHP(CurrentHP, MaxHP);
+    StageHUDWidgetInstance.Get()->BP_PlayerDamageFlash();
 }

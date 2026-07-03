@@ -7,6 +7,12 @@
 #include "MainPlayerCharacterState.generated.h"
 
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+	FOnHealthChanged,
+	float, CurrentHealth,
+	float, MaxHealth
+);
+
 UCLASS()
 class EXTRACTIONSHOOTER14_API AMainPlayerCharacterState : public APlayerCharacterState
 {
@@ -20,6 +26,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player|Health")
 	float GetMaxHealth() const { return MaxHealth; }
 	
+	UPROPERTY(BlueprintAssignable, Category = "Player|Health")
+	FOnHealthChanged OnHealthChanged;
+
+	UFUNCTION(BlueprintCallable, Category = "Player|Health")
+	void ApplyDamage(float DamageAmount);
+
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Player|Health")
@@ -33,6 +45,5 @@ protected:
 	UFUNCTION()
 	void OnRep_Health();
 
-	UFUNCTION(BlueprintCallable, Category = "Player|Health")
-	void ApplyDamage(float DamageAmount);
+
 };
