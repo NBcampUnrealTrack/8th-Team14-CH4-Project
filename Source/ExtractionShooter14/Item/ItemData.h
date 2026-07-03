@@ -39,4 +39,8 @@ public:
 	// 총기 데이터 Row (무기가 아닐 경우 None)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName WeaponRowName;
+
+	// 상점 판매 가격 연결(필요 없으면 삭제)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Price = 0;
 };

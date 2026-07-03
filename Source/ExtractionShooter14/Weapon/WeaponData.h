@@ -8,6 +8,8 @@
 
 #include "WeaponData.generated.h"
 
+class USkeletalMesh;
+
 USTRUCT(BlueprintType)
 struct FWeaponData : public FTableRowBase
 {
@@ -18,6 +20,10 @@ public:
 	// 무기 종류
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EWeaponType WeaponType = EWeaponType::Rifle;
+
+	// 총기 메쉬
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMesh* WeaponMesh = nullptr;
 
 	// 발사 방식
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -46,4 +52,20 @@ public:
 	// 사거리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Range = 10000.f;
+
+	// 탄퍼짐
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Spread = 0.f;
+
+	// 수직 반동
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float VerticalRecoil = 1.f;
+
+	// 수평 반동
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HorizontalRecoil = 0.5f;
+
+	// 총구 소켓
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName MuzzleSocketName = TEXT("Muzzle");
 };
