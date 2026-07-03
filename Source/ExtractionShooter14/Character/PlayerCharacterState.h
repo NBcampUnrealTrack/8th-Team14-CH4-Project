@@ -9,6 +9,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerInfoChanged, FPlayerDatas, PlayerData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerbIsDeadChanged, uint8, bIsDead);
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API APlayerCharacterState : public APlayerState
@@ -18,33 +19,38 @@ public:
 	APlayerCharacterState();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-	void ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData);
 	
+	void ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData);
 	const FPlayerDatas& GetPlayerInfo() const;
 	
 	FPlayerInfoChanged OnPlayerDataChanged;
 	FPlayerReadyChanged OnPlayerReadyChanged;
+	FPlayerbIsDeadChanged OnPlayerbIsDeadChanged;
 	
 	UFUNCTION()
 	void OnRep_PlayerInfo();
 	UFUNCTION()
 	void OnRep_bIsReady();
+	UFUNCTION()
+	void OnRep_bIsDead();
+
+	bool GetbIsDead() const { return bIsDead; }
+	void SetbIsDead(bool bIsDeadd);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerReady(bool bReady);
 	bool IsPlayerReady() const { return bIsReady; }
 	
 	void SetPlayerReady(bool SetReady);
-#pragma region Cheat
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void PlusPlayerCoin();
-#pragma endregion 
 protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInfo)
 	FPlayerDatas PlayerInfo;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_bIsReady)
 	uint8 bIsReady : 1;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_bIsDead)
+	uint8 bIsDead : 1;
 	
 // =========================================================== MainPlayerCharacterState
 
@@ -56,6 +62,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player|Health")
 	float GetMaxHealth() const { return MaxHealth; }
 	
+	UFUNCTION(BlueprintCallable, Category = "Player|Health")
+	void InitiateStats();
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Player|Health")

@@ -54,11 +54,19 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void PossessedBy(AController* NewController) override;
-
+	
+	virtual void OnRep_PlayerState() override;
+	
+	void BindDieFunctionWithPlayerStateDelegate();
+	
+	UFUNCTION()
+	void OnbIsDeadChanged(uint8 changedbisdead);
+	
+	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	
 	UFUNCTION(BlueprintCallable, Category = "Death")
 	void Die();
 	
-	bool GetbIsDead() const;
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -179,12 +187,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Death")
 	UAnimMontage* DeathMontage;
 
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Death")
-	bool bIsDead = false;
+	// UPROPERTY(Replicated, BlueprintReadOnly, Category = "Death")
+	// bool bIsDead = false;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDie();
 
-	UFUNCTION(BlueprintCallable, Category = "Death")
-	void CheckDeath();
+	// UFUNCTION(BlueprintCallable, Category = "Death")
+	// void CheckDeath();
 };
