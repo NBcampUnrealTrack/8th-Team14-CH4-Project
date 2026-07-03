@@ -6,6 +6,7 @@
 
 APlayerCharacterState::APlayerCharacterState()
 	:bIsReady(false)
+	,bIsDead(false)
 {
 }
 
@@ -15,6 +16,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
 	DOREPLIFETIME(ThisClass, bIsReady);
+	DOREPLIFETIME(ThisClass, bIsDead);
 	DOREPLIFETIME(ThisClass, CurrentHealth);
 }
 
@@ -48,22 +50,10 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 	OnPlayerDataChanged.Broadcast(PlayerInfo);
 }
 
-void APlayerCharacterState::OnRep_bIsReady()
-{
-	OnPlayerReadyChanged.Broadcast(bIsReady);
-}
-
-void APlayerCharacterState::SetPlayerReady(bool SetReady)
-{
-	// init only server
-	bIsReady = SetReady;
-}
-
 void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
 {
 	// in server
-	bIsReady = bReady;
-	OnRep_bIsReady();
+	SetPlayerReady(bReady);
 	
 	ATestGameMode* GameModeBaseES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
 	if (!IsValid(GameModeBaseES)) return;
@@ -72,30 +62,67 @@ void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
 	
 }
 
-#pragma region Cheat
-void APlayerCharacterState::PlusPlayerCoin_Implementation()
-{
-	PlayerInfo.Gold -= 100;
-}
-#pragma endregion 
-
 // =========================================================== MainPlayerCharacterState
+
+
 
 void APlayerCharacterState::OnRep_Health()
 {
 }
 
 void APlayerCharacterState::ApplyDamage(float DamageAmount)
-{
+{// is in server
 	if (!HasAuthority()) return;
 
 	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.0f, MaxHealth);
 
-	if (CurrentHealth <= 0.0f)
+	if (CurrentHealth <= 0.0f && bIsDead == false)
 	{
-		if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(GetPawn()))
-		{
-			PlayerCharacter->Die();
-		}
+		//if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(GetPawn()))
+		//{
+			SetbIsDead(true);
+			//OnRep_bIsDead();
+			//PlayerCharacter->Die();
+			
+		//}
 	}
+}
+
+void APlayerCharacterState::InitiateStats()
+{
+	CurrentHealth = MaxHealth;
+	SetbIsDead(false);
+	SetPlayerReady(false);
+}
+
+void APlayerCharacterState::OnRep_bIsReady()
+{
+	OnPlayerReadyChanged.Broadcast(bIsReady);
+}
+
+void APlayerCharacterState::OnRep_bIsDead()
+{
+	OnPlayerbIsDeadChanged.Broadcast(bIsDead);
+}
+
+void APlayerCharacterState::SetPlayerReady(bool SetReady)
+{
+	if (bIsReady == SetReady)
+		return;
+
+	bIsReady = SetReady;
+
+	OnRep_bIsReady();
+	ForceNetUpdate();
+}
+
+void APlayerCharacterState::SetbIsDead(bool bIsDeadd)
+{
+	if (bIsDead == bIsDeadd)
+		return;
+
+	bIsDead = bIsDeadd;
+
+	OnRep_bIsDead(); // 서버 즉시 처리
+	ForceNetUpdate();
 }

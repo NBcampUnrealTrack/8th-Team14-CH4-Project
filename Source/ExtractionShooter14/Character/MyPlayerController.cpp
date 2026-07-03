@@ -112,13 +112,19 @@ void AMyPlayerController::Client_WhenMoveToLobbyUI_Implementation()
 
 void AMyPlayerController::Server_OnClickedResultUI_Implementation()
 {// Die -> Goto Lobby and Client_WhenMoveTo // Live -> Client_WhenMoveTo
-
-    ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
-    if (!IsValid(GameModeES)) return;
-    //if (!IsValid(// PLYAER CAHCHEDD)) return;
-
-        GameModeES->RespawnPlayerAtLobbyStartPoint(this);
-    
+    if (HasAuthority())
+    {
+        ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
+        APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
+        if (!IsValid(GameModeES)) return;
+        if (!IsValid(PlayerStateES)) return;
+        //if (!IsValid(// PLYAER CAHCHEDD)) return;
+        if (PlayerStateES->GetbIsDead())
+        {
+            PlayerStateES->InitiateStats();
+            GameModeES->RespawnPlayerAtLobbyStartPoint(this);
+        }
+    }
 }
 
 void AMyPlayerController::Server_MoveToLobbyLocation_Implementation()

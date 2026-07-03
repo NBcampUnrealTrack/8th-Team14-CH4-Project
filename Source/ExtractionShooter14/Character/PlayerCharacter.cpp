@@ -235,6 +235,49 @@ void APlayerCharacter::PossessedBy(AController* NewController)
     {
         SetupPlayerInputComponent(InputComponent);
     }
+    
+    BindDieFunctionWithPlayerStateDelegate();
+}
+
+void APlayerCharacter::OnRep_PlayerState()
+{
+    Super::OnRep_PlayerState();
+    
+    BindDieFunctionWithPlayerStateDelegate();
+}
+
+void APlayerCharacter::BindDieFunctionWithPlayerStateDelegate()
+{
+    APlayerCharacterState* PlayerCharacterStateES = Cast<APlayerCharacterState>(GetPlayerState());
+    if (!IsValid(PlayerCharacterStateES)) return;
+    
+    PlayerCharacterStateES->OnPlayerbIsDeadChanged.RemoveDynamic(this, &ThisClass::OnbIsDeadChanged);
+    PlayerCharacterStateES->OnPlayerbIsDeadChanged.AddDynamic(this, &ThisClass::OnbIsDeadChanged);
+}
+
+void APlayerCharacter::OnbIsDeadChanged(uint8 changedbisdead)
+{
+    if (changedbisdead)
+    {
+        Die();
+    }
+}
+
+void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+    // run on server and local client
+    if (USkeletalMeshComponent* MeshComp = GetMesh())
+    {
+        MeshComp->bPauseAnims = true;
+        MeshComp->SetComponentTickEnabled(false);
+    }
+    if (HasAuthority())
+    { // only do it in server
+        AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
+        if (!IsValid(PlayerControllerES)) return;
+        PlayerControllerES->Client_OpenResultUI();
+        Destroy();
+    }
 }
 
 void APlayerCharacter::ServerStartSprint_Implementation()
@@ -264,7 +307,7 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
     DOREPLIFETIME(APlayerCharacter, CurrentWeaponType);
     DOREPLIFETIME(APlayerCharacter, bIsSprinting);
-    DOREPLIFETIME(APlayerCharacter, bIsDead);
+    //DOREPLIFETIME(APlayerCharacter, bIsDead);
 }
 
 void APlayerCharacter::StartAim()
@@ -460,23 +503,43 @@ void APlayerCharacter::ServerFire_Implementation()
 
 void APlayerCharacter::Die()
 {
-    if (!HasAuthority()) return;
-    if (bIsDead) return;
+    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+    {
+        MovementComp->DisableMovement();
+        MovementComp->StopMovementImmediately();
+    }
+    //
+    // if (IsLocallyControlled())
+    // {
+    //     if (AController* MyController = GetController())
+    //     {
+    //         DisableInput(Cast<APlayerController>(MyController));
+    //     }
+    // }
+    
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-    bIsDead = true; // Server's bIsDead is Changed ?
-    MulticastDie();
+    if (DeathMontage && GetMesh() && GetMesh()->GetAnimInstance())
+    {
+        GetMesh()->GetAnimInstance()->Montage_Play(DeathMontage);
+        
+        FOnMontageEnded EndDelegate;
+        EndDelegate.BindUObject(this, &APlayerCharacter::OnDeathMontageEnded);
+        GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate, DeathMontage);
+    }
     
-    SetLifeSpan(1.0f);
+    //if (!HasAuthority()) return;
+    // if (bIsDead) return;
+    //
+    // bIsDead = true; // Server's bIsDead is Changed ?
+    //MulticastDie();
     
-    AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
-    if (!IsValid(PlayerControllerES)) return;
-    PlayerControllerES->Client_OpenResultUI();
+    // SetLifeSpan(0.f);
+    //
+    // AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
+    // if (!IsValid(PlayerControllerES)) return;
+    // PlayerControllerES->Client_OpenResultUI();
     //PlayerControllerES->Server_HandleMoveToLobbyCaseBybIsDead();
-}
-
-bool APlayerCharacter::GetbIsDead() const
-{
-    return bIsDead;
 }
 
 void APlayerCharacter::MulticastDie_Implementation()
@@ -497,22 +560,27 @@ void APlayerCharacter::MulticastDie_Implementation()
     if (DeathMontage && GetMesh() && GetMesh()->GetAnimInstance())
     {
         GetMesh()->GetAnimInstance()->Montage_Play(DeathMontage);
+        
+        FOnMontageEnded EndDelegate;
+        EndDelegate.BindUObject(this, &APlayerCharacter::OnDeathMontageEnded);
+        GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate, DeathMontage);
     }
 }
 
-void APlayerCharacter::CheckDeath()
-{
-    if (!HasAuthority()) return;
-    if (bIsDead) return;
-
-    APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
-    if (!PS) return;
-
-    if (PS->GetCurrentHealth() <= 0.0f)
-    {
-        Die();
-    }
-}
+// void APlayerCharacter::CheckDeath()
+// {
+//     if (!HasAuthority()) return;
+//     if (bIsDead) return;
+//
+//     APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
+//     if (!PS) return;
+//
+//     if (PS->GetCurrentHealth() <= 0.0f)
+//     {
+//         
+//         Die();
+//     }
+// }
 
 float APlayerCharacter::TakeDamage(
     float DamageAmount,
