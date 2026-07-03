@@ -1,5 +1,6 @@
 #include "MyPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "MainPlayerCharacterState.h"
 #include "PlayerCharacter.h"
 #include "PlayerCharacterState.h"
 #include "TestGameMode.h"
@@ -11,24 +12,6 @@
 #include "MainPlayerCharacterState.h"
 
 class APlayerCharacter;
-
-void AMyPlayerController::OnUnPossess()
-{
-    Super::OnUnPossess();
-    UE_LOG(LogTemp, Warning, TEXT("[SERVER? %d] OnUnPossess PC=%s PawnBefore=%s"),
-    HasAuthority(),
-    *GetNameSafe(this),
-    *GetNameSafe(GetPawn()));
-}
-
-void AMyPlayerController::OnPossess(APawn* InPawn)
-{
-    Super::OnPossess(InPawn);
-    UE_LOG(LogTemp, Warning, TEXT("[SERVER? %d] OnPossess PC=%s Pawn=%s"),
-    HasAuthority(),
-    *GetNameSafe(this),
-    *GetNameSafe(InPawn));
-}
 
 AMyPlayerController::AMyPlayerController()
     :IsOpenOptionUI(false)
@@ -87,6 +70,7 @@ void AMyPlayerController::Find_ApplyLobbyCamera()
     ensureMsgf(FoundActors.Num() > 0, TEXT("None Camera"));
     
     SetViewTargetWithBlend(FoundActors[0], 0.f);
+
 }
 
 void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
@@ -123,34 +107,17 @@ void AMyPlayerController::Client_WhenMoveToLobbyUI_Implementation()
 {
     InitLobbyWidgetandCachedPlayerState();
     Find_ApplyLobbyCamera();
+
 }
 
 void AMyPlayerController::Server_OnClickedResultUI_Implementation()
 {// Die -> Goto Lobby and Client_WhenMoveTo // Live -> Client_WhenMoveTo
-    // APlayerCharacter* PlayerCharacterES = Cast<APlayerCharacter>(GetPawn());
-    // ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
-    // if (!IsValid(GameModeES)) return;
-    // if (!IsValid(PlayerCharacterES)) return;
-    //
-    // if (PlayerCharacterES->GetbIsDead())
-    // {
-    //     GameModeES->RespawnPlayerAtLobbyStartPoint(this);
-    // }
-    // else
-    // {
-    //     Client_WhenMoveToLobbyUI();
-    //     //Client_OpenResultUI();
-    // }
-    APlayerCharacter* PlayerCharacterES = Cast<APlayerCharacter>(GetPawn());
+
     ATestGameMode* GameModeES = Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
     if (!IsValid(GameModeES)) return;
-    if (!IsValid(PlayerCharacterES)) return;
-    
-    if (PlayerCharacterES->GetbIsDead())
-    {
+    //if (!IsValid(// PLYAER CAHCHEDD)) return;
+
         GameModeES->RespawnPlayerAtLobbyStartPoint(this);
-    }
-    
     
 }
 
@@ -163,31 +130,23 @@ void AMyPlayerController::Server_MoveToLobbyLocation_Implementation()
 }
 
 void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
-{
-    if (!IsLocalController()) return;
-
-    UWidgetLayoutLibrary::RemoveAllWidgets(this);
-
-    FInputModeGameOnly GameMode;
-    SetInputMode(GameMode);
-    bShowMouseCursor = false;
-
-    SetViewTargetWithBlend(GetPawn(), 0.f);
-    SetAutoManageCamera(true);
-
-    if (!IsValid(StageWidgetClass)) return;
-
-    StageWidgetInstance = CreateWidget<UUserWidget>(this, StageWidgetClass);
-    if (!IsValid(StageWidgetInstance)) return;
-
-    StageWidgetInstance->AddToViewport(10);
-
-    StageHUDWidgetInstance = Cast<UESHUDWidget>(StageWidgetInstance);
-
-    if (!IsValid(StageHUDWidgetInstance.Get()))
+{   //  ======================= when stage moved // play animontage ====================== //
+    if (IsLocalController())
     {
-        UE_LOG(LogTemp, Warning, TEXT("StageWidgetInstance is not ESHUDWidget. Check WBP_HUD parent class."));
-        return;
+        UWidgetLayoutLibrary::RemoveAllWidgets(this);
+    
+        FInputModeGameOnly GameMode;
+        SetInputMode(GameMode);
+        bShowMouseCursor = false;
+    
+        SetViewTargetWithBlend(GetPawn(), 0.f);
+        SetAutoManageCamera(true);
+    
+        if (!IsValid(StageWidgetClass)) return;
+        StageWidgetInstance = CreateWidget<UUserWidget>(this, StageWidgetClass);
+        if (!IsValid(StageWidgetInstance)) return;
+        StageWidgetInstance->AddToViewport();
+
     }
 
     AMainPlayerCharacterState* PS = GetPlayerState<AMainPlayerCharacterState>();
@@ -233,9 +192,6 @@ void AMyPlayerController::Client_OpenResultUI_Implementation()
     FInputModeUIOnly UIOnlyMode;
     SetInputMode(UIOnlyMode);
     bShowMouseCursor = true;
-    
-    SetAutoManageCamera(false);
-    Find_ApplyLobbyCamera();
 
 }
 

@@ -198,7 +198,7 @@ void ATestGameMode::HandleAllPlayerisReady()
             APawn* PlayerPawn = PlayerControllerES->GetPawn();
             if (!IsValid(PlayerPawn)) continue;
             
-            PlayerControllerES->SetAutoManageCamera(true);
+            //PlayerControllerES->SetAutoManageCamera(true);
             
             UE_LOG(LogTemp, Warning, TEXT("BeforeStage PC=%s Pawn=%s State=%s"),
             *GetNameSafe(PlayerControllerES),
@@ -285,5 +285,5 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     RestartPlayerAtTransform(TargetController, MovePoint);
     TargetController->Client_WhenMoveToLobbyUI();
-    TargetController->Client_OpenResultUI();
+    //TargetController->Client_OpenResultUI();
 }
