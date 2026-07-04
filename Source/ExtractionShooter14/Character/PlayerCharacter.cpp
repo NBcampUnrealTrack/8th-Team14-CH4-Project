@@ -272,7 +272,7 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
         //MeshComp->SetVisibility(false);
     }
     
-    if (IsLocallyControlled())
+    if (IsLocallyControlled())  
     {
         AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
         if (!IsValid(PlayerControllerES)) return;
@@ -280,6 +280,7 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
         
         //Destroy();
     }
+    
 }
 
 void APlayerCharacter::ServerStartSprint_Implementation()
