@@ -4,6 +4,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "TestGameMode.generated.h"
 
+class APlayerCharacterState;
 class AMyPlayerController;
 
 UCLASS()
@@ -24,7 +25,7 @@ public:
 	FTransform GetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
 	void SetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
 	void RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetController);
-	void InitiatePlayerStats(AMyPlayerController* TargetController);
+	void InitializePlayerStats(APlayerCharacterState* InPlayerState);
 	
 	int32 GetInGamePlayerCount() const;
 	void SetInGamePlayerCount(int32 InNewPlayerCount);

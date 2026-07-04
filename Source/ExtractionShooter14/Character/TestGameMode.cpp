@@ -41,6 +41,8 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
     NewPlayer->GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PS)) return;
     
+    PS->SetPlayerStagePlace(EPlayerPlace::Lobby);
+    
     UE_LOG(
         LogTemp,
         Warning,
@@ -114,7 +116,8 @@ void ATestGameMode::Logout(AController* Exiting)
 {
     APlayerCharacterState* PS = Exiting->GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PS)) return;
-
+    PS->SetPlayerStagePlace(EPlayerPlace::None);
+    
     const FString PlayerKey = PS->GetUniqueId()->ToString();
 
     if (UES_GameInstanceSubsystem* SaveSubsystem =
@@ -191,11 +194,13 @@ void ATestGameMode::HandleAllPlayerisReady()
         for (const TPair<TWeakObjectPtr<APlayerController>, int32>& Pair : LobbyPlayerStartPointMap)
         {
             AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(Pair.Key.Get());
+            APlayerCharacterState* PlayerCharacterStateES = PlayerControllerES->GetPlayerState<APlayerCharacterState>();
+            APawn* PlayerPawn = PlayerControllerES->GetPawn();
+            
             const int32 StartIndex = Pair.Value;
             
             if (!IsValid(PlayerControllerES)) continue;
-            
-            APawn* PlayerPawn = PlayerControllerES->GetPawn();
+            if (!IsValid(PlayerCharacterStateES)) continue;
             if (!IsValid(PlayerPawn)) continue;
             
             //PlayerControllerES->SetAutoManageCamera(true);
@@ -205,6 +210,7 @@ void ATestGameMode::HandleAllPlayerisReady()
             *GetNameSafe(PlayerControllerES->GetPawn()),
             *PlayerControllerES->GetStateName().ToString());
             
+            PlayerCharacterStateES->SetPlayerStagePlace(EPlayerPlace::Stage);
             PlayerPawn->TeleportTo
             (
                 StageSpawnLocationActors[StartIndex]->GetActorLocation(),
@@ -274,7 +280,12 @@ FTransform ATestGameMode::GetPlayerLobbyStartPoint(AMyPlayerController* TargetCo
 
 void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetController)
 {
-    InitiatePlayerStats(TargetController);
+    APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PlayerStateES)) return;
+    
+    PlayerStateES->ApplyPlayerStageInventoryToPlayerStorage();
+    InitializePlayerStats(PlayerStateES);
+    
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     TargetController->GetPawn()->TeleportTo(MovePoint.GetLocation(), MovePoint.Rotator());
     TargetController->Client_WhenMoveToLobbyUI();
@@ -284,15 +295,16 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
 void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetController)
 {
     if (!IsValid(TargetController)) return;
-
+    
+    APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PlayerStateES)) return;
+    
     APawn* OldPawn = TargetController->GetPawn();
+    if (!IsValid(OldPawn)) return;
+    OldPawn->Destroy();
 
-    InitiatePlayerStats(TargetController);
+    InitializePlayerStats(PlayerStateES);
 
-    if (IsValid(OldPawn))
-    {
-        OldPawn->Destroy();
-    }
     //InitiatePlayerStats(TargetController);
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     RestartPlayerAtTransform(TargetController, MovePoint);
@@ -300,9 +312,13 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     //TargetController->Client_OpenResultUI();
 }
 
-void ATestGameMode::InitiatePlayerStats(AMyPlayerController* TargetController)
+void ATestGameMode::InitializePlayerStats(APlayerCharacterState* InPlayerState)
 {
-    APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
-    if (!IsValid(PlayerStateES)) return;
-    PlayerStateES->InitiateStats();
+    if (!IsValid(InPlayerState)) return;
+    InPlayerState->InitiateStats();
+    // ================================ Place
+    InPlayerState->SetPlayerStagePlace(EPlayerPlace::Lobby);
+    
+    InPlayerState->ClearPlayerStageInventory();
 }
+

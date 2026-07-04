@@ -1,5 +1,6 @@
 #include "MyPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
 #include "MainPlayerCharacterState.h"
 #include "PlayerCharacter.h"
 #include "PlayerCharacterState.h"
@@ -14,7 +15,7 @@
 class APlayerCharacter;
 
 AMyPlayerController::AMyPlayerController()
-    :IsOpenOptionUI(false)
+    //:IsOpenOptionUI(false)
 {
     //APlayerController의 기본값은 = true
     //의미하는바 = 매프레임 or possess할때 viewtarget을 possess하고있는 pawn으로 자동관리
@@ -31,10 +32,17 @@ void AMyPlayerController::BeginPlay()
     {
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
         {
-            if (DefaultMappingContext)
+            for (const UInputMappingContext* MappingContext : MappingContextList)
             {
-                Subsystem->AddMappingContext(DefaultMappingContext, 0);
+                if (IsValid(MappingContext))
+                {
+                    Subsystem->AddMappingContext(MappingContext, 0);
+                }
             }
+            // if (DefaultMappingContext)
+            // {
+            //     Subsystem->AddMappingContext(DefaultMappingContext, 0);
+            // }
         }
     }
     
@@ -44,21 +52,23 @@ void AMyPlayerController::BeginPlay()
         ResultWidgetInstance = CreateWidget<UUserWidget>(this, ResultWidgetClass);
         if (!IsValid(ResultWidgetInstance)) return;
         
-        if (!IsValid(OptionWidgetClass)) return;
-        OptionWidgetInstance = CreateWidget<UUserWidget>(this, OptionWidgetClass);
-        if (!IsValid(OptionWidgetInstance)) return;
+        // if (!IsValid(OptionWidgetClass)) return;
+        // OptionWidgetInstance = CreateWidget<UUserWidget>(this, OptionWidgetClass);
+        // if (!IsValid(OptionWidgetInstance)) return;
         
-        if (!IsValid(LobbyWidgetClass)) return;
-        LobbyWidgetInstance = CreateWidget<UES_LobbyWidgetHUD>(this, LobbyWidgetClass);
-        if (!IsValid(LobbyWidgetInstance)) return;
-        LobbyWidgetInstance->AddToViewport();
-      
-        
-        Find_ApplyLobbyCamera();
-        
-        FInputModeUIOnly InputMode;
-        SetInputMode(InputMode);
-        bShowMouseCursor = true;
+    //     if (!IsValid(LobbyWidgetClass)) return;
+    //     LobbyWidgetInstance = CreateWidget<UES_LobbyWidgetHUD>(this, LobbyWidgetClass);
+    //     if (!IsValid(LobbyWidgetInstance)) return;
+    //     LobbyWidgetInstance->AddToViewport();
+    //     
+    //     Find_ApplyLobbyCamera();
+    //     
+    // // INPUT MODE ON AND INPUT KEY
+    //     FInputModeUIOnly InputMode;
+    //     InputMode.SetWidgetToFocus(LobbyWidgetInstance->TakeWidget());
+    //     SetInputMode(InputMode);
+    //     bShowMouseCursor = true;
+
     }
 }
 
@@ -81,13 +91,20 @@ void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
     
     if (!IsValid(PlayerStateES)) return;
     if (!IsValid(LobbyWidgetClass)) return;
-    if (!IsValid(LobbyWidgetInstance)) return;
+    //if (!IsValid(LobbyWidgetInstance)) return;
     
     LobbyWidgetInstance = CreateWidget<UES_LobbyWidgetHUD>(this, LobbyWidgetClass);
     
     LobbyWidgetInstance->CachedPlayerState(PlayerStateES);
+    LobbyWidgetInstance->CachedPlayerController(this);
     
     LobbyWidgetInstance->AddToViewport();
+    // INPUT MODE ON AND INPUT KEY
+    FInputModeUIOnly InputMode;
+    InputMode.SetWidgetToFocus(LobbyWidgetInstance->TakeWidget());
+    SetInputMode(InputMode);
+    bShowMouseCursor = true;
+
 }
 
 void AMyPlayerController::SetAutoManageCamera(bool bEnable)
@@ -100,14 +117,13 @@ void AMyPlayerController::OnRep_PlayerState()
     Super::OnRep_PlayerState();
     
     InitLobbyWidgetandCachedPlayerState();
-    
+    Find_ApplyLobbyCamera();
 }
 
 void AMyPlayerController::Client_WhenMoveToLobbyUI_Implementation()
 {
     InitLobbyWidgetandCachedPlayerState();
     Find_ApplyLobbyCamera();
-
 }
 
 void AMyPlayerController::Server_OnClickedResultUI_Implementation()
@@ -140,7 +156,7 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
     if (IsLocalController())
     {
         UWidgetLayoutLibrary::RemoveAllWidgets(this);
-    
+        
         FInputModeGameOnly GameMode;
         SetInputMode(GameMode);
         bShowMouseCursor = false;
@@ -167,27 +183,6 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
     );
 }
 
-void AMyPlayerController::OpenOptionUI()
-{
-    if (!IsValid(OptionWidgetInstance)) return;
-    OptionWidgetInstance->AddToViewport(1);
-    IsOpenOptionUI = true;
-    FInputModeGameAndUI GameUIMode;
-    SetInputMode(GameUIMode);
-    bShowMouseCursor = true;
-}
-
-void AMyPlayerController::CloseOptionUI()
-{
-    if (!IsValid(OptionWidgetInstance)) return;
-    OptionWidgetInstance->RemoveFromParent();
-    IsOpenOptionUI = false;
-    FInputModeGameOnly GameMode;
-    SetInputMode(GameMode);
-    bShowMouseCursor = false;
-    
-}
-
 void AMyPlayerController::Client_OpenResultUI_Implementation()
 {
     //UWidgetLayoutLibrary::RemoveAllWidgets(this);
@@ -198,8 +193,43 @@ void AMyPlayerController::Client_OpenResultUI_Implementation()
     FInputModeUIOnly UIOnlyMode;
     SetInputMode(UIOnlyMode);
     bShowMouseCursor = true;
-
+    //Find_ApplyLobbyCamera();
 }
+
+void AMyPlayerController::OpenOptionUI()
+{
+
+    if (!IsValid(OptionWidgetClass)) return;
+    if (!IsValid(OptionWidgetInstance))
+    {
+        OptionWidgetInstance = CreateWidget<UUserWidget>(this, OptionWidgetClass);
+        OptionWidgetInstance->AddToViewport(3);
+    }
+    else
+    {
+        OptionWidgetInstance->RemoveFromParent();
+        OptionWidgetInstance=nullptr;
+    }
+}
+
+#pragma region Cheat 
+
+void AMyPlayerController::SetCheatCoin(int32 InCheatCoin)
+{
+    APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PlayerStateES)) return;
+    PlayerStateES->Server_SetGold(InCheatCoin);
+}
+
+void AMyPlayerController::SetCheatStageCoin(int32 InCheatCoin)
+{
+    APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PlayerStateES)) return;
+    PlayerStateES->Server_SetStageGold(InCheatCoin);
+}
+
+
+#pragma endregion 
 
 void AMyPlayerController::OnPlayerHealthChanged(float CurrentHP, float MaxHP)
 {

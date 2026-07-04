@@ -11,6 +11,8 @@ void UES_LobbyWidgetHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
+	SetIsFocusable(true);
+	
 	ATestGameState* GameStateES = Cast<ATestGameState>(UGameplayStatics::GetGameState(GetWorld()));
 	if (!IsValid(GameStateES)) return;
 	OwningGameState = GameStateES;
@@ -21,6 +23,13 @@ void UES_LobbyWidgetHUD::NativeConstruct()
 		SetLobbyCountPlayer(GameStateES->GetPlayerInGameCount_GS());
 		PlayerStateChangedHandle = GameStateES->OnChangedPlayerStates.AddUObject(this, &ThisClass::RefreshPlayerUserIcon);
 		RefreshPlayerUserIcon();
+	}
+	
+	if (!IsValid(OwningPlayerState)) return;
+	if (!PlayerinfoChangedHandle.IsValid())
+	{
+		PlayerinfoChangedHandle = OwningPlayerState->OnPlayerDataChanged.AddUObject(this, &ThisClass::RefreshPlayerInfo);
+		RefreshPlayerInfo();
 	}
 	//AddUserIcon();
 }
@@ -38,9 +47,26 @@ void UES_LobbyWidgetHUD::NativeDestruct()
 		GameStateES->OnChangedPlayerInGameCount.RemoveDynamic(this, &UES_LobbyWidgetHUD::SetLobbyCountPlayer);
 		GameStateES->OnChangedPlayerStates.Remove(PlayerStateChangedHandle);
 	}
+	
+	if (PlayerinfoChangedHandle.IsValid() && IsValid(OwningPlayerState))
+	{
+		OwningPlayerState->OnPlayerDataChanged.Remove(PlayerinfoChangedHandle);
+		PlayerinfoChangedHandle.Reset();
+	}
 }
 
+FReply UES_LobbyWidgetHUD::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
 
+	if (InKeyEvent.GetKey() == EKeys::LeftControl)
+	{
+		OwningPlayerController->OpenOptionUI();
+		// FReply를 반환하지않으면 controller에게 까지 입력이 전달됨
+		return FReply::Handled();
+	}
+	
+	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
 
 void UES_LobbyWidgetHUD::RefreshPlayerUserIcon()
 {
@@ -56,20 +82,20 @@ void UES_LobbyWidgetHUD::RefreshPlayerUserIcon()
 	
 	PlayerIconHorizontal->ClearChildren();
 	
-	for ( auto& EachPlayerState : OwningGameState->PlayerArray)
+	for ( auto EachPlayerState : OwningGameState->GetLobbyPlayerStates())
 	{
 		if (!IsValid(EachPlayerState)) continue;
 		
-		APlayerCharacterState* EachPlayerStateES = Cast<APlayerCharacterState>(EachPlayerState);
-		if (!IsValid(EachPlayerStateES)) continue;
+		// APlayerCharacterState* EachPlayerStateES = Cast<APlayerCharacterState>(EachPlayerState);
+		// if (!IsValid(EachPlayerStateES)) continue;
 		
 		UES_LobbyUserIconWidget* UserIconInstance =
 			CreateWidget<UES_LobbyUserIconWidget>(GetOwningPlayer(), UserIconClass);
 		
-		UserIconInstance->CachedPlayerCharacterState(EachPlayerStateES);
+		UserIconInstance->CachedPlayerCharacterState(EachPlayerState);
 		PlayerIconHorizontal->AddChild(UserIconInstance);
 		
-		UserIconInstance->RefreshReadyIcon(EachPlayerStateES->IsPlayerReady());
+		UserIconInstance->RefreshReadyIcon(EachPlayerState->IsPlayerReady());
 	}
 }
 
@@ -85,6 +111,20 @@ void UES_LobbyWidgetHUD::SetLobbyCountPlayer(const int32 InNewPlayer)
 	LobbyCountPlayer->SetText(FText::AsNumber(InNewPlayer));
 }
 
+void UES_LobbyWidgetHUD::RefreshPlayerInfo()
+{
+	if (!IsValid(OwningPlayerState)) return;
+	if (!IsValid(LobbyTotalGold)) return;
+	
+	UTextBlock* GoldText = Cast<UTextBlock>(
+		LobbyTotalGold->GetWidgetFromName(TEXT("TXT_Gold_Text"))
+	);
+	const FPlayerDatas& NewPlayerData = OwningPlayerState->GetPlayerInfo();
+	GoldText->SetText(FText::AsNumber(NewPlayerData.GoldStorage));
+	
+	PlayerNickName->SetText(FText::FromString(NewPlayerData.PlayerNickName));
+}
+
 void UES_LobbyWidgetHUD::AddUserIcon()
 {
 	// if (!IsValid(UserIconClass)) return;
@@ -98,4 +138,9 @@ void UES_LobbyWidgetHUD::AddUserIcon()
 void UES_LobbyWidgetHUD::CachedPlayerState(APlayerCharacterState* InPlayerState)
 {
 	OwningPlayerState = InPlayerState;
+}
+
+void UES_LobbyWidgetHUD::CachedPlayerController(AMyPlayerController* InPlayerController)
+{
+	OwningPlayerController = InPlayerController;
 }

@@ -9,7 +9,7 @@
 class UES_LobbyWidgetHUD;
 class UInputMappingContext;
 class UUserWidget;
-class AMainPlayerCharacterState;
+class APlayerCharacterState;
 class UUserWidget;
 class UESHUDWidget;
 
@@ -26,7 +26,7 @@ protected:
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* DefaultMappingContext;
+	TArray<UInputMappingContext*> MappingContextList;
 public:
 	void Find_ApplyLobbyCamera();
 	void InitLobbyWidgetandCachedPlayerState();
@@ -47,6 +47,7 @@ public:
 	UFUNCTION()
 	void OnPlayerHealthChanged(float CurrentHP, float MaxHP);
 public:
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
 	TSubclassOf<UUserWidget> ResultWidgetClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Result")
@@ -60,12 +61,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Option")
 	TObjectPtr<UUserWidget> OptionWidgetInstance;
 	
-	UPROPERTY()
-	uint8 IsOpenOptionUI : 1;
-	UFUNCTION()
+	// UPROPERTY()
+	// uint8 IsOpenOptionUI : 1;
+	UFUNCTION(BlueprintCallable)
 	void OpenOptionUI();
-	UFUNCTION()
-	void CloseOptionUI();
+	// UFUNCTION()
+	// void CloseOptionUI();
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Lobby")
 	TSubclassOf<UES_LobbyWidgetHUD> LobbyWidgetClass;
@@ -73,11 +74,17 @@ public:
 	TObjectPtr<UES_LobbyWidgetHUD> LobbyWidgetInstance;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Stage")
-	TSubclassOf<UUserWidget> StageWidgetClass;
+	TSubclassOf<UESHUDWidget> StageWidgetClass;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
-	TObjectPtr<UUserWidget> StageWidgetInstance;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
-	TObjectPtr<UESHUDWidget> StageHUDWidgetInstance;
+	TObjectPtr<UESHUDWidget> StageWidgetInstance;
+	
+	
+#pragma region Cheat
+	UFUNCTION(Exec)
+	void SetCheatCoin(int32 InCheatCoin);
+	UFUNCTION(Exec)
+	void SetCheatStageCoin(int32 InCheatCoin);
+	
+#pragma endregion 
 };
