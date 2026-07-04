@@ -23,7 +23,7 @@ protected:
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* DefaultMappingContext;
+	TArray<UInputMappingContext*> MappingContextList;
 public:
 	void Find_ApplyLobbyCamera();
 	void InitLobbyWidgetandCachedPlayerState();
@@ -42,6 +42,7 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_OnClickedResultUI();
 public:
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
 	TSubclassOf<UUserWidget> ResultWidgetClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Result")
@@ -55,12 +56,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Option")
 	TObjectPtr<UUserWidget> OptionWidgetInstance;
 	
-	UPROPERTY()
-	uint8 IsOpenOptionUI : 1;
-	UFUNCTION()
+	// UPROPERTY()
+	// uint8 IsOpenOptionUI : 1;
+	UFUNCTION(BlueprintCallable)
 	void OpenOptionUI();
-	UFUNCTION()
-	void CloseOptionUI();
+	// UFUNCTION()
+	// void CloseOptionUI();
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Lobby")
 	TSubclassOf<UES_LobbyWidgetHUD> LobbyWidgetClass;
@@ -71,4 +72,13 @@ public:
 	TSubclassOf<UUserWidget> StageWidgetClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
 	TObjectPtr<UUserWidget> StageWidgetInstance;
+	
+	
+#pragma region Cheat
+	UFUNCTION(Exec)
+	void SetCheatCoin(int32 InCheatCoin);
+	UFUNCTION(Exec)
+	void SetCheatStageCoin(int32 InCheatCoin);
+	
+#pragma endregion 
 };

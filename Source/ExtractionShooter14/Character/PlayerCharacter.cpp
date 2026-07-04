@@ -216,14 +216,14 @@ void APlayerCharacter::OpenOptionUI(const FInputActionValue& Value)
     AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
     if (!IsValid(PlayerControllerES)) return;
     
-    if (PlayerControllerES->IsOpenOptionUI)
-    {
-        PlayerControllerES->CloseOptionUI();
-    }
-    else
-    {
+    // if (PlayerControllerES->IsOpenOptionUI)
+    // {
+    //     PlayerControllerES->CloseOptionUI();
+    // }
+    // else
+    // {
         PlayerControllerES->OpenOptionUI();
-    }
+    //}
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
