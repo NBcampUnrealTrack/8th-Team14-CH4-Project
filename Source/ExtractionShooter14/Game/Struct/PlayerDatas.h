@@ -13,5 +13,5 @@ public:
 	UPROPERTY()
 	int32 Gold = 0;
 	UPROPERTY()
-	TArray<FName> ItemNames;
+	TArray<FName> ItemStorage;
 };
