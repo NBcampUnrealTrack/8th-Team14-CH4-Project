@@ -3,6 +3,7 @@
 // #include "Components/StaticMeshComponent.h"
 // #include "Components/BoxComponent.h"
 #include "Character/TestGameMode.h"
+#include "Components/SphereComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 ATeleportTriggerBox_Timer::ATeleportTriggerBox_Timer()
@@ -21,6 +22,7 @@ ATeleportTriggerBox_Timer::ATeleportTriggerBox_Timer()
 	//
 	// BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::MoveToLocationBeginOverlap);
 	// BoxComponent->OnComponentEndOverlap.AddDynamic(this, &ThisClass::MoveToLocationEndOverlap);
+	SphereComponent->SetSphereRadius(5000.f);
 }
 
 void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

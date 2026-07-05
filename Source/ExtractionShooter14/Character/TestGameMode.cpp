@@ -11,6 +11,8 @@
 #include "Structure/StageLocationActor.h"
 #include "Algo/RandomShuffle.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 ATestGameMode::ATestGameMode()
 {
@@ -29,7 +31,7 @@ void ATestGameMode::BeginPlay()
     UGameplayStatics::GetAllActorsOfClass(
         GetWorld(),
         AStageLocationActor::StaticClass(),
-        StageSpawnLocationActors);
+        StageSpawnLocationPoints);
     
 }
 
@@ -95,7 +97,10 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
     const int32 Index = GetAvailableStartIndex();
     if (Index != INDEX_NONE)
     {
+        // add player startpoint
         LobbyPlayerStartPointMap.Add(NewPlayer, Index);
+        PS->SetLobbyIndex(Index);
+        
         APawn* PlayerPawn = NewPlayer->GetPawn();
         if (!IsValid(PlayerPawn)) return;
         PlayerPawn->TeleportTo(
@@ -109,7 +114,8 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
         GameState_Test->AddLobbyPlayerStates(PS);
     }
     
-    
+    // timer and switch enumgamestate
+    StartLobby();
 }
 
 void ATestGameMode::Logout(AController* Exiting)
@@ -167,58 +173,61 @@ void ATestGameMode::SetMaxInGamePlayerCount(int32 InNewMaxPlayerCount)
 
 void ATestGameMode::HandleAllPlayerisReady()
 {
-    if (IsAllPlayersReady())
-    {
-        //gs >> gamestate::playing
-        
-        Algo::RandomShuffle(StageSpawnLocationActors);
-        
-        // ATestGameState* GS = GetGameState<ATestGameState>();
-        // if (!IsValid(GS)) return;
-        //
-        // for ( int i = 0; i < GS->GetLobbyPlayerStates().Num(); ++i)
-        // {
-        //     APlayerCharacterState* PlayerStates =  GS->GetLobbyPlayerStates()[i];
-        //     AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(PlayerStates->GetPlayerController());
-        //     ACharacter* PlayerCharacterES = Cast<ACharacter>(PlayerStates->GetPawn());
-        //     if (!IsValid(PlayerControllerES)) continue;
-        //     if (!IsValid(PlayerCharacterES)) continue;
-        //     
-        //     PlayerCharacterES->TeleportTo(
-        //     StageSpawnLocationActors[i]->GetActorLocation(),
-        //     StageSpawnLocationActors[i]->GetActorRotation()
-        //         );
-        //     
-        //     PlayerControllerES->Client_WhenMoveToStagePopUpUI();
-        //}
-        for (const TPair<TWeakObjectPtr<APlayerController>, int32>& Pair : LobbyPlayerStartPointMap)
+    ATestGameState* GS = GetGameState<ATestGameState>();
+    if (!IsValid(GS)) return;
+    int32 PlayerCount = GS->GetLobbyPlayerStates().Num();
+    
+    
+    // if (PlayerCount >= MaxInGamePlayerCount)
+    // {
+        if (IsAllPlayersReady())
         {
-            AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(Pair.Key.Get());
-            APlayerCharacterState* PlayerCharacterStateES = PlayerControllerES->GetPlayerState<APlayerCharacterState>();
-            APawn* PlayerPawn = PlayerControllerES->GetPawn();
+            //gs >> gamestate::playing
+        
+            Algo::RandomShuffle(StageSpawnLocationPoints);
+
+            for (const TPair<TWeakObjectPtr<APlayerController>, int32>& Pair : LobbyPlayerStartPointMap)
+            {
+                AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(Pair.Key.Get());
+                APlayerCharacterState* PlayerCharacterStateES = PlayerControllerES->GetPlayerState<APlayerCharacterState>();
+                APawn* PlayerPawn = PlayerControllerES->GetPawn();
             
-            const int32 StartIndex = Pair.Value;
+                const int32 StartIndex = Pair.Value;
             
-            if (!IsValid(PlayerControllerES)) continue;
-            if (!IsValid(PlayerCharacterStateES)) continue;
-            if (!IsValid(PlayerPawn)) continue;
+                if (!IsValid(PlayerControllerES)) continue;
+                if (!IsValid(PlayerCharacterStateES)) continue;
+                if (!IsValid(PlayerPawn)) continue;
             
-            //PlayerControllerES->SetAutoManageCamera(true);
+                //PlayerControllerES->SetAutoManageCamera(true);
             
-            UE_LOG(LogTemp, Warning, TEXT("BeforeStage PC=%s Pawn=%s State=%s"),
-            *GetNameSafe(PlayerControllerES),
-            *GetNameSafe(PlayerControllerES->GetPawn()),
-            *PlayerControllerES->GetStateName().ToString());
+                UE_LOG(LogTemp, Warning, TEXT("BeforeStage PC=%s Pawn=%s State=%s"),
+                *GetNameSafe(PlayerControllerES),
+                *GetNameSafe(PlayerControllerES->GetPawn()),
+                *PlayerControllerES->GetStateName().ToString());
             
-            PlayerCharacterStateES->SetPlayerStagePlace(EPlayerPlace::Stage);
-            PlayerPawn->TeleportTo
-            (
-                StageSpawnLocationActors[StartIndex]->GetActorLocation(),
-                StageSpawnLocationActors[StartIndex]->GetActorRotation()
-                );
-            PlayerControllerES->Client_WhenMoveToStagePopUpUI();
+                PlayerCharacterStateES->SetPlayerStagePlace(EPlayerPlace::Stage);
+                PlayerPawn->TeleportTo
+                (
+                    StageSpawnLocationPoints[StartIndex]->GetActorLocation(),
+                    StageSpawnLocationPoints[StartIndex]->GetActorRotation()
+                    );
+                FRotator PlayerRotation = StageSpawnLocationPoints[StartIndex]->GetActorRotation();
+                PlayerRotation.Pitch = 0.0f;
+                PlayerRotation.Roll = 0.0f;
+            
+                PlayerControllerES->SetControlRotation(PlayerRotation);
+                PlayerPawn->SetActorRotation(PlayerRotation);
+                PlayerControllerES->Client_ApplySpawnRotation(PlayerRotation);
+            
+                PlayerControllerES->Client_WhenMoveToStagePopUpUI();
+                
+
+            }
+            
+            // timer and switch enumgamestate
+            StartStage();
         }
-    }
+    //}
 }
 
 bool ATestGameMode::IsAllPlayersReady()
@@ -252,12 +261,37 @@ bool ATestGameMode::IsAllPlayersReady()
     return true;
 }
 
+void ATestGameMode::StartLobby()
+{
+    ATestGameState* GS = GetGameState<ATestGameState>();
+    
+    FPhaseTimerData SetLobbyTimerData;
+    SetLobbyTimerData.GameStateEnum = EGameState::Waiting;
+    SetLobbyTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
+    SetLobbyTimerData.PhaseDuration = 10.f;
+    
+    GS->SetGameStatePhaseTimerData(SetLobbyTimerData);
+}
+
+void ATestGameMode::StartStage()
+{
+    ATestGameState* GS = GetGameState<ATestGameState>();
+
+    FPhaseTimerData SetLobbyTimerData;
+    SetLobbyTimerData.GameStateEnum = EGameState::Playing;
+    SetLobbyTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
+    SetLobbyTimerData.PhaseDuration = 20.f;
+    
+    GS->SetGameStatePhaseTimerData(SetLobbyTimerData);
+}
+
 int32 ATestGameMode::GetAvailableStartIndex() const
 {
     TSet<int32> UsedIndices;
 
     for (const auto& Pair : LobbyPlayerStartPointMap)
-    {
+    { // <playercontroller, int32> 
+        
         UsedIndices.Add(Pair.Value);
     }
 
@@ -283,11 +317,25 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PlayerStateES)) return;
     
+    PlayerStateES->SetPlayerStagePlace(EPlayerPlace::Lobby);
     PlayerStateES->ApplyPlayerStageInventoryToPlayerStorage();
     InitializePlayerStats(PlayerStateES);
     
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
-    TargetController->GetPawn()->TeleportTo(MovePoint.GetLocation(), MovePoint.Rotator());
+    ACharacter* CharacterES = Cast<ACharacter>(TargetController->GetPawn());
+    CharacterES->GetCharacterMovement()->Velocity = FVector::ZeroVector;
+    // CharacterES->GetCharacterMovement()->DisableMovement();
+    FRotator Rotation = MovePoint.Rotator();
+    Rotation.Pitch = 0.f;
+    Rotation.Roll = 0.f;
+    // TargetController->SetControlRotation(Rotation);
+    // CharacterES->SetActorRotation(Rotation);
+    TargetController->GetPawn()->TeleportTo(MovePoint.GetLocation(), Rotation);
+    
+    TargetController->SetControlRotation(Rotation);
+    CharacterES->SetActorRotation(Rotation);
+    TargetController->Client_ApplySpawnRotation(Rotation);
+    
     TargetController->Client_WhenMoveToLobbyUI();
     TargetController->Client_OpenResultUI();
 }
@@ -299,6 +347,7 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PlayerStateES)) return;
     
+    PlayerStateES->SetPlayerStagePlace(EPlayerPlace::Lobby);
     APawn* OldPawn = TargetController->GetPawn();
     if (!IsValid(OldPawn)) return;
     OldPawn->Destroy();

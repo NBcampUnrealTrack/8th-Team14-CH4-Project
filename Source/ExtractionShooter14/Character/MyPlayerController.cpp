@@ -9,6 +9,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Title/UI/ES_LobbyWidgetHUD.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Character/TestGameState.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 class APlayerCharacter;
 
@@ -72,13 +74,27 @@ void AMyPlayerController::BeginPlay()
 
 void AMyPlayerController::Find_ApplyLobbyCamera()
 {
-    SetAutoManageCamera(false);
-    TArray<AActor*> FoundActors;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("LobbyMainCamera"), FoundActors);
-    ensureMsgf(FoundActors.Num() > 0, TEXT("None Camera"));
-    
-    SetViewTargetWithBlend(FoundActors[0], 0.f);
-
+    if (IsLocalController())
+    {
+        APlayerCharacterState* PlayerCharacterStateES = GetPlayerState<APlayerCharacterState>();
+        
+        if (!IsValid(PlayerCharacterStateES)) return;
+        
+        const int32 PlayerSlotIndex = PlayerCharacterStateES->GetLobbyIndex();
+        
+        TArray<AActor*> FoundCameras;
+        UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("LobbyMainCamera"), FoundCameras);
+        ensureMsgf(FoundCameras.Num() > 0, TEXT("None Camera"));
+        FoundCameras.Sort([](const AActor& A, const AActor& B)
+        {
+            return A.GetName() < B.GetName();
+        }); // sort by name camera_1 , camera_2 , camera_3
+        
+        if (!FoundCameras.IsValidIndex(PlayerSlotIndex)) return;
+        
+        SetAutoManageCamera(false);
+        SetViewTargetWithBlend(FoundCameras[PlayerSlotIndex], 0.f);
+    }
 }
 
 void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
@@ -105,6 +121,42 @@ void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
 
 }
 
+void AMyPlayerController::StopPlayerMovement()
+{
+    SetIgnoreMoveInput(true);
+    SetIgnoreLookInput(true);
+    
+    ACharacter* CharacterES = Cast<ACharacter>(GetPawn());
+    if (!IsValid(CharacterES)) return;
+    CharacterES->GetCharacterMovement()->StopMovementImmediately();
+    CharacterES->GetCharacterMovement()->DisableMovement();
+    // CharacterES->SetActorRotation(FRotator::ZeroRotator);
+    // SetControlRotation(FRotator::ZeroRotator);
+}
+
+void AMyPlayerController::StartPlayerMovement()
+{
+    SetIgnoreMoveInput(false);
+    SetIgnoreLookInput(false);
+
+    ACharacter* CharacterES = Cast<ACharacter>(GetPawn());
+    if (!IsValid(CharacterES)) return;
+    CharacterES->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+    // CharacterES->SetActorRotation(FRotator::ZeroRotator);
+    // SetControlRotation(FRotator::ZeroRotator);
+
+}
+
+void AMyPlayerController::Client_ApplySpawnRotation_Implementation(FRotator Rot)
+{
+    if (ACharacter* Ch = Cast<ACharacter>(GetPawn()))
+    {
+        Ch->SetActorRotation(Rot);
+    }
+
+    SetControlRotation(Rot);
+}
+
 void AMyPlayerController::SetAutoManageCamera(bool bEnable)
 {
     bAutoManageActiveCameraTarget = bEnable;
@@ -114,12 +166,20 @@ void AMyPlayerController::OnRep_PlayerState()
 {
     Super::OnRep_PlayerState();
     
+    StopPlayerMovement();
     InitLobbyWidgetandCachedPlayerState();
     Find_ApplyLobbyCamera();
 }
 
 void AMyPlayerController::Client_WhenMoveToLobbyUI_Implementation()
 {
+    // SetIgnoreMoveInput(true);
+    // SetIgnoreLookInput(true);
+    
+    // ACharacter* CharacterES = Cast<ACharacter>(GetPawn());
+    // CharacterES->GetCharacterMovement()->StopMovementImmediately();
+    // CharacterES->GetCharacterMovement()->DisableMovement();
+    StopPlayerMovement();
     InitLobbyWidgetandCachedPlayerState();
     Find_ApplyLobbyCamera();
 }
@@ -153,6 +213,9 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
 {   //  ======================= when stage moved // play animontage ====================== //
     if (IsLocalController())
     {
+        FRotator ControllerRot1 = GetControlRotation();
+        StartPlayerMovement();
+        
         UWidgetLayoutLibrary::RemoveAllWidgets(this);
         
         FInputModeGameOnly GameMode;

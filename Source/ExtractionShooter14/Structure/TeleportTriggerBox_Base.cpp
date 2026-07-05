@@ -3,6 +3,7 @@
 #include "Character/MyPlayerController.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 
 ATeleportTriggerBox_Base::ATeleportTriggerBox_Base()
 {
@@ -15,11 +16,12 @@ ATeleportTriggerBox_Base::ATeleportTriggerBox_Base()
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	StaticMeshComponent->SetupAttachment(GetRootComponent());
 	
-	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	BoxComponent->SetupAttachment(StaticMeshComponent);
+	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent_C"));
+	SphereComponent->SetupAttachment(StaticMeshComponent);
+	SphereComponent->SetSphereRadius(300.f);
 	
-	BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::MoveToLocationBeginOverlap);
-	BoxComponent->OnComponentEndOverlap.AddDynamic(this, &ThisClass::MoveToLocationEndOverlap);
+	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::MoveToLocationBeginOverlap);
+	SphereComponent->OnComponentEndOverlap.AddDynamic(this, &ThisClass::MoveToLocationEndOverlap);
 }
 
 void ATeleportTriggerBox_Base::MoveToLocationBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

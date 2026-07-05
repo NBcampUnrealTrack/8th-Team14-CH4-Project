@@ -23,6 +23,8 @@ void UES_LobbyWidgetHUD::NativeConstruct()
 		SetLobbyCountPlayer(GameStateES->GetPlayerInGameCount_GS());
 		PlayerStateChangedHandle = GameStateES->OnChangedPlayerStates.AddUObject(this, &ThisClass::RefreshPlayerUserIcon);
 		RefreshPlayerUserIcon();
+		PhaseTimerChangedHandle = GameStateES->OnChangedGameStatePhaseTimerData.AddUObject(this, &UES_LobbyWidgetHUD::HandlePhaseTimerChanged);
+		HandlePhaseTimerChanged();
 	}
 	
 	if (!IsValid(OwningPlayerState)) return;
@@ -53,6 +55,15 @@ void UES_LobbyWidgetHUD::NativeDestruct()
 		OwningPlayerState->OnPlayerDataChanged.Remove(PlayerinfoChangedHandle);
 		PlayerinfoChangedHandle.Reset();
 	}
+	
+	if (PhaseTimerChangedHandle.IsValid() && IsValid(OwningGameState))
+	{
+		OwningGameState->OnChangedGameStatePhaseTimerData.Remove(PhaseTimerChangedHandle);
+		PhaseTimerChangedHandle.Reset();
+	}
+	
+	GetWorld()->GetTimerManager().ClearTimer(PhaseTimerHandle);
+	
 }
 
 FReply UES_LobbyWidgetHUD::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
@@ -143,4 +154,32 @@ void UES_LobbyWidgetHUD::CachedPlayerState(APlayerCharacterState* InPlayerState)
 void UES_LobbyWidgetHUD::CachedPlayerController(AMyPlayerController* InPlayerController)
 {
 	OwningPlayerController = InPlayerController;
+}
+
+void UES_LobbyWidgetHUD::HandlePhaseTimerChanged()
+{
+	if (!IsValid(OwningGameState)) return;
+	
+	UpdateTimerText();
+
+	GetWorld()->GetTimerManager().SetTimer(
+		PhaseTimerHandle,
+		this,
+		&ThisClass::UpdateTimerText,
+		1.0f,
+		true
+	);
+}
+
+void UES_LobbyWidgetHUD::UpdateTimerText()
+{
+	if (!IsValid(OwningGameState)) return;
+
+	float RemainTime = OwningGameState->GetRemainTime(); // 100seconds, 50seconds
+	int32 TotalSeconds = FMath::CeilToInt(RemainTime); // float to int
+
+	int32 Minutes =	TotalSeconds / 60; // 100seconds / 60
+	int32 Seconds =	TotalSeconds % 60; // 100seconds % 60
+
+	LobbyTimerText->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds)));
 }

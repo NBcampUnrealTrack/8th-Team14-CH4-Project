@@ -5,6 +5,7 @@
 #include "TeleportTriggerBox_Base.generated.h"
 
 class UBoxComponent;
+class USphereComponent;
 class UStaticMeshComponent;
 class USceneComponent;
 
@@ -36,6 +37,6 @@ protected:
 	TObjectPtr<USceneComponent> SceneComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	TObjectPtr<UBoxComponent> BoxComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	TObjectPtr<USphereComponent> SphereComponent;
 };
