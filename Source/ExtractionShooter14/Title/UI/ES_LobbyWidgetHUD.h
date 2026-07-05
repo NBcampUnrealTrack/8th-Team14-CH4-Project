@@ -44,6 +44,8 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> PlayerNickName;
 	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> LobbyTimerText;
+	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UHorizontalBox> PlayerIconHorizontal;
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UUserWidget> LobbyTotalGold;
@@ -60,4 +62,9 @@ public:
 	
 	FDelegateHandle PlayerStateChangedHandle;
 	FDelegateHandle PlayerinfoChangedHandle;
+	FDelegateHandle PhaseTimerChangedHandle;
+	
+	FTimerHandle PhaseTimerHandle;
+	void HandlePhaseTimerChanged();
+	void UpdateTimerText();
 };

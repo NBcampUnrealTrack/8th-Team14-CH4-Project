@@ -9,6 +9,7 @@
 #include "PlayerCharacterState.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FPlayerInfoChanged);
+DECLARE_MULTICAST_DELEGATE(FPlayerLobbyIndexChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
@@ -41,11 +42,13 @@ public:
 	void ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData);
 	const FPlayerDatas& GetPlayerInfo() const;
 	
+	
 	void ClearPlayerStageInventory();
 	void ApplyPlayerStageInventoryToPlayerStorage();
 	
 #pragma region Delegate
 	FPlayerInfoChanged OnPlayerDataChanged;
+	FPlayerLobbyIndexChanged OnPlayerLobbyIndexChanged;
 	UPROPERTY(BlueprintAssignable)
 	FPlayerStageInventoryChanged OnPlayerStageInventoryChanged;
 	UPROPERTY(BlueprintAssignable)
@@ -61,6 +64,8 @@ public:
 	void OnRep_PlayerStageInventory();
 	UFUNCTION()
 	void OnRep_PlayerStageGold(int32 OldGold);
+	UFUNCTION()
+	void OnRep_PlayerLobbyIndex();
 	UFUNCTION()
 	void OnRep_PlayerStagePlace();
 	UFUNCTION()
@@ -84,6 +89,9 @@ public:
 	void SetPlayerReady(bool SetReady);
 	
 	void AddPlayerStageGold(int32 AddGoldValue);
+	
+	void SetLobbyIndex(int32 PlayerSlotIndex);
+	const int32 GetLobbyIndex() const;
 #pragma endregion 
 	
 #pragma region Properties
@@ -97,8 +105,11 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerStageGold)
 	int32 PlayerStageGold;
 	
+	UPROPERTY(ReplicatedUsing=OnRep_PlayerLobbyIndex)
+	int32 PlayerLobbyIndex = INDEX_NONE;
+	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerStagePlace)
-	EPlayerPlace PlayerPlace;
+	EPlayerPlace PlayerPlace = EPlayerPlace::None;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_bIsReady)
 	uint8 bIsReady : 1;

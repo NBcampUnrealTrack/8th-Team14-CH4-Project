@@ -30,7 +30,12 @@ protected:
 public:
 	void Find_ApplyLobbyCamera();
 	void InitLobbyWidgetandCachedPlayerState();
-
+	
+	void StopPlayerMovement();
+	void StartPlayerMovement();
+	UFUNCTION(Client, Reliable)
+	void Client_ApplySpawnRotation(FRotator Rot);
+	
 	UFUNCTION(BlueprintCallable)
 	void SetAutoManageCamera(bool bEnable);
 	

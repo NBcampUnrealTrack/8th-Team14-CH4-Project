@@ -17,6 +17,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
 	DOREPLIFETIME(ThisClass, PlayerPlace);
+	DOREPLIFETIME_CONDITION(ThisClass, PlayerLobbyIndex, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerStageInventory, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerStageGold, COND_OwnerOnly);
 	DOREPLIFETIME(ThisClass, bIsReady);
@@ -36,6 +37,16 @@ void APlayerCharacterState::ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData)
 const FPlayerDatas& APlayerCharacterState::GetPlayerInfo() const
 {
 	return PlayerInfo;
+}
+
+void APlayerCharacterState::SetLobbyIndex(int32 PlayerSlotIndex)
+{
+	PlayerLobbyIndex = PlayerSlotIndex;
+}
+
+const int32 APlayerCharacterState::GetLobbyIndex() const
+{
+	return PlayerLobbyIndex;
 }
 
 void APlayerCharacterState::ClearPlayerStageInventory()
@@ -153,6 +164,11 @@ void APlayerCharacterState::OnRep_PlayerStageInventory()
 void APlayerCharacterState::OnRep_PlayerStageGold(int32 OldGold)
 {
 	OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
+}
+
+void APlayerCharacterState::OnRep_PlayerLobbyIndex()
+{
+	OnPlayerLobbyIndexChanged.Broadcast();
 }
 
 void APlayerCharacterState::OnRep_Health()

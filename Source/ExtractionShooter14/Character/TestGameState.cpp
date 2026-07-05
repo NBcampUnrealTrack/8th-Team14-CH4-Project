@@ -6,6 +6,7 @@ void ATestGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	
 	DOREPLIFETIME(ThisClass, PlayerInGameCount_GS);
 	DOREPLIFETIME(ThisClass, LobbyPlayerStates);
+	DOREPLIFETIME(ThisClass, GameStatePhaseTimerData);
 }
 
 void ATestGameState::SetPlayerInGameCount_GS(int32 InNewPlayerInGameCount)
@@ -39,7 +40,30 @@ const TArray<APlayerCharacterState*>& ATestGameState::GetLobbyPlayerStates() con
 	return LobbyPlayerStates;
 }
 
+void ATestGameState::OnRep_GameStatePhaseTimerData()
+{ // waiting // playing //
+	OnChangedGameStatePhaseTimerData.Broadcast();
+}
 
+void ATestGameState::SetGameStatePhaseTimerData(FPhaseTimerData InPhaseTimerData)
+{
+	GameStatePhaseTimerData.GameStateEnum = InPhaseTimerData.GameStateEnum;
+	GameStatePhaseTimerData.PhaseStartServerTime = InPhaseTimerData.PhaseStartServerTime;
+	GameStatePhaseTimerData.PhaseDuration = InPhaseTimerData.PhaseDuration;
+	
+	OnRep_GameStatePhaseTimerData();
+}
+
+float ATestGameState::GetRemainTime() const
+{
+	float CurrentServerTime = GetServerWorldTimeSeconds();
+	// total timeLength - (now total time(ing) - start total time(stop)) 
+	return FMath::Max(
+		0.f,
+		GameStatePhaseTimerData.PhaseDuration -
+		(CurrentServerTime - GameStatePhaseTimerData.PhaseStartServerTime)
+		);
+}
 
 void ATestGameState::OnRep_PlayerInGameCount_GS()
 {

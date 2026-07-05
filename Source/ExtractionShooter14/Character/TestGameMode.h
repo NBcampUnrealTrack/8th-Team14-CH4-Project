@@ -34,6 +34,9 @@ public:
 	
 	void HandleAllPlayerisReady();
 	bool IsAllPlayersReady();
+	
+	void StartLobby();
+	void StartStage();
 private:
 	UPROPERTY()
 	int32 InGamePlayerCount = 0;
@@ -50,5 +53,5 @@ private:
 	UPROPERTY()
 	TMap<TWeakObjectPtr<APlayerController>, int32> LobbyPlayerStartPointMap;
 	UPROPERTY()
-	TArray<AActor*> StageSpawnLocationActors;
+	TArray<AActor*> StageSpawnLocationPoints;
 };
