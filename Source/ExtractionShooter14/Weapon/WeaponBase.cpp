@@ -2,6 +2,7 @@
 #include "Character/PlayerCharacter.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
 
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -107,10 +108,22 @@ void AWeaponBase::FireTrace()
 
 	FVector CameraLocation;
 	FRotator CameraRotation;
+
 	PC->GetPlayerViewPoint(CameraLocation, CameraRotation);
 
+	FRotator BulletRotation = CameraRotation;
+
+	BulletRotation.Pitch += FMath::FRandRange(
+		-CurrentWeaponData.Spread,
+		CurrentWeaponData.Spread);
+
+	BulletRotation.Yaw += FMath::FRandRange(
+		-CurrentWeaponData.Spread,
+		CurrentWeaponData.Spread);
+
+
 	const FVector TraceStart = CameraLocation;
-	const FVector TraceEnd = TraceStart + (CameraRotation.Vector() * CurrentWeaponData.Range);
+	const FVector TraceEnd = TraceStart + (BulletRotation.Vector() * CurrentWeaponData.Range);
 
 	// 카메라 -> 조준점 trace
 	FHitResult HitResult;
@@ -150,6 +163,31 @@ void AWeaponBase::FireTrace()
 		Params
 	);
 
+	if (HasAuthority() && bWeaponHit && OwnerCharacter)
+	{
+		AActor* HitActor = WeaponHit.GetActor();
+
+		if (HitActor)
+		{
+			float Damage = CurrentWeaponData.Damage;
+
+			if (IsHeadShot(WeaponHit))
+			{
+				Damage *= CurrentWeaponData.HeadShotMultiplier;
+
+				UE_LOG(LogTemp, Warning, TEXT("HeadShot!"));
+			}
+
+			UGameplayStatics::ApplyDamage(
+				HitActor,
+				Damage,
+				OwnerCharacter->GetController(),
+				this,
+				nullptr
+			);
+		}
+	}
+
 	// 카메라 Trace
 	DrawDebugLine(
 		GetWorld(),
@@ -188,6 +226,18 @@ void AWeaponBase::FireTrace()
 
 void AWeaponBase::Fire()
 {
+	switch (CurrentWeaponData.FireMode)
+	{
+	case EFireMode::Single:
+		break;
+
+	case EFireMode::Auto:
+		break;
+
+	case EFireMode::Burst:
+		break;
+	}
+
 	if (!CanFire())
 	{
 		return;
@@ -199,10 +249,12 @@ void AWeaponBase::Fire()
 
 	FireTrace();
 
+	MulticastPlayFireEffects();
+
 	UE_LOG(LogTemp, Warning, TEXT("Fire! Ammo : %d"), CurrentMagazineAmmo);
 }
 
-void AWeaponBase::Reload()
+void AWeaponBase::FinishReload()
 {
 	if (CurrentMagazineAmmo >= CurrentWeaponData.MagazineSize)
 	{
@@ -222,9 +274,90 @@ void AWeaponBase::Reload()
 
 	CurrentReserveAmmo -= ReloadAmmo;
 
+	bIsReloading = false;
+
 	UE_LOG(LogTemp, Warning, TEXT("Reload! Magazine : %d / Reserve : %d"),
 		CurrentMagazineAmmo,
 		CurrentReserveAmmo);
+}
+
+void AWeaponBase::ServerFire_Implementation()
+{
+	Fire();
+}
+
+void AWeaponBase::ServerReload_Implementation()
+{
+	Reload();
+}
+
+void AWeaponBase::BurstFire()
+{
+	if (BurstCount >= BurstShotCount)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(BurstTimerHandle);
+		return;
+	}
+
+	Fire();
+
+	BurstCount++;
+
+	GetWorld()->GetTimerManager().SetTimer(
+		BurstTimerHandle,
+		this,
+		&AWeaponBase::BurstFire,
+		CurrentWeaponData.FireRate,
+		false
+	);
+}
+
+void AWeaponBase::ServerStartFire_Implementation()
+{
+	StartFire();
+}
+
+void AWeaponBase::ServerStopFire_Implementation()
+{
+	StopFire();
+}
+
+void AWeaponBase::Reload()
+{
+	if (bIsReloading)
+	{
+		return;
+	}
+
+	if (CurrentMagazineAmmo >= CurrentWeaponData.MagazineSize)
+	{
+		return;
+	}
+
+	if (CurrentReserveAmmo <= 0)
+	{
+		return;
+	}
+
+	bIsReloading = true;
+
+	GetWorld()->GetTimerManager().SetTimer(
+		ReloadTimerHandle,
+		this,
+		&AWeaponBase::FinishReload,
+		CurrentWeaponData.ReloadTime,
+		false
+	);
+}
+
+void AWeaponBase::OnRep_CurrentMagazineAmmo()
+{
+	//탄창 탄약 수 UI연동
+}
+
+void AWeaponBase::OnRep_CurrentReserveAmmo()
+{
+	//예비 탄약 수 UI연동
 }
 
 void AWeaponBase::StartFire()
@@ -253,7 +386,9 @@ void AWeaponBase::StartFire()
 
 	case EFireMode::Burst:
 
-		Fire();
+		BurstCount = 0;
+
+		BurstFire();
 
 		break;
 	}
@@ -263,6 +398,38 @@ void AWeaponBase::StartFire()
 void AWeaponBase::StopFire()
 {
 	GetWorld()->GetTimerManager().ClearTimer(FireTimerHandle);
+}
+
+void AWeaponBase::MulticastPlayFireEffects_Implementation()
+{
+	if (!MeshComponent)
+	{
+		return;
+	}
+
+	// 총구 화염
+	if (CurrentWeaponData.MuzzleFlash)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAttached(
+			CurrentWeaponData.MuzzleFlash,
+			MeshComponent,
+			TEXT("Muzzle"),
+			FVector::ZeroVector,
+			FRotator::ZeroRotator,
+			EAttachLocation::SnapToTarget,
+			true
+		);
+	}
+
+	// 발사 사운드
+	if (CurrentWeaponData.FireSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			GetWorld(),
+			CurrentWeaponData.FireSound,
+			GetMuzzleLocation()
+		);
+	}
 }
 
 void AWeaponBase::SetOwnerCharacter(APlayerCharacter* NewOwner)
@@ -278,4 +445,24 @@ FVector AWeaponBase::GetMuzzleLocation() const
 FRotator AWeaponBase::GetMuzzleRotation() const
 {
 	return MeshComponent->GetSocketRotation(CurrentWeaponData.MuzzleSocketName);
+}
+
+bool AWeaponBase::IsHeadShot(const FHitResult& HitResult) const
+{
+	return HitResult.BoneName == TEXT("head");
+}
+
+int32 AWeaponBase::GetCurrentMagazineAmmo() const
+{
+	return CurrentMagazineAmmo;
+}
+
+int32 AWeaponBase::GetCurrentReserveAmmo() const
+{
+	return CurrentReserveAmmo;
+}
+
+bool AWeaponBase::IsReloading() const
+{
+	return bIsReloading;
 }

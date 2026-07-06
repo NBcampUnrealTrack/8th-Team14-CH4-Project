@@ -18,7 +18,9 @@ public class ExtractionShooter14 : ModuleRules
 			//AI
 			"AIModule", "NavigationSystem",
 
-            "AnimGraphRuntime"
+            "AnimGraphRuntime",
+
+            "Niagara"
         });
 
 		PublicIncludePaths.AddRange(new string[]
