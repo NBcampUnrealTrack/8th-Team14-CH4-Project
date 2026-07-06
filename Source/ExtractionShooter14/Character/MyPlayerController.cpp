@@ -12,7 +12,6 @@
 #include "Character/TestGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "ESHUDWidget.h"
-#include "PlayerCharacterState.h"
 
 class APlayerCharacter;
 
@@ -215,7 +214,6 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
 {   //  ======================= when stage moved // play animontage ====================== //
     if (IsLocalController())
     {
-        FRotator ControllerRot1 = GetControlRotation();
         StartPlayerMovement();
         
         UWidgetLayoutLibrary::RemoveAllWidgets(this);
@@ -228,7 +226,7 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
         SetAutoManageCamera(true);
     
         if (!IsValid(StageWidgetClass)) return;
-        StageWidgetInstance = CreateWidget<UUserWidget>(this, StageWidgetClass);
+        StageWidgetInstance = CreateWidget<UESHUDWidget>(this, StageWidgetClass);
         if (!IsValid(StageWidgetInstance)) return;
         StageWidgetInstance->AddToViewport();
 
@@ -240,7 +238,7 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
     PS->OnHealthChanged.RemoveDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
     PS->OnHealthChanged.AddDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
 
-    StageHUDWidgetInstance.Get()->BP_UpdatePlayerHP(
+    StageWidgetInstance.Get()->BP_UpdatePlayerHP(
         PS->GetCurrentHealth(),
         PS->GetMaxHealth()
     );
@@ -298,8 +296,8 @@ void AMyPlayerController::OnPlayerHealthChanged(float CurrentHP, float MaxHP)
 {
     UE_LOG(LogTemp, Warning, TEXT("HP Changed: %.1f / %.1f"), CurrentHP, MaxHP);
 
-    if (!IsValid(StageHUDWidgetInstance.Get())) return;
+    if (!IsValid(StageWidgetInstance.Get())) return;
 
-    StageHUDWidgetInstance.Get()->BP_UpdatePlayerHP(CurrentHP, MaxHP);
-    StageHUDWidgetInstance.Get()->BP_PlayerDamageFlash();
+    StageWidgetInstance.Get()->BP_UpdatePlayerHP(CurrentHP, MaxHP);
+    StageWidgetInstance.Get()->BP_PlayerDamageFlash();
 }

@@ -121,7 +121,9 @@ void APlayerCharacterState::ApplyDamage(float DamageAmount)
 	if (!HasAuthority()) return;
 
 	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.0f, MaxHealth);
-
+	
+	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	
 	if (CurrentHealth <= 0.0f && bIsDead == false)
 	{
 		//if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(GetPawn()))
@@ -173,6 +175,7 @@ void APlayerCharacterState::OnRep_PlayerLobbyIndex()
 
 void APlayerCharacterState::OnRep_Health()
 {
+	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
 }
 
 void APlayerCharacterState::OnRep_bIsReady()

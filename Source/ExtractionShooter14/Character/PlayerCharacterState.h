@@ -14,6 +14,11 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerbIsDeadChanged, uint8, bIsDead);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+	FOnHealthChanged,
+	float, CurrentHealth,
+	float, MaxHealth
+);
 
 UENUM(BlueprintType)
 enum class EPlayerPlace : uint8
@@ -53,6 +58,8 @@ public:
 	FPlayerStageInventoryChanged OnPlayerStageInventoryChanged;
 	UPROPERTY(BlueprintAssignable)
 	FPlayerStageGoldChanged OnPlayerStageGoldChanged;
+	UPROPERTY(BlueprintAssignable, Category = "Player|Health")
+	FOnHealthChanged OnHealthChanged;
 	FPlayerReadyChanged OnPlayerReadyChanged;
 	FPlayerbIsDeadChanged OnPlayerbIsDeadChanged;
 #pragma endregion 
@@ -72,6 +79,8 @@ public:
 	void OnRep_bIsReady();
 	UFUNCTION()
 	void OnRep_bIsDead();
+	UFUNCTION()
+	void OnRep_Health();
 #pragma endregion 
 	
 #pragma region SetterGetter
@@ -116,12 +125,22 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_bIsDead)
 	uint8 bIsDead : 1;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Player|Health")
+    float CurrentHealth = 100.0f;
+  
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|Health")
+    float MaxHealth = 100.0f;
+
 #pragma endregion 
 	
 // =========================================================== MainPlayerCharacterState
 
 public:
-
+	
+	UFUNCTION(BlueprintCallable, Category = "Player|Health")
+	void ApplyDamage(float DamageAmount);
+	
 	UFUNCTION(BlueprintCallable, Category = "Player|Health")
 	float GetCurrentHealth() const { return CurrentHealth; }
 
@@ -130,22 +149,5 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Player|Health")
 	void InitiateStats();
-protected:
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Player|Health")
-	float CurrentHealth = 100.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player|Health")
-	float MaxHealth = 100.0f;
-
-protected:
-
-	UFUNCTION()
-	void OnRep_Health();
-
-	UFUNCTION(BlueprintCallable, Category = "Player|Health")
-	void ApplyDamage(float DamageAmount);
-	
-	
 
 };
