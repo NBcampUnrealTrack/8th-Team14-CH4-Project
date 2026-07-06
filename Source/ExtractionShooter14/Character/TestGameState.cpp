@@ -47,11 +47,19 @@ void ATestGameState::OnRep_GameStatePhaseTimerData()
 
 void ATestGameState::SetGameStatePhaseTimerData(FPhaseTimerData InPhaseTimerData)
 {
-	GameStatePhaseTimerData.GameStateEnum = InPhaseTimerData.GameStateEnum;
-	GameStatePhaseTimerData.PhaseStartServerTime = InPhaseTimerData.PhaseStartServerTime;
-	GameStatePhaseTimerData.PhaseDuration = InPhaseTimerData.PhaseDuration;
+	if (HasAuthority())
+	{
+		GameStatePhaseTimerData.GameStateEnum = InPhaseTimerData.GameStateEnum;
+		GameStatePhaseTimerData.PhaseStartServerTime = InPhaseTimerData.PhaseStartServerTime;
+		GameStatePhaseTimerData.PhaseDuration = InPhaseTimerData.PhaseDuration;
 	
-	OnRep_GameStatePhaseTimerData();
+		OnRep_GameStatePhaseTimerData();
+	}
+}
+
+FPhaseTimerData ATestGameState::GetGameStatePhaseTimerData() const
+{
+	return GameStatePhaseTimerData;
 }
 
 float ATestGameState::GetRemainTime() const

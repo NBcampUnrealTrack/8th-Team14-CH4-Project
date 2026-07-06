@@ -15,7 +15,7 @@ UENUM()
 enum class EGameState : uint8
 {
 	None,
-	Waiting,
+	LobbyWaiting,
 	Playing
 };
 
@@ -51,12 +51,14 @@ public:
 	
 	void AddLobbyPlayerStates(APlayerCharacterState* InNewPlayerState);
 	void RemoveLobbyPlayerStates(APlayerCharacterState* InOutPlayerState);
+	void ForceAllPlayersReady();
 	
 	const TArray<APlayerCharacterState*>& GetLobbyPlayerStates() const;
 	
 	UFUNCTION()
 	void OnRep_GameStatePhaseTimerData();
 	void SetGameStatePhaseTimerData(FPhaseTimerData InPhaseTimerData);
+	FPhaseTimerData GetGameStatePhaseTimerData() const;
 	
 	float GetRemainTime() const;
 private:

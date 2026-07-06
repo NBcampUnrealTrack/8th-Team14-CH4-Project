@@ -16,6 +16,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
+	//DOREPLIFETIME(ThisClass, PlayerCombatInfo);
 	DOREPLIFETIME(ThisClass, PlayerPlace);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerLobbyIndex, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerStageInventory, COND_OwnerOnly);
@@ -137,9 +138,13 @@ void APlayerCharacterState::ApplyDamage(float DamageAmount)
 }
 void APlayerCharacterState::InitiateStats()
 {
-	CurrentHealth = MaxHealth;
-	SetbIsDead(false);
-	SetPlayerReady(false);
+	if (HasAuthority())
+	{
+		CurrentHealth = MaxHealth;
+		PlayerCombatInfo = FCollectCombatInfo();
+		SetbIsDead(false);
+		SetPlayerReady(false);
+	}
 }
 
 void APlayerCharacterState::OnRep_PlayerInfo()
@@ -213,6 +218,71 @@ void APlayerCharacterState::AddPlayerStageGold(int32 AddGoldValue)
 		PlayerStageGold += AddGoldValue;
 
 		OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
+	}
+}
+
+void APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemData& InItemName)
+{
+	if (HasAuthority())
+	{
+		bool bIsItemChanged = false;
+		
+		FInventoryItemData* FoundItem =
+	PlayerStageInventory.FindByPredicate(
+	[&InItemName](const FInventoryItemData& StorageItem)
+	{
+		return StorageItem.ItemName == InItemName.ItemName;
+	});
+
+		if (FoundItem)
+		{
+			// PlayerInfo.ItemStorage[].ItemCount += 10; SameMeaning
+			// FoundItem = PlayerInfo.ItemStorage[] ,  return Array's iterator
+			FoundItem->ItemCount += InItemName.ItemCount;
+			bIsItemChanged=true;
+		}
+		else
+		{
+			// no same item
+			// add total
+			PlayerStageInventory.Add(InItemName);
+			bIsItemChanged=true;
+		}
+		
+	if (bIsItemChanged) // if no add pass broadcast
+		OnPlayerStageInventoryChanged.Broadcast();
+	}
+}
+
+void APlayerCharacterState::AddPlayerCombatInfo_DamageDealt(const float InGiveDmg)
+{
+	if (HasAuthority())
+	{
+		PlayerCombatInfo.DamageDealt += InGiveDmg;
+	}
+}
+
+void APlayerCharacterState::AddPlayerCombatInfo_DamageTaken(const float InReceiveDmg)
+{
+	if (HasAuthority())
+	{
+		PlayerCombatInfo.DamageTaken += InReceiveDmg;
+	}
+}
+
+void APlayerCharacterState::AddPlayerCombatInfo_KillCount(const int32 InKillCount)
+{
+	if (HasAuthority())
+	{
+		PlayerCombatInfo.KillCount += InKillCount;
+	}
+}
+
+void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCount)
+{
+	if (HasAuthority())
+	{
+		PlayerCombatInfo.LootCount += InLootCount;
 	}
 }
 

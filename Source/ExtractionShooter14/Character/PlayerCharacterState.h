@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ExtractionShooter14/Game/Struct/PlayerDatas.h"
 #include "Game/Struct/InventoryItemDatas.h"
+#include "Game/Struct/CollectCombatInfo.h"
 #include "GameFramework/PlayerState.h"
 #include "PlayerCharacterState.generated.h"
 
@@ -83,7 +84,7 @@ public:
 	void OnRep_Health();
 #pragma endregion 
 	
-#pragma region SetterGetter
+#pragma region SetterGetter(LobbyFunction)
 	bool GetbIsDead() const { return bIsDead; }
 	void SetbIsDead(bool bIsDeadd);
 	
@@ -97,16 +98,35 @@ public:
 	
 	void SetPlayerReady(bool SetReady);
 	
-	void AddPlayerStageGold(int32 AddGoldValue);
-	
 	void SetLobbyIndex(int32 PlayerSlotIndex);
 	const int32 GetLobbyIndex() const;
+#pragma endregion 
+	
+#pragma region ItemFunction
+	
+	UFUNCTION()  // Put Gold In StageGold
+	void AddPlayerStageGold(int32 AddGoldValue); //server only
+	UFUNCTION() // Put Item In StageInventory
+	void AddItemInPlayerStageInventory(const FInventoryItemData& InItemName); //serveronly
+	// FInventoryItemData == <FName, int32>
+	
+	UFUNCTION()
+	void AddPlayerCombatInfo_DamageDealt(const float InGiveDmg);
+	UFUNCTION()
+	void AddPlayerCombatInfo_DamageTaken(const float InReceiveDmg);
+	UFUNCTION()
+	void AddPlayerCombatInfo_KillCount(const int32 InKillCount);
+	UFUNCTION()
+	void AddPlayerCombatInfo_LootCount(const int32 InLootCount);
 #pragma endregion 
 	
 #pragma region Properties
 protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInfo)
 	FPlayerDatas PlayerInfo;
+	
+	UPROPERTY()
+	FCollectCombatInfo PlayerCombatInfo;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerStageInventory)
 	TArray<FInventoryItemData> PlayerStageInventory;

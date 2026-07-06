@@ -166,7 +166,7 @@ void UES_LobbyWidgetHUD::HandlePhaseTimerChanged()
 		PhaseTimerHandle,
 		this,
 		&ThisClass::UpdateTimerText,
-		1.0f,
+		0.1f,
 		true
 	);
 }
@@ -178,8 +178,42 @@ void UES_LobbyWidgetHUD::UpdateTimerText()
 	float RemainTime = OwningGameState->GetRemainTime(); // 100seconds, 50seconds
 	int32 TotalSeconds = FMath::CeilToInt(RemainTime); // float to int
 
-	int32 Minutes =	TotalSeconds / 60; // 100seconds / 60
-	int32 Seconds =	TotalSeconds % 60; // 100seconds % 60
+	int32 Minutes =	TotalSeconds / 60; // 100seconds / 60 = 1
+	int32 Seconds =	TotalSeconds % 60; // 100seconds % 60 = 40
 
 	LobbyTimerText->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds)));
+	
+	ApplyTextColorAnimation(RemainTime);
+}
+
+void UES_LobbyWidgetHUD::ApplyTextColorAnimation(float LeftTime)
+{
+	if (!IsValid(OwningGameState)) return;
+	
+	const EGameState GamePhase = OwningGameState->GetGameStatePhaseTimerData().GameStateEnum;
+	const float PassedTime = OwningGameState->GetServerWorldTimeSeconds() - OwningGameState->GetGameStatePhaseTimerData().PhaseStartServerTime;
+	const float Ratio = PassedTime / OwningGameState->GetGameStatePhaseTimerData().PhaseDuration;
+	
+	if (GamePhase == EGameState::LobbyWaiting)
+	{
+		if (LeftTime > 5.f)
+		{
+			LobbyTimerText->SetColorAndOpacity(FColor::White);
+		}
+		else if (LeftTime <= 5.f)
+		{
+			LobbyTimerText->SetColorAndOpacity(FColor::Red);
+		}
+	}
+	else if (GamePhase == EGameState::Playing)
+	{
+		if (Ratio < 0.2f)
+		{
+			LobbyTimerText->SetColorAndOpacity(FColor::Green);
+		}
+		else if (Ratio >= 0.2f)
+		{
+			LobbyTimerText->SetColorAndOpacity(FColor::White);
+		}
+	}
 }

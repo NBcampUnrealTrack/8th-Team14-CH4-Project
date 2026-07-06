@@ -4,6 +4,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "TestGameMode.generated.h"
 
+struct FPhaseTimerData;
+enum class EPlayerPlace : uint8;
 class APlayerCharacterState;
 class AMyPlayerController;
 
@@ -37,6 +39,11 @@ public:
 	
 	void StartLobby();
 	void StartStage();
+	void MoveToStage();
+	void ForceReadyPlayers(bool bIsready);
+	void StartPhaseTimer(FPhaseTimerData Data);
+	
+	bool CheckAllPlayerStatePlace(EPlayerPlace InPlayerPlace);
 private:
 	UPROPERTY()
 	int32 InGamePlayerCount = 0;
@@ -44,9 +51,18 @@ private:
 	int32 MaxInGamePlayerCount = 3;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
-	int32 WaitingTime = 15;
-	int32 RemainingTime;
-	
+	int32 LobbyDuration = 20;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
+	int32 PlayDuration = 100;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
+	int32 CountDownTime = 5;
+	UPROPERTY()
+	FTimerHandle CheckRemainLobbyTimeHandle;
+	// UPROPERTY()
+	// FTimerHandle CheckRemainStageTimeHandle;
+	UFUNCTION()
+	void CheckRemainTime();
+	uint8 bForced : 1;
 	
 	UPROPERTY()
 	TArray<AActor*> LobbyPlayerStartPoints;

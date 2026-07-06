@@ -35,6 +35,7 @@ public:
 	UFUNCTION()
 	void AddUserIcon();
 	
+	void ApplyTextColorAnimation(float LeftTime);
 	
 	void CachedPlayerState(APlayerCharacterState* InPlayerState);
 	void CachedPlayerController(AMyPlayerController* InPlayerController);
