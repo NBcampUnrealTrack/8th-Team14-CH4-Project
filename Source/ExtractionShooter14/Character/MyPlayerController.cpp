@@ -228,7 +228,7 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
         if (!IsValid(StageWidgetClass)) return;
         StageWidgetInstance = CreateWidget<UESHUDWidget>(this, StageWidgetClass);
         if (!IsValid(StageWidgetInstance)) return;
-        StageWidgetInstance->AddToViewport();
+        StageWidgetInstance->AddToViewport(10);
 
     }
 
