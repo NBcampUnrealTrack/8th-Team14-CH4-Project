@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Sound/SoundBase.h"
+#include "NiagaraSystem.h"
 
 #include "WeaponType.h"
 #include "FireMode.h"
@@ -68,4 +70,13 @@ public:
 	// ÃÑ±¸ ¼ÒÄÏ
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName MuzzleSocketName = TEXT("Muzzle");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HeadShotMultiplier = 2.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<class USoundBase> FireSound = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<class UNiagaraSystem> MuzzleFlash = nullptr;
 };

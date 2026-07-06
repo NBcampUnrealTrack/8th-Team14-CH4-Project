@@ -33,20 +33,57 @@ protected:
 
 	FTimerHandle FireTimerHandle;
 
+	FTimerHandle ReloadTimerHandle;
+
 	void FireTrace();
 
 	void Fire();
 
+
+	void FinishReload();
+
 	UPROPERTY(Replicated)
 	bool bIsReloading = false;
 
-public:
+	bool bIsFiring = false;
 
-	void Reload();
+	UPROPERTY()
+	int32 BurstCount = 0;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	int32 BurstShotCount = 3;
+
+	FTimerHandle BurstTimerHandle;
+
+	void BurstFire();
 
 	void StartFire();
 
 	void StopFire();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayFireEffects();
+public:
+	UFUNCTION(Server, Reliable)
+	void ServerFire();
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStartFire();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStopFire();
+
+	void Reload();
+
+	UFUNCTION()
+	void OnRep_CurrentMagazineAmmo();
+
+	UFUNCTION()
+	void OnRep_CurrentReserveAmmo();
+
 
 public:
 	UPROPERTY()
@@ -61,11 +98,11 @@ public:
 	FDataTableRowHandle WeaponDataRow;
 
 	// ÇöÀç ÅºÃ¢ Åº¾à
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentMagazineAmmo, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	int32 CurrentMagazineAmmo = 0;
 
 	// ÇöÀç ¿¹ºñ Åº¾à
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentMagazineAmmo, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	int32 CurrentReserveAmmo = 0;
 
 	float LastFireTime = -100.f;
@@ -76,7 +113,17 @@ public:
 
 	FRotator GetMuzzleRotation() const;
 
+	bool IsHeadShot(const FHitResult& HitResult) const;
+
 protected:
 	UPROPERTY()
 	class APlayerCharacter* OwnerCharacter = nullptr;
+
+public:
+
+	int32 GetCurrentMagazineAmmo() const;
+
+	int32 GetCurrentReserveAmmo() const;
+
+	bool IsReloading() const;
 };
