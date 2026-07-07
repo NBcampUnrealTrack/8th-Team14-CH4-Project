@@ -423,9 +423,29 @@ void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponType NewWeaponT
     EquipWeaponInternal(NewWeaponType);
 }
 
+    bIsAiming = false;
+
+    CurrentWeaponType = NewWeaponType;
+
+    EquipWeaponActor(NewWeaponType);
+
+    //성윤 서버/리스 listen 서버의 로컬 플레이어일 경우 장비 UI와 3D 프리뷰를 즉시 갱신하기 위한 이벤트
+    if (IsLocallyControlled())
+    {
+        BP_OnWeaponChanged(GetCurrentWeaponDataRow());
+    }
+
+    MulticastPlayEquipMontage(NewWeaponType);
+}
+
 void APlayerCharacter::OnRep_CurrentWeaponType()
 {
     //ApplyWeaponVisuals();
+    //성윤 클라이언트에서 CurrentWeaponType 복제 완료 시 장비 UI와 3D 프리뷰를 갱신하기 위한 이벤트
+    if (IsLocallyControlled())
+    {
+        BP_OnWeaponChanged(GetCurrentWeaponDataRow());
+    }
 }
 
 void APlayerCharacter::MulticastPlayEquipMontage_Implementation(EWeaponType NewWeaponType)
@@ -630,6 +650,37 @@ bool APlayerCharacter::EquipWeaponActor(EWeaponType NewWeaponType)
     );
 
     return true;
+}
+
+//성윤 WeaponType에 맞는 DT_Weapon RowHandle을 반환하는 함수
+FDataTableRowHandle APlayerCharacter::GetWeaponDataRowByType(EWeaponTypes WeaponType) const
+{
+    switch (WeaponType)
+    {
+    case EWeaponTypes::Pistol:
+        return PistolWeaponData;
+
+    case EWeaponTypes::Rifle:
+        return RifleWeaponData;
+
+    case EWeaponTypes::Shotgun:
+        return ShotgunWeaponData;
+
+    default:
+        return FDataTableRowHandle();
+    }
+}
+
+//성윤 현재 장착 중인 무기의 DT_Weapon RowHandle을 UI/장비 프리뷰에서 가져가기 위한 함수
+FDataTableRowHandle APlayerCharacter::GetCurrentWeaponDataRow() const
+{
+    return GetWeaponDataRowByType(CurrentWeaponType);
+}
+
+//성윤 현재 장착 중인 Weapon Actor를 반환해서 장비 프리뷰가 실제 무기까지 함께 캡처할 수 있게 하는 함수
+AWeaponBase* APlayerCharacter::GetCurrentWeaponActor() const
+{
+    return CurrentWeapon;
 }
 
 void APlayerCharacter::Reload()

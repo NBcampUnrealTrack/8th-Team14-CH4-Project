@@ -140,7 +140,7 @@ void AWeaponBase::FireTrace()
 	const FVector TraceStart = CameraLocation;
 	const FVector TraceEnd = TraceStart + (BulletRotation.Vector() * CurrentWeaponData.Range);
 
-	// Ä«¸Þ¶ó -> Á¶ÁØÁ¡ trace
+	// Ä«ï¿½Þ¶ï¿½ -> ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ trace
 	FHitResult HitResult;
 
 	FCollisionQueryParams Params;
@@ -155,19 +155,19 @@ void AWeaponBase::FireTrace()
 		Params
 	);
 
-	// Á¶ÁØÁ¡
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	FVector HitLocation = bHit ? HitResult.Location : TraceEnd;
 
-	// ÃÑ±¸ À§Ä¡
+	// ï¿½Ñ±ï¿½ ï¿½ï¿½Ä¡
 	FVector MuzzleLocation = GetMuzzleLocation();
 
-	// ÃÑ±¸ ¡æ Á¶ÁØÁ¡ ¹æÇâ
+	// ï¿½Ñ±ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	FVector ShootDirection = (HitLocation - MuzzleLocation).GetSafeNormal();
 
-	// ÃÑ±¸ Trace ³¡Á¡
+	// ï¿½Ñ±ï¿½ Trace ï¿½ï¿½ï¿½ï¿½
 	FVector MuzzleEnd = MuzzleLocation + (ShootDirection * CurrentWeaponData.Range);
 
-	// ÃÑ±¸ -> Á¶ÁØÁ¡ Trace
+	// ï¿½Ñ±ï¿½ -> ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Trace
 	FHitResult WeaponHit;
 
 	bool bWeaponHit = GetWorld()->LineTraceSingleByChannel(
@@ -203,7 +203,7 @@ void AWeaponBase::FireTrace()
 		}
 	}
 
-	// Ä«¸Þ¶ó Trace
+	// Ä«ï¿½Þ¶ï¿½ Trace
 	DrawDebugLine(
 		GetWorld(),
 		TraceStart,
@@ -215,7 +215,7 @@ void AWeaponBase::FireTrace()
 		1.f
 	);
 
-	// ÃÑ±¸ Trace
+	// ï¿½Ñ±ï¿½ Trace
 	DrawDebugLine(
 		GetWorld(),
 		MuzzleLocation,
@@ -227,7 +227,7 @@ void AWeaponBase::FireTrace()
 		1.f
 	);
 
-	// ÃÑ±¸ À§Ä¡
+	// ï¿½Ñ±ï¿½ ï¿½ï¿½Ä¡
 	DrawDebugSphere(
 		GetWorld(),
 		MuzzleLocation,
@@ -367,12 +367,12 @@ void AWeaponBase::Reload()
 
 void AWeaponBase::OnRep_CurrentMagazineAmmo()
 {
-	//ÅºÃ¢ Åº¾à ¼ö UI¿¬µ¿
+	//ÅºÃ¢ Åºï¿½ï¿½ ï¿½ï¿½ UIï¿½ï¿½ï¿½ï¿½
 }
 
 void AWeaponBase::OnRep_CurrentReserveAmmo()
 {
-	//¿¹ºñ Åº¾à ¼ö UI¿¬µ¿
+	//ï¿½ï¿½ï¿½ï¿½ Åºï¿½ï¿½ ï¿½ï¿½ UIï¿½ï¿½ï¿½ï¿½
 }
 
 void AWeaponBase::StartFire()
@@ -422,7 +422,7 @@ void AWeaponBase::MulticastPlayFireEffects_Implementation()
 		return;
 	}
 
-	// ÃÑ±¸ È­¿°
+	// ï¿½Ñ±ï¿½ È­ï¿½ï¿½
 	if (CurrentWeaponData.MuzzleFlash)
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAttached(
@@ -436,7 +436,7 @@ void AWeaponBase::MulticastPlayFireEffects_Implementation()
 		);
 	}
 
-	// ¹ß»ç »ç¿îµå
+	// ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½
 	if (CurrentWeaponData.FireSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(

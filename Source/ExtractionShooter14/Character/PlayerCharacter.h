@@ -8,6 +8,7 @@
 #include "InputActionValue.h"
 #include "Weapon/WeaponType.h"
 #include "GameFramework/Character.h"
+#include "Engine/DataTable.h"
 #include "PlayerCharacter.generated.h"
 
 class USpringArmComponent;
@@ -76,6 +77,18 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Death")
 	void Die();
+
+	//성윤 현재 장착 중인 무기의 DataTable RowHandle을 UI/프리뷰 블루프린트에서 읽기 위한 함수
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	FDataTableRowHandle GetCurrentWeaponDataRow() const;
+
+	//성윤 무기가 변경됐을 때 장비 UI와 3D 프리뷰를 갱신하기 위해 블루프린트로 알려주는 이벤트
+	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
+	void BP_OnWeaponChanged(FDataTableRowHandle NewWeaponDataRow);
+
+	//성윤 현재 장착 중인 Weapon Actor를 장비 프리뷰 SceneCapture에서 ShowOnly 대상으로 등록하기 위한 함수
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	AWeaponBase* GetCurrentWeaponActor() const;
 
 	virtual float TakeDamage(
 		float DamageAmount,
@@ -194,6 +207,9 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
 	void ApplyWeaponVisuals();
+
+	//성윤 WeaponType을 실제 DT_Weapon RowHandle로 변환하는 내부용 함수
+	FDataTableRowHandle GetWeaponDataRowByType(EWeaponTypes WeaponType) const;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayEquipMontage(EWeaponType NewWeaponType);
