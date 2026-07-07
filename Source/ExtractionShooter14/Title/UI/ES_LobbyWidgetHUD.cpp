@@ -30,7 +30,7 @@ void UES_LobbyWidgetHUD::NativeConstruct()
 	if (!IsValid(OwningPlayerState)) return;
 	if (!PlayerinfoChangedHandle.IsValid())
 	{
-		PlayerinfoChangedHandle = OwningPlayerState->OnPlayerDataChanged.AddUObject(this, &ThisClass::RefreshPlayerInfo);
+		PlayerinfoChangedHandle = OwningPlayerState->OnPlayerInfoChanged.AddUObject(this, &ThisClass::RefreshPlayerInfo);
 		RefreshPlayerInfo();
 	}
 	//AddUserIcon();
@@ -52,7 +52,7 @@ void UES_LobbyWidgetHUD::NativeDestruct()
 	
 	if (PlayerinfoChangedHandle.IsValid() && IsValid(OwningPlayerState))
 	{
-		OwningPlayerState->OnPlayerDataChanged.Remove(PlayerinfoChangedHandle);
+		OwningPlayerState->OnPlayerInfoChanged.Remove(PlayerinfoChangedHandle);
 		PlayerinfoChangedHandle.Reset();
 	}
 	
@@ -166,7 +166,7 @@ void UES_LobbyWidgetHUD::HandlePhaseTimerChanged()
 		PhaseTimerHandle,
 		this,
 		&ThisClass::UpdateTimerText,
-		0.1f,
+		0.5f,
 		true
 	);
 }

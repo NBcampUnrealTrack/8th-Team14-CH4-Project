@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Title/UI/ES_LobbyWidgetHUD.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Title/UI/ES_ResaultWidgetHUD.h"
 #include "Character/TestGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "ESHUDWidget.h"
@@ -50,7 +51,7 @@ void AMyPlayerController::BeginPlay()
     if (IsLocalController())
     {
         if (!IsValid(ResultWidgetClass)) return;
-        ResultWidgetInstance = CreateWidget<UUserWidget>(this, ResultWidgetClass);
+        UES_ResaultWidgetHUD* ResultWidgetInstance = CreateWidget<UES_ResaultWidgetHUD>(this, ResultWidgetClass);
         if (!IsValid(ResultWidgetInstance)) return;
         
         // if (!IsValid(OptionWidgetClass)) return;
@@ -247,9 +248,18 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
 void AMyPlayerController::Client_OpenResultUI_Implementation()
 {
     //UWidgetLayoutLibrary::RemoveAllWidgets(this);
+    APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PS)) return;
+    if (!IsValid(ResultWidgetClass)) return;
     
-    if (!IsValid(ResultWidgetInstance)) return;
-    ResultWidgetInstance->AddToViewport(1);
+    UES_ResaultWidgetHUD* ResultWidgetInstance = CreateWidget<UES_ResaultWidgetHUD>(this, ResultWidgetClass);
+    ResultWidgetInstance->SetPlayerCombatInfo(PS->GetPlayerCombatInfo());
+    
+    ResultWidgetInstance->AddToViewport(100);
+    ResultWidgetInstance->SetFocus();
+    // ACharacter* PlayerCharcterES= Cast<ACharacter>(GetPawn());
+    // if (!IsValid(PlayerCharcterES)) return;
+    // PlayerCharcterES->GetCharacterMovement()->Velocity = FVector::ZeroVector;
     
     FInputModeUIOnly UIOnlyMode;
     SetInputMode(UIOnlyMode);

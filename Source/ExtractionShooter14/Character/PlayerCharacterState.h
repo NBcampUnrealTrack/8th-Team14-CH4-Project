@@ -11,6 +11,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FPlayerInfoChanged);
 DECLARE_MULTICAST_DELEGATE(FPlayerLobbyIndexChanged);
+DECLARE_MULTICAST_DELEGATE(FPlayerCombatInfoChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
@@ -53,8 +54,9 @@ public:
 	void ApplyPlayerStageInventoryToPlayerStorage();
 	
 #pragma region Delegate
-	FPlayerInfoChanged OnPlayerDataChanged;
+	FPlayerInfoChanged OnPlayerInfoChanged;
 	FPlayerLobbyIndexChanged OnPlayerLobbyIndexChanged;
+	FPlayerCombatInfoChanged OnPlayerCombatInfoChanged;
 	UPROPERTY(BlueprintAssignable)
 	FPlayerStageInventoryChanged OnPlayerStageInventoryChanged;
 	UPROPERTY(BlueprintAssignable)
@@ -68,6 +70,8 @@ public:
 #pragma region OnRep_Function
 	UFUNCTION()
 	void OnRep_PlayerInfo();
+	UFUNCTION()
+	void OnRep_PlayerCombatInfo();
 	UFUNCTION()
 	void OnRep_PlayerStageInventory();
 	UFUNCTION()
@@ -118,6 +122,14 @@ public:
 	void AddPlayerCombatInfo_KillCount(const int32 InKillCount);
 	UFUNCTION()
 	void AddPlayerCombatInfo_LootCount(const int32 InLootCount);
+	
+	const FCollectCombatInfo& GetPlayerCombatInfo();
+#pragma endregion 
+	
+#pragma region CombatFunction
+	void CalCulateCombatScore();
+	
+	void InitializeCombatScore();
 #pragma endregion 
 	
 #pragma region Properties
@@ -125,7 +137,7 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInfo)
 	FPlayerDatas PlayerInfo;
 	
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing=OnRep_PlayerCombatInfo)
 	FCollectCombatInfo PlayerCombatInfo;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerStageInventory)
@@ -159,7 +171,12 @@ protected:
 public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Player|Health")
-	void ApplyDamage(float DamageAmount);
+	void TakenDamage(
+	float ActualDamage,
+	FDamageEvent const& DamageEvent,
+	AController* EventInstigator,
+	AActor* DamageCauser
+);
 	
 	UFUNCTION(BlueprintCallable, Category = "Player|Health")
 	float GetCurrentHealth() const { return CurrentHealth; }

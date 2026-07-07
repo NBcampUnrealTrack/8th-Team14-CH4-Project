@@ -27,6 +27,7 @@ public:
 	FTransform GetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
 	void SetPlayerLobbyStartPoint(AMyPlayerController* TargetController);
 	void RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetController);
+	void TimeOutReSetPlayer(AMyPlayerController* TargetController);
 	void InitializePlayerStats(APlayerCharacterState* InPlayerState);
 	
 	int32 GetInGamePlayerCount() const;
@@ -51,9 +52,9 @@ private:
 	int32 MaxInGamePlayerCount = 3;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
-	int32 LobbyDuration = 20;
+	int32 LobbyDuration = 30;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
-	int32 PlayDuration = 100;
+	int32 PlayDuration = 50;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
 	int32 CountDownTime = 5;
 	UPROPERTY()

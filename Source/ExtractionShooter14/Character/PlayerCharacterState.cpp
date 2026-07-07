@@ -16,7 +16,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
-	//DOREPLIFETIME(ThisClass, PlayerCombatInfo);
+	DOREPLIFETIME(ThisClass, PlayerCombatInfo);
 	DOREPLIFETIME(ThisClass, PlayerPlace);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerLobbyIndex, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerStageInventory, COND_OwnerOnly);
@@ -32,7 +32,7 @@ void APlayerCharacterState::ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData)
 	if (!HasAuthority()) return;
 	
 	PlayerInfo = ApplyPlayerData;
-	OnPlayerDataChanged.Broadcast();
+	OnPlayerInfoChanged.Broadcast();
 }
 
 const FPlayerDatas& APlayerCharacterState::GetPlayerInfo() const
@@ -99,7 +99,7 @@ void APlayerCharacterState::ApplyPlayerStageInventoryToPlayerStorage()
 		}
 		
 		if (bIsItemChanged) // if no add pass broadcast
-		OnPlayerDataChanged.Broadcast();
+		OnPlayerInfoChanged.Broadcast();
 		
 
 	}
@@ -117,31 +117,45 @@ void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
 	
 }
 
-void APlayerCharacterState::ApplyDamage(float DamageAmount)
+void APlayerCharacterState::TakenDamage(
+	float ActualDamage,
+	FDamageEvent const& DamageEvent,
+	AController* EventInstigator,
+	AActor* DamageCauser
+)
 {// is in server
 	if (!HasAuthority()) return;
 
-	CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0.0f, MaxHealth);
+	CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, MaxHealth);
 	
-	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	// ## todo::record combatinfo ##
+	UE_LOG(LogTemp, Warning, TEXT("SERVER :: %.1f / %.1f"),CurrentHealth,MaxHealth);
+	PlayerCombatInfo.DamageTaken += ActualDamage;
+	
+	APlayerCharacterState* AttackerPlayerState = EventInstigator->GetPlayerState<APlayerCharacterState>();
+	if (IsValid(AttackerPlayerState))
+	{
+		AttackerPlayerState->AddPlayerCombatInfo_DamageDealt(ActualDamage);
+	}
 	
 	if (CurrentHealth <= 0.0f && bIsDead == false)
 	{
-		//if (APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(GetPawn()))
-		//{
-			SetbIsDead(true);
-			//OnRep_bIsDead();
-			//PlayerCharacter->Die();
-			
-		//}
+		SetbIsDead(true);
+		if (IsValid(AttackerPlayerState))
+		{
+			AttackerPlayerState->AddPlayerCombatInfo_KillCount(1);
+		}
 	}
+	
+	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	OnPlayerCombatInfoChanged.Broadcast();
 }
 void APlayerCharacterState::InitiateStats()
 {
 	if (HasAuthority())
 	{
 		CurrentHealth = MaxHealth;
-		PlayerCombatInfo = FCollectCombatInfo();
+		//
 		SetbIsDead(false);
 		SetPlayerReady(false);
 	}
@@ -160,7 +174,11 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 		5.f
 		);
 	
-	OnPlayerDataChanged.Broadcast();
+	OnPlayerInfoChanged.Broadcast();
+}
+
+void APlayerCharacterState::OnRep_PlayerCombatInfo()
+{
 }
 
 void APlayerCharacterState::OnRep_PlayerStageInventory()
@@ -181,6 +199,8 @@ void APlayerCharacterState::OnRep_PlayerLobbyIndex()
 void APlayerCharacterState::OnRep_Health()
 {
 	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	UE_LOG(LogTemp, Warning, TEXT("CLIENT :: %.1f / %.1f"),CurrentHealth,MaxHealth);
+
 }
 
 void APlayerCharacterState::OnRep_bIsReady()
@@ -259,6 +279,10 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageDealt(const float InGiveDm
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.DamageDealt += InGiveDmg;
+				
+		CalCulateCombatScore();
+		
+		OnPlayerCombatInfoChanged.Broadcast();
 	}
 }
 
@@ -267,6 +291,10 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageTaken(const float InReceiv
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.DamageTaken += InReceiveDmg;
+				
+		CalCulateCombatScore();
+		
+		OnPlayerCombatInfoChanged.Broadcast();
 	}
 }
 
@@ -275,6 +303,10 @@ void APlayerCharacterState::AddPlayerCombatInfo_KillCount(const int32 InKillCoun
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.KillCount += InKillCount;
+				
+		CalCulateCombatScore();
+		
+		OnPlayerCombatInfoChanged.Broadcast();
 	}
 }
 
@@ -283,7 +315,31 @@ void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCoun
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.LootCount += InLootCount;
+		
+		CalCulateCombatScore();
+		
+		OnPlayerCombatInfoChanged.Broadcast();
 	}
+}
+
+const FCollectCombatInfo& APlayerCharacterState::GetPlayerCombatInfo()
+{
+	return PlayerCombatInfo;
+}
+
+void APlayerCharacterState::CalCulateCombatScore()
+{
+	PlayerCombatInfo.Score =
+	(FMath::RoundToInt(PlayerCombatInfo.DamageDealt * 2.f)) -
+	(FMath::RoundToInt(PlayerCombatInfo.DamageTaken * 1.f)) +
+	(PlayerCombatInfo.KillCount * 5) +
+	(PlayerCombatInfo.LootCount * 3) +
+	(FMath::RoundToInt(PlayerCombatInfo.SurviveTime * 1.5f));
+}
+
+void APlayerCharacterState::InitializeCombatScore()
+{
+	PlayerCombatInfo = FCollectCombatInfo();
 }
 
 void APlayerCharacterState::SetbIsDead(bool bIsDeadd)

@@ -178,8 +178,8 @@ void ATestGameMode::HandleAllPlayerisReady()
     
     if (GS->GetGameStatePhaseTimerData().GameStateEnum == EGameState::LobbyWaiting)
     {
-        //if (PlayerCount >= MaxInGamePlayerCount)
-        //{
+        // if (PlayerCount >= MaxInGamePlayerCount)
+        // {
             if (IsAllPlayersReady())
             {
                 FPhaseTimerData PhaseTimerData;
@@ -299,7 +299,8 @@ void ATestGameMode::MoveToStage()
                     *GetNameSafe(PlayerControllerES),
                     *GetNameSafe(PlayerControllerES->GetPawn()),
                     *PlayerControllerES->GetStateName().ToString());
-        
+                    
+                    PlayerCharacterStateES->InitializeCombatScore();
                     PlayerCharacterStateES->SetPlayerStagePlace(EPlayerPlace::Stage);
                     PlayerPawn->TeleportTo
                     (
@@ -313,7 +314,7 @@ void ATestGameMode::MoveToStage()
                     PlayerControllerES->SetControlRotation(PlayerRotation);
                     PlayerPawn->SetActorRotation(PlayerRotation);
                     PlayerControllerES->Client_ApplySpawnRotation(PlayerRotation);
-        
+                    PlayerControllerES->StartPlayerMovement();
                     PlayerControllerES->Client_WhenMoveToStagePopUpUI();
                 }
             }
@@ -424,7 +425,7 @@ void ATestGameMode::CheckRemainTime()
                     AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(PlayerStates->GetOwningController());
                     if (!IsValid(PlayerControllerES)) continue;
                     
-                    RespawnPlayerAtLobbyStartPoint(PlayerControllerES);
+                    TimeOutReSetPlayer(PlayerControllerES);
                 }
             }
         }
@@ -464,14 +465,14 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     if (!IsValid(PlayerStateES)) return;
     ATestGameState* GameStateES = GetGameState<ATestGameState>();
     if (!IsValid(GameStateES)) return;
-    PlayerStateES->SetPlayerStagePlace(EPlayerPlace::Lobby);
     
     PlayerStateES->ApplyPlayerStageInventoryToPlayerStorage();
     InitializePlayerStats(PlayerStateES);
+    TargetController->StopPlayerMovement();
     
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     ACharacter* CharacterES = Cast<ACharacter>(TargetController->GetPawn());
-    CharacterES->GetCharacterMovement()->Velocity = FVector::ZeroVector;
+    //CharacterES->GetCharacterMovement()->Velocity = FVector::ZeroVector;
     // CharacterES->GetCharacterMovement()->DisableMovement();
     FRotator Rotation = MovePoint.Rotator();
     Rotation.Pitch = 0.f;
@@ -479,11 +480,11 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     // TargetController->SetControlRotation(Rotation);
     // CharacterES->SetActorRotation(Rotation);
     TargetController->GetPawn()->TeleportTo(MovePoint.GetLocation(), Rotation);
-    
+    // rotation
     TargetController->SetControlRotation(Rotation);
     CharacterES->SetActorRotation(Rotation);
     TargetController->Client_ApplySpawnRotation(Rotation);
-    
+    // UI
     TargetController->Client_WhenMoveToLobbyUI();
     TargetController->Client_OpenResultUI();
     
@@ -506,13 +507,13 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PlayerStateES)) return;
     
-    PlayerStateES->SetPlayerStagePlace(EPlayerPlace::Lobby);
     APawn* OldPawn = TargetController->GetPawn();
     if (!IsValid(OldPawn)) return;
     OldPawn->Destroy();
 
     InitializePlayerStats(PlayerStateES);
-
+    TargetController->StopPlayerMovement();
+    
     //InitiatePlayerStats(TargetController);
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     RestartPlayerAtTransform(TargetController, MovePoint);
@@ -529,13 +530,44 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     }
 }
 
+void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
+{
+    if (!IsValid(TargetController)) return;
+    ATestGameState* GameStateES = GetGameState<ATestGameState>();
+    if (!IsValid(GameStateES)) return;
+    APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PlayerStateES)) return;
+    
+    APawn* OldPawn = TargetController->GetPawn();
+    if (!IsValid(OldPawn)) return;
+    OldPawn->Destroy();
+
+    InitializePlayerStats(PlayerStateES);
+    TargetController->StopPlayerMovement();
+
+    //InitiatePlayerStats(TargetController);
+    FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
+    RestartPlayerAtTransform(TargetController, MovePoint);
+    TargetController->Client_WhenMoveToLobbyUI();
+    TargetController->Client_OpenResultUI();
+    if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
+    {
+        FPhaseTimerData SetLobbyTimerData;
+        SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
+        SetLobbyTimerData.PhaseStartServerTime = GameStateES->GetServerWorldTimeSeconds();
+        SetLobbyTimerData.PhaseDuration = LobbyDuration;
+        StartPhaseTimer(SetLobbyTimerData);
+        //StartLobby();
+    }
+}
+
 void ATestGameMode::InitializePlayerStats(APlayerCharacterState* InPlayerState)
 {
     if (!IsValid(InPlayerState)) return;
-    InPlayerState->InitiateStats();
     // ================================ Place
     InPlayerState->SetPlayerStagePlace(EPlayerPlace::Lobby);
     
+    InPlayerState->InitiateStats();
     InPlayerState->ClearPlayerStageInventory();
 }
 

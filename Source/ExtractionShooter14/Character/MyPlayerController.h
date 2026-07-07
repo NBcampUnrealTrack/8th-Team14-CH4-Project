@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"
 
+class UES_ResaultWidgetHUD;
 class UES_LobbyWidgetHUD;
 class UInputMappingContext;
 class UUserWidget;
@@ -54,9 +55,9 @@ public:
 public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
-	TSubclassOf<UUserWidget> ResultWidgetClass;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Result")
-	TObjectPtr<UUserWidget> ResultWidgetInstance;
+	TSubclassOf<UES_ResaultWidgetHUD> ResultWidgetClass;
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Result")
+	// TObjectPtr<UUserWidget> ResultWidgetInstance;
 	
 	UFUNCTION(Client, Reliable)
 	void Client_OpenResultUI();

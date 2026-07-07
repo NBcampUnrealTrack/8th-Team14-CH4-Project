@@ -586,24 +586,26 @@ void APlayerCharacter::MulticastDie_Implementation()
 //     }
 // }
 
+//float  APlayerCharacter::TakeDamage
+//UGameplayStatics::ApplyDamage
 float APlayerCharacter::TakeDamage(
     float DamageAmount,
     FDamageEvent const& DamageEvent,
     AController* EventInstigator,
     AActor* DamageCauser
 )
-{
+{ // maybe server?
     const float ActualDamage = Super::TakeDamage(
         DamageAmount,
         DamageEvent,
         EventInstigator,
         DamageCauser
     );
-
+    
     APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
     if (PS)
     {
-        PS->ApplyDamage(ActualDamage);
+        PS->TakenDamage(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
     }
 
     return ActualDamage;
