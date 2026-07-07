@@ -13,6 +13,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
+class AWeaponBase;
 
 UENUM(BlueprintType)
 enum class EWeaponTypes : uint8
@@ -36,6 +37,8 @@ public:
 
 protected:
 
+	void EquipWeaponActor(EWeaponTypes NewWeaponType);
+
 	virtual void BeginPlay() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -47,6 +50,20 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerStopSprint();
 
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Weapon")
+	AWeaponBase* CurrentWeapon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	TSubclassOf<AWeaponBase> WeaponBaseClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	FDataTableRowHandle PistolWeaponData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	FDataTableRowHandle RifleWeaponData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	FDataTableRowHandle ShotgunWeaponData;
 public:	
 
 	virtual void Tick(float DeltaTime) override;
@@ -106,14 +123,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* FireAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* ReloadAction;
+
 	UFUNCTION(Server, Reliable)
 	void ServerFire();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	float TestDamage = 10.0f;
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	float TestDamage = 10.0f;*/
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	float FireRange = 10000.0f;
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	float FireRange = 10000.0f;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float WalkSpeed = 300.f;
@@ -133,7 +153,9 @@ protected:
 	void StopSprint(const FInputActionValue& Value);
 	void StartAim();
 	void StopAim();
-	void Fire();
+	void StartFire();
+	void StopFire();
+	void Reload();
 	
 	void OpenOptionUI(const FInputActionValue& Value);
 
@@ -193,6 +215,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Death")
 	UAnimMontage* DeathMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")
+	UAnimMontage* StageSpawnMontage;
+	
+
 
 	// UPROPERTY(Replicated, BlueprintReadOnly, Category = "Death")
 	// bool bIsDead = false;

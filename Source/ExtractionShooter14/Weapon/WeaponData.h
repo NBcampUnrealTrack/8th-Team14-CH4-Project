@@ -27,6 +27,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USkeletalMesh* WeaponMesh = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attach")
+	FVector AttachLocationOffset = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attach")
+	FRotator AttachRotationOffset = FRotator::ZeroRotator;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attach")
+	FVector AttachScale = FVector(1.0f, 1.0f, 1.0f);
+
 	// 발사 방식
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EFireMode FireMode = EFireMode::Auto;
@@ -79,4 +88,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<class UNiagaraSystem> MuzzleFlash = nullptr;
+
+	
 };

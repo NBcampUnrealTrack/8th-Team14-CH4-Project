@@ -11,6 +11,7 @@
 #include "WeaponBase.generated.h"
 
 class USkeletalMeshComponent;
+class USceneComponent;
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API AWeaponBase : public AActor
@@ -86,6 +87,10 @@ public:
 
 
 public:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* SceneRoot;
+
 	UPROPERTY()
 	FWeaponData CurrentWeaponData;
 
@@ -94,15 +99,18 @@ public:
 	USkeletalMeshComponent* MeshComponent;
 
 	// 웹폰데이터 테이블 로우네임
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponData, EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	FDataTableRowHandle WeaponDataRow;
+
+	UFUNCTION()
+	void OnRep_WeaponData();
 
 	// 현재 탄창 탄약
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentMagazineAmmo, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	int32 CurrentMagazineAmmo = 0;
 
 	// 현재 예비 탄약
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentMagazineAmmo, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentReserveAmmo, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	int32 CurrentReserveAmmo = 0;
 
 	float LastFireTime = -100.f;

@@ -3,6 +3,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/SceneComponent.h"
 
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -11,15 +12,18 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(AWeaponBase, CurrentMagazineAmmo);
 	DOREPLIFETIME(AWeaponBase, CurrentReserveAmmo);
 	DOREPLIFETIME(AWeaponBase, bIsReloading);
+	DOREPLIFETIME(AWeaponBase, WeaponDataRow);
 }
 
 AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	RootComponent = SceneRoot;
 
-	RootComponent = MeshComponent;
+	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	MeshComponent->SetupAttachment(SceneRoot);
 
 	bReplicates = true;
 
@@ -42,6 +46,9 @@ void AWeaponBase::OnConstruction(const FTransform& Transform)
 
 void AWeaponBase::ApplyWeaponData()
 {
+	UE_LOG(LogTemp, Warning, TEXT("ApplyWeaponData : %s"),
+		WeaponDataRow.IsNull() ? TEXT("NULL") : TEXT("VALID"));
+
 	if (WeaponDataRow.IsNull())
 	{
 		return;
@@ -60,6 +67,14 @@ void AWeaponBase::ApplyWeaponData()
 	{
 		MeshComponent->SetSkeletalMesh(CurrentWeaponData.WeaponMesh);
 	}
+
+	MeshComponent->SetRelativeLocation(CurrentWeaponData.AttachLocationOffset);
+	MeshComponent->SetRelativeRotation(CurrentWeaponData.AttachRotationOffset);
+	MeshComponent->SetRelativeScale3D(CurrentWeaponData.AttachScale);
+
+	UE_LOG(LogTemp, Warning, TEXT("Weapon Offset: %s / %s"),
+		*CurrentWeaponData.AttachLocationOffset.ToString(),
+		*CurrentWeaponData.AttachRotationOffset.ToString());
 
 	CurrentMagazineAmmo = CurrentWeaponData.MagazineSize;
 	CurrentReserveAmmo = CurrentWeaponData.MaxAmmo;
@@ -430,6 +445,11 @@ void AWeaponBase::MulticastPlayFireEffects_Implementation()
 			GetMuzzleLocation()
 		);
 	}
+}
+
+void AWeaponBase::OnRep_WeaponData()
+{
+	ApplyWeaponData();
 }
 
 void AWeaponBase::SetOwnerCharacter(APlayerCharacter* NewOwner)

@@ -15,12 +15,13 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Curves/CurveFloat.h"
-#include "Kismet/GameplayStatics.h"
-#include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "MainPlayerCharacterState.h"
 #include "ESHUDWidget.h"
 #include "PlayerCharacterState.h"
+#include "Weapon/WeaponBase.h"
+#include "Engine/DataTable.h"
+#include "Kismet/GameplayStatics.h"
 
 
 APlayerCharacter::APlayerCharacter()
@@ -79,7 +80,12 @@ void APlayerCharacter::BeginPlay()
         }
     }
 
-    ApplyWeaponVisuals();
+    //ApplyWeaponVisuals();
+
+    if (HasAuthority())
+    {
+        EquipWeaponActor(CurrentWeaponType);
+    }
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -131,7 +137,21 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
         if (FireAction)
         {
-            EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &APlayerCharacter::Fire);
+            EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &APlayerCharacter::StartFire);
+
+            EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopFire);
+
+            EnhancedInputComponent->BindAction(
+                FireAction,
+                ETriggerEvent::Canceled,
+                this,
+                &APlayerCharacter::StopFire
+            );
+        }
+
+        if (ReloadAction)
+        {
+            EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &APlayerCharacter::Reload);
         }
     }
 
@@ -231,10 +251,6 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
 
-    if (InputComponent)
-    {
-        SetupPlayerInputComponent(InputComponent);
-    }
     
     BindDieFunctionWithPlayerStateDelegate();
 }
@@ -293,7 +309,6 @@ void APlayerCharacter::ServerStartSprint_Implementation()
     }
 }
 
-
 void APlayerCharacter::ServerStopSprint_Implementation()
 {
     if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
@@ -311,6 +326,7 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(APlayerCharacter, CurrentWeaponType);
     DOREPLIFETIME(APlayerCharacter, bIsSprinting);
     //DOREPLIFETIME(APlayerCharacter, bIsDead);
+    DOREPLIFETIME(APlayerCharacter, CurrentWeapon);
 }
 
 void APlayerCharacter::StartAim()
@@ -381,7 +397,10 @@ void APlayerCharacter::FinishAimCamera()
 
 void APlayerCharacter::EquipWeapon(EWeaponTypes NewWeaponType)
 {
-    if (CurrentWeaponType == NewWeaponType) return;
+    if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
+    {
+        return;
+    }
 
     if (bIsAiming)
     {
@@ -400,19 +419,23 @@ void APlayerCharacter::EquipWeapon(EWeaponTypes NewWeaponType)
 
 void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponTypes NewWeaponType)
 {
-    if (CurrentWeaponType == NewWeaponType) return;
+    if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
+    {
+        return;
+    }
 
     bIsAiming = false;
 
     CurrentWeaponType = NewWeaponType;
-    ApplyWeaponVisuals();
+
+    EquipWeaponActor(NewWeaponType);
 
     MulticastPlayEquipMontage(NewWeaponType);
 }
 
 void APlayerCharacter::OnRep_CurrentWeaponType()
 {
-    ApplyWeaponVisuals();
+    //ApplyWeaponVisuals();
 }
 
 void APlayerCharacter::MulticastPlayEquipMontage_Implementation(EWeaponTypes NewWeaponType)
@@ -449,58 +472,31 @@ void APlayerCharacter::CancelAimInstant()
     SetActorTickEnabled(false);
 }
 
-void APlayerCharacter::Fire()
+void APlayerCharacter::StartFire()
 {
     if (!IsLocallyControlled()) return;
 
-    ServerFire();
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->ServerStartFire();
+    }
+}
+
+void APlayerCharacter::StopFire()
+{
+    if (!IsLocallyControlled()) return;
+
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->ServerStopFire();
+    }
 }
 
 void APlayerCharacter::ServerFire_Implementation()
 {
-    AController* OwnerController = GetController();
-    if (!OwnerController) return;
-
-    FVector ViewLocation;
-    FRotator ViewRotation;
-    OwnerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
-
-    const FVector TraceStart = ViewLocation;
-    const FVector TraceEnd = TraceStart + ViewRotation.Vector() * FireRange;
-
-    FHitResult HitResult;
-
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
-
-    const bool bHit = GetWorld()->LineTraceSingleByChannel(
-        HitResult,
-        TraceStart,
-        TraceEnd,
-        ECC_Visibility,
-        Params
-    );
-
-    DrawDebugLine(
-        GetWorld(),
-        TraceStart,
-        TraceEnd,
-        FColor::Red,
-        false,
-        2.0f,
-        0,
-        1.0f
-    );
-
-    if (bHit && HitResult.GetActor())
+    if (CurrentWeapon)
     {
-        UGameplayStatics::ApplyDamage(
-            HitResult.GetActor(),
-            TestDamage,
-            OwnerController,
-            this,
-            UDamageType::StaticClass()
-        );
+        CurrentWeapon->ServerFire();
     }
 }
 
@@ -606,4 +602,69 @@ float APlayerCharacter::TakeDamage(
     }
 
     return ActualDamage;
+}
+
+void APlayerCharacter::EquipWeaponActor(EWeaponTypes NewWeaponType)
+{
+    if (!HasAuthority()) return;
+    if (!WeaponBaseClass) return;
+
+    FDataTableRowHandle SelectedWeaponData;
+
+    switch (NewWeaponType)
+    {
+    case EWeaponTypes::Pistol:
+        SelectedWeaponData = PistolWeaponData;
+        break;
+
+    case EWeaponTypes::Rifle:
+        SelectedWeaponData = RifleWeaponData;
+        break;
+
+    case EWeaponTypes::Shotgun:
+        SelectedWeaponData = ShotgunWeaponData;
+        break;
+    }
+
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->Destroy();
+        CurrentWeapon = nullptr;
+    }
+
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Owner = this;
+    SpawnParams.Instigator = this;
+
+    CurrentWeapon = GetWorld()->SpawnActorDeferred<AWeaponBase>(
+        WeaponBaseClass,
+        FTransform::Identity,
+        this,
+        this,
+        ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+    );
+
+    if (!CurrentWeapon) return;
+
+    CurrentWeapon->WeaponDataRow = SelectedWeaponData;
+
+    UGameplayStatics::FinishSpawningActor(CurrentWeapon, FTransform::Identity);
+
+    CurrentWeapon->SetOwnerCharacter(this);
+
+    CurrentWeapon->AttachToComponent(
+        GetMesh(),
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        TEXT("WeaponSocket")
+    );
+}
+
+void APlayerCharacter::Reload()
+{
+    if (!IsLocallyControlled()) return;
+
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->ServerReload();
+    }
 }
