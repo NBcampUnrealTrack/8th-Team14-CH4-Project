@@ -178,20 +178,20 @@ void ATestGameMode::HandleAllPlayerisReady()
     
     if (GS->GetGameStatePhaseTimerData().GameStateEnum == EGameState::LobbyWaiting)
     {
-        if (PlayerCount >= MaxInGamePlayerCount)
-        {
+        //if (PlayerCount >= MaxInGamePlayerCount)
+        //{
             if (IsAllPlayersReady())
             {
                 FPhaseTimerData PhaseTimerData;
                 PhaseTimerData.GameStateEnum = EGameState::LobbyWaiting;
                 PhaseTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
-                PhaseTimerData.PhaseDuration = 5.f;
+                PhaseTimerData.PhaseDuration = 0.f; // 5.f
                 GS->SetGameStatePhaseTimerData(PhaseTimerData);
             
                 // 5초뒤 move
             
             }
-        }
+        //}
     }
     
     if (GS->GetGameStatePhaseTimerData().GameStateEnum == EGameState::Playing)
