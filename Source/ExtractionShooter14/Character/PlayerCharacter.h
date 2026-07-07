@@ -209,7 +209,7 @@ protected:
 	void ApplyWeaponVisuals();
 
 	//성윤 WeaponType을 실제 DT_Weapon RowHandle로 변환하는 내부용 함수
-	FDataTableRowHandle GetWeaponDataRowByType(EWeaponTypes WeaponType) const;
+	FDataTableRowHandle GetWeaponDataRowByType(EWeaponType WeaponType) const;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayEquipMontage(EWeaponType NewWeaponType);

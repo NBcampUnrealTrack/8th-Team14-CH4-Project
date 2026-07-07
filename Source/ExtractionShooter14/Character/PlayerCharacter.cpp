@@ -421,21 +421,11 @@ void APlayerCharacter::EquipWeapon(EWeaponType NewWeaponType)
 void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponType NewWeaponType)
 {
     EquipWeaponInternal(NewWeaponType);
-}
 
-    bIsAiming = false;
-
-    CurrentWeaponType = NewWeaponType;
-
-    EquipWeaponActor(NewWeaponType);
-
-    //성윤 서버/리스 listen 서버의 로컬 플레이어일 경우 장비 UI와 3D 프리뷰를 즉시 갱신하기 위한 이벤트
     if (IsLocallyControlled())
     {
         BP_OnWeaponChanged(GetCurrentWeaponDataRow());
     }
-
-    MulticastPlayEquipMontage(NewWeaponType);
 }
 
 void APlayerCharacter::OnRep_CurrentWeaponType()
@@ -655,22 +645,16 @@ bool APlayerCharacter::EquipWeaponActor(EWeaponType NewWeaponType)
 }
 
 //성윤 WeaponType에 맞는 DT_Weapon RowHandle을 반환하는 함수
-FDataTableRowHandle APlayerCharacter::GetWeaponDataRowByType(EWeaponTypes WeaponType) const
+FDataTableRowHandle APlayerCharacter::GetWeaponDataRowByType(EWeaponType WeaponType) const
 {
-    switch (WeaponType)
+    const FDataTableRowHandle* FoundWeaponData = WeaponDataMap.Find(WeaponType);
+
+    if (!FoundWeaponData || FoundWeaponData->IsNull())
     {
-    case EWeaponTypes::Pistol:
-        return PistolWeaponData;
-
-    case EWeaponTypes::Rifle:
-        return RifleWeaponData;
-
-    case EWeaponTypes::Shotgun:
-        return ShotgunWeaponData;
-
-    default:
         return FDataTableRowHandle();
     }
+
+    return *FoundWeaponData;
 }
 
 //성윤 현재 장착 중인 무기의 DT_Weapon RowHandle을 UI/장비 프리뷰에서 가져가기 위한 함수
