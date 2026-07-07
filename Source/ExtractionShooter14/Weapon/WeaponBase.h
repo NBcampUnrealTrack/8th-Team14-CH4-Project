@@ -58,10 +58,6 @@ protected:
 
 	void BurstFire();
 
-	void StartFire();
-
-	void StopFire();
-
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayFireEffects();
 public:
@@ -84,6 +80,11 @@ public:
 
 	UFUNCTION()
 	void OnRep_CurrentReserveAmmo();
+
+
+	void StartFire();
+
+	void StopFire();
 
 
 public:

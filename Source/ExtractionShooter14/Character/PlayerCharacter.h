@@ -6,6 +6,7 @@
 #include "Components/TimelineComponent.h"
 #include "PlayerCharacterAnimInstance.h"
 #include "InputActionValue.h"
+#include "Weapon/WeaponType.h"
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
@@ -14,14 +15,6 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 class AWeaponBase;
-
-UENUM(BlueprintType)
-enum class EWeaponTypes : uint8
-{
-	Pistol  UMETA(DisplayName = "Pistol"),
-	Rifle   UMETA(DisplayName = "Rifle"),
-	Shotgun UMETA(DisplayName = "Shotgun")
-};
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API APlayerCharacter : public ACharacter
@@ -37,7 +30,7 @@ public:
 
 protected:
 
-	void EquipWeaponActor(EWeaponTypes NewWeaponType);
+	bool EquipWeaponActor(EWeaponType NewWeaponType);
 
 	virtual void BeginPlay() override;
 
@@ -50,20 +43,20 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerStopSprint();
 
+	UFUNCTION(Server, Reliable)
+	void ServerStartFire();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStopFire();
+
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Weapon")
 	AWeaponBase* CurrentWeapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	TSubclassOf<AWeaponBase> WeaponBaseClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
-	FDataTableRowHandle PistolWeaponData;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
-	FDataTableRowHandle RifleWeaponData;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
-	FDataTableRowHandle ShotgunWeaponData;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TMap<EWeaponType, FDataTableRowHandle> WeaponDataMap;
 public:	
 
 	virtual void Tick(float DeltaTime) override;
@@ -188,22 +181,22 @@ protected:
 	UCurveFloat* AimCameraCurve = nullptr;
 
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponType, BlueprintReadOnly, Category = "Weapon")
-	EWeaponTypes CurrentWeaponType = EWeaponTypes::Pistol;
+	EWeaponType CurrentWeaponType = EWeaponType::Pistol;
 
 	UFUNCTION()
 	void OnRep_CurrentWeaponType();
 
 	UFUNCTION(Server, Reliable)
-	void ServerSetWeaponType(EWeaponTypes NewWeaponType);
+	void ServerSetWeaponType(EWeaponType NewWeaponType);
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void EquipWeapon(EWeaponTypes NewWeaponType);
+	void EquipWeapon(EWeaponType NewWeaponType);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
 	void ApplyWeaponVisuals();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayEquipMontage(EWeaponTypes NewWeaponType);
+	void MulticastPlayEquipMontage(EWeaponType NewWeaponType);
 
 	void CancelAimInstant();
 
@@ -218,6 +211,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")
 	UAnimMontage* StageSpawnMontage;
+
+	void EquipWeaponInternal(EWeaponType NewWeaponType);
 	
 
 

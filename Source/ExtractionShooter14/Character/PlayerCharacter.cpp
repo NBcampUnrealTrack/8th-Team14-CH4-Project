@@ -22,6 +22,7 @@
 #include "Weapon/WeaponBase.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
+#include "Weapon/WeaponType.h"
 
 
 APlayerCharacter::APlayerCharacter()
@@ -395,7 +396,7 @@ void APlayerCharacter::FinishAimCamera()
     SetActorTickEnabled(false);
 }
 
-void APlayerCharacter::EquipWeapon(EWeaponTypes NewWeaponType)
+void APlayerCharacter::EquipWeapon(EWeaponType NewWeaponType)
 {
     if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
     {
@@ -409,7 +410,7 @@ void APlayerCharacter::EquipWeapon(EWeaponTypes NewWeaponType)
 
     if (HasAuthority())
     {
-        ServerSetWeaponType_Implementation(NewWeaponType);
+        EquipWeaponInternal(NewWeaponType);
     }
     else
     {
@@ -417,20 +418,9 @@ void APlayerCharacter::EquipWeapon(EWeaponTypes NewWeaponType)
     }
 }
 
-void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponTypes NewWeaponType)
+void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponType NewWeaponType)
 {
-    if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
-    {
-        return;
-    }
-
-    bIsAiming = false;
-
-    CurrentWeaponType = NewWeaponType;
-
-    EquipWeaponActor(NewWeaponType);
-
-    MulticastPlayEquipMontage(NewWeaponType);
+    EquipWeaponInternal(NewWeaponType);
 }
 
 void APlayerCharacter::OnRep_CurrentWeaponType()
@@ -438,21 +428,21 @@ void APlayerCharacter::OnRep_CurrentWeaponType()
     //ApplyWeaponVisuals();
 }
 
-void APlayerCharacter::MulticastPlayEquipMontage_Implementation(EWeaponTypes NewWeaponType)
+void APlayerCharacter::MulticastPlayEquipMontage_Implementation(EWeaponType NewWeaponType)
 {
     UAnimMontage* MontageToPlay = nullptr;
 
     switch (NewWeaponType)
     {
-    case EWeaponTypes::Pistol:
+    case EWeaponType::Pistol:
         MontageToPlay = PistolEquipMontage;
         break;
 
-    case EWeaponTypes::Rifle:
+    case EWeaponType::Rifle:
         MontageToPlay = RifleEquipMontage;
         break;
 
-    case EWeaponTypes::Shotgun:
+    case EWeaponType::Shotgun:
         MontageToPlay = RifleEquipMontage;
         break;
     }
@@ -474,22 +464,17 @@ void APlayerCharacter::CancelAimInstant()
 
 void APlayerCharacter::StartFire()
 {
+
     if (!IsLocallyControlled()) return;
 
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->ServerStartFire();
-    }
+    ServerStartFire();
 }
 
 void APlayerCharacter::StopFire()
 {
     if (!IsLocallyControlled()) return;
 
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->ServerStopFire();
-    }
+    ServerStopFire();
 }
 
 void APlayerCharacter::ServerFire_Implementation()
@@ -604,26 +589,16 @@ float APlayerCharacter::TakeDamage(
     return ActualDamage;
 }
 
-void APlayerCharacter::EquipWeaponActor(EWeaponTypes NewWeaponType)
+bool APlayerCharacter::EquipWeaponActor(EWeaponType NewWeaponType)
 {
-    if (!HasAuthority()) return;
-    if (!WeaponBaseClass) return;
+    if (!HasAuthority()) return false;
+    if (!WeaponBaseClass) return false;
 
-    FDataTableRowHandle SelectedWeaponData;
+    const FDataTableRowHandle* FoundWeaponData = WeaponDataMap.Find(NewWeaponType);
 
-    switch (NewWeaponType)
+    if (!FoundWeaponData || FoundWeaponData->IsNull())
     {
-    case EWeaponTypes::Pistol:
-        SelectedWeaponData = PistolWeaponData;
-        break;
-
-    case EWeaponTypes::Rifle:
-        SelectedWeaponData = RifleWeaponData;
-        break;
-
-    case EWeaponTypes::Shotgun:
-        SelectedWeaponData = ShotgunWeaponData;
-        break;
+        return false;
     }
 
     if (CurrentWeapon)
@@ -631,10 +606,6 @@ void APlayerCharacter::EquipWeaponActor(EWeaponTypes NewWeaponType)
         CurrentWeapon->Destroy();
         CurrentWeapon = nullptr;
     }
-
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.Owner = this;
-    SpawnParams.Instigator = this;
 
     CurrentWeapon = GetWorld()->SpawnActorDeferred<AWeaponBase>(
         WeaponBaseClass,
@@ -644,9 +615,9 @@ void APlayerCharacter::EquipWeaponActor(EWeaponTypes NewWeaponType)
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn
     );
 
-    if (!CurrentWeapon) return;
+    if (!CurrentWeapon) return false;
 
-    CurrentWeapon->WeaponDataRow = SelectedWeaponData;
+    CurrentWeapon->WeaponDataRow = *FoundWeaponData;
 
     UGameplayStatics::FinishSpawningActor(CurrentWeapon, FTransform::Identity);
 
@@ -657,6 +628,8 @@ void APlayerCharacter::EquipWeaponActor(EWeaponTypes NewWeaponType)
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
         TEXT("WeaponSocket")
     );
+
+    return true;
 }
 
 void APlayerCharacter::Reload()
@@ -666,5 +639,41 @@ void APlayerCharacter::Reload()
     if (CurrentWeapon)
     {
         CurrentWeapon->ServerReload();
+    }
+}
+
+void APlayerCharacter::EquipWeaponInternal(EWeaponType NewWeaponType)
+{
+    if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
+    {
+        return;
+    }
+
+    bIsAiming = false;
+
+    if (!EquipWeaponActor(NewWeaponType))
+    {
+        return;
+    }
+
+    CurrentWeaponType = NewWeaponType;
+
+    MulticastPlayEquipMontage(NewWeaponType);
+}
+
+void APlayerCharacter::ServerStartFire_Implementation()
+{
+
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->StartFire();
+    }
+}
+
+void APlayerCharacter::ServerStopFire_Implementation()
+{
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->StopFire();
     }
 }
