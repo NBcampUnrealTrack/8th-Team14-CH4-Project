@@ -166,7 +166,7 @@ void UES_LobbyWidgetHUD::HandlePhaseTimerChanged()
 		PhaseTimerHandle,
 		this,
 		&ThisClass::UpdateTimerText,
-		0.5f,
+		0.2f,
 		true
 	);
 }

@@ -1,4 +1,6 @@
 ﻿#include "TestGameState.h"
+
+#include "PlayerCharacterState.h"
 #include "Net/UnrealNetwork.h"
 void ATestGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -71,6 +73,78 @@ float ATestGameState::GetRemainTime() const
 		GameStatePhaseTimerData.PhaseDuration -
 		(CurrentServerTime - GameStatePhaseTimerData.PhaseStartServerTime)
 		);
+}
+
+void ATestGameState::AddPlayerState(APlayerState* PlayerState)
+{
+	Super::AddPlayerState(PlayerState);
+	if (HasAuthority())
+	{
+		APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(PlayerState);
+	
+		if (!IsValid(PlayerStateES)) return;
+		if (PlayerStateES->OnPlayerCombatInfoChanged.IsBoundToObject(this)) return;
+	
+		PlayerStateES->OnPlayerCombatInfoChanged.AddUObject(this, &ThisClass::CalculatePlayerRank);
+		CalculatePlayerRank();
+	}
+}
+
+void ATestGameState::RemovePlayerState(APlayerState* PlayerState)
+{
+	if (HasAuthority())
+	{
+		APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(PlayerState);
+		if (!IsValid(PlayerStateES)) return;
+	
+		PlayerStateES->OnPlayerCombatInfoChanged.RemoveAll(this);
+	}
+	Super::RemovePlayerState(PlayerState);
+	
+	if (HasAuthority())
+	{
+		CalculatePlayerRank();
+	}
+}
+
+void ATestGameState::CalculatePlayerRank()
+{
+	if (HasAuthority())
+	{
+		if (GameStatePhaseTimerData.GameStateEnum == EGameState::Playing)
+		{
+			TArray<APlayerCharacterState*> CopyPlayerStates = LobbyPlayerStates;
+			
+			CopyPlayerStates.Sort(
+				[](const APlayerCharacterState& A, const APlayerCharacterState& B)
+				{
+					return A.GetPlayerCombatInfo().Score > B.GetPlayerCombatInfo().Score;
+				});
+			// todo:: removeall
+			
+			
+			int32 CurrentRank = 1;
+		
+			for (int32 i = 0; i < CopyPlayerStates.Num(); ++i)
+			{
+				APlayerCharacterState* CurrentPS = CopyPlayerStates[i];
+				if (!IsValid(CurrentPS)) continue;
+		
+				if (i > 0)
+				{
+					APlayerCharacterState* PrevPS = CopyPlayerStates[i - 1];
+		
+					if (IsValid(PrevPS) &&
+						CurrentPS->GetPlayerCombatInfo().Score < PrevPS->GetPlayerCombatInfo().Score)
+					{
+						CurrentRank = i + 1;
+					}
+				}
+		
+				CurrentPS->SetPlayerCombatInfo_Rank(CurrentRank);
+			}
+		}
+	}
 }
 
 void ATestGameState::OnRep_PlayerInGameCount_GS()

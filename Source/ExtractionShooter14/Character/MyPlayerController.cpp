@@ -87,9 +87,15 @@ void AMyPlayerController::Find_ApplyLobbyCamera()
         TArray<AActor*> FoundCameras;
         UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("LobbyMainCamera"), FoundCameras);
         ensureMsgf(FoundCameras.Num() > 0, TEXT("None Camera"));
+
+        for (const AActor* Camera : FoundCameras)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("%s"), *Camera->GetName());
+        }
+        
         FoundCameras.Sort([](const AActor& A, const AActor& B)
         {
-            return A.GetName() < B.GetName();
+            return A.GetActorLabel() < B.GetActorLabel();
         }); // sort by name camera_1 , camera_2 , camera_3
         
         if (!FoundCameras.IsValidIndex(PlayerSlotIndex)) return;
@@ -215,6 +221,11 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
 {   //  ======================= when stage moved // play animontage ====================== //
     if (IsLocalController())
     {
+        APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
+        if (!IsValid(PS)) return;
+        ATestGameState* GameStateES = GetWorld()->GetGameState<ATestGameState>();
+        if (!IsValid(GameStateES)) return;
+            
         StartPlayerMovement();
         
         UWidgetLayoutLibrary::RemoveAllWidgets(this);
@@ -228,21 +239,21 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
     
         if (!IsValid(StageWidgetClass)) return;
         StageWidgetInstance = CreateWidget<UESHUDWidget>(this, StageWidgetClass);
+
+        StageWidgetInstance->SetOwningGameState(GameStateES);
+        StageWidgetInstance->SetOwningPlayerState(PS);
+        
         if (!IsValid(StageWidgetInstance)) return;
         StageWidgetInstance->AddToViewport(10);
 
+        PS->OnHealthChanged.RemoveDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
+        PS->OnHealthChanged.AddDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
+
+        StageWidgetInstance.Get()->BP_UpdatePlayerHP(
+            PS->GetCurrentHealth(),
+            PS->GetMaxHealth()
+        );
     }
-
-    APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
-    if (!IsValid(PS)) return;
-
-    PS->OnHealthChanged.RemoveDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
-    PS->OnHealthChanged.AddDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
-
-    StageWidgetInstance.Get()->BP_UpdatePlayerHP(
-        PS->GetCurrentHealth(),
-        PS->GetMaxHealth()
-    );
 }
 
 void AMyPlayerController::Client_OpenResultUI_Implementation()
@@ -254,9 +265,10 @@ void AMyPlayerController::Client_OpenResultUI_Implementation()
     
     UES_ResaultWidgetHUD* ResultWidgetInstance = CreateWidget<UES_ResaultWidgetHUD>(this, ResultWidgetClass);
     ResultWidgetInstance->SetPlayerCombatInfo(PS->GetPlayerCombatInfo());
+    ResultWidgetInstance->SetPlayerNickName(FText::FromString(PS->GetPlayerInfo().PlayerNickName));
     
     ResultWidgetInstance->AddToViewport(100);
-    ResultWidgetInstance->SetFocus();
+    //ResultWidgetInstance->SetFocus();
     // ACharacter* PlayerCharcterES= Cast<ACharacter>(GetPawn());
     // if (!IsValid(PlayerCharcterES)) return;
     // PlayerCharcterES->GetCharacterMovement()->Velocity = FVector::ZeroVector;

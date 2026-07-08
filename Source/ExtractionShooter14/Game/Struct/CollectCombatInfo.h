@@ -25,4 +25,7 @@ struct FCollectCombatInfo
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 Score = 0;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 Rank = 0;
 };

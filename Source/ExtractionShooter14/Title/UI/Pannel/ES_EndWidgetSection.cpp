@@ -1,6 +1,8 @@
 ﻿#include "ES_EndWidgetSection.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
+#include "Components/PanelSlot.h"
+#include "Components/VerticalBoxSlot.h"
 #include "Title/UI/RowWidget/ES_EndWidgetRow.h"
 
 void UES_EndWidgetSection::SetSectionTitle(const FText& NewTitle)
@@ -15,5 +17,10 @@ void UES_EndWidgetSection::AddRowSetRowTitle(const FText& InTitle, const FText& 
 	if (!IsValid(RowWidget)) return;
 	
 	RowWidget->SetTitle(InTitle, InValue);
-	RowVerticalBox->AddChild(RowWidget);
+	//RowWidget->SetPadding(FMargin(10.f,0.f));
+	UVerticalBoxSlot* CustomSlot = RowVerticalBox->AddChildToVerticalBox(RowWidget);
+	CustomSlot->SetPadding(FMargin(5.f,0.f));
+	CustomSlot->SetVerticalAlignment(VAlign_Center);
+	CustomSlot->SetHorizontalAlignment(HAlign_Center);
+	CustomSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 }

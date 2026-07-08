@@ -130,9 +130,11 @@ void APlayerCharacterState::TakenDamage(
 	
 	// ## todo::record combatinfo ##
 	UE_LOG(LogTemp, Warning, TEXT("SERVER :: %.1f / %.1f"),CurrentHealth,MaxHealth);
-	PlayerCombatInfo.DamageTaken += ActualDamage;
 	
 	APlayerCharacterState* AttackerPlayerState = EventInstigator->GetPlayerState<APlayerCharacterState>();
+	
+	AddPlayerCombatInfo_DamageTaken(ActualDamage);
+	
 	if (IsValid(AttackerPlayerState))
 	{
 		AttackerPlayerState->AddPlayerCombatInfo_DamageDealt(ActualDamage);
@@ -149,6 +151,7 @@ void APlayerCharacterState::TakenDamage(
 	
 	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
 	OnPlayerCombatInfoChanged.Broadcast();
+	ForceNetUpdate();
 }
 void APlayerCharacterState::InitiateStats()
 {
@@ -177,8 +180,15 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 	OnPlayerInfoChanged.Broadcast();
 }
 
-void APlayerCharacterState::OnRep_PlayerCombatInfo()
+void APlayerCharacterState::OnRep_PlayerCombatInfo(const FCollectCombatInfo& OldCombatInfo)
 {
+	//OnPlayerCombatInfoChanged.Broadcast();
+	if (OldCombatInfo.Rank == PlayerCombatInfo.Rank) return;
+	
+	
+	
+	OnPlayerCombatInfoChanged.Broadcast();
+	// 	OnPlayerRankChanged.Broadcast();
 }
 
 void APlayerCharacterState::OnRep_PlayerStageInventory()
@@ -200,7 +210,6 @@ void APlayerCharacterState::OnRep_Health()
 {
 	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
 	UE_LOG(LogTemp, Warning, TEXT("CLIENT :: %.1f / %.1f"),CurrentHealth,MaxHealth);
-
 }
 
 void APlayerCharacterState::OnRep_bIsReady()
@@ -282,7 +291,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageDealt(const float InGiveDm
 				
 		CalCulateCombatScore();
 		
-		OnPlayerCombatInfoChanged.Broadcast();
+		//OnPlayerCombatInfoChanged.Broadcast();
 	}
 }
 
@@ -294,7 +303,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageTaken(const float InReceiv
 				
 		CalCulateCombatScore();
 		
-		OnPlayerCombatInfoChanged.Broadcast();
+		//OnPlayerCombatInfoChanged.Broadcast();
 	}
 }
 
@@ -306,7 +315,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_KillCount(const int32 InKillCoun
 				
 		CalCulateCombatScore();
 		
-		OnPlayerCombatInfoChanged.Broadcast();
+		//OnPlayerCombatInfoChanged.Broadcast();
 	}
 }
 
@@ -318,11 +327,22 @@ void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCoun
 		
 		CalCulateCombatScore();
 		
-		OnPlayerCombatInfoChanged.Broadcast();
+		//OnPlayerCombatInfoChanged.Broadcast();
 	}
 }
 
-const FCollectCombatInfo& APlayerCharacterState::GetPlayerCombatInfo()
+void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
+{
+	if (HasAuthority())
+	{
+		if (PlayerCombatInfo.Rank == InRank) return;
+		PlayerCombatInfo.Rank = InRank;
+		OnPlayerCombatInfoChanged.Broadcast();
+		//OnPlayerRankChanged.Broadcast();
+	}
+}
+
+const FCollectCombatInfo& APlayerCharacterState::GetPlayerCombatInfo() const
 {
 	return PlayerCombatInfo;
 }
@@ -330,11 +350,11 @@ const FCollectCombatInfo& APlayerCharacterState::GetPlayerCombatInfo()
 void APlayerCharacterState::CalCulateCombatScore()
 {
 	PlayerCombatInfo.Score =
-	(FMath::RoundToInt(PlayerCombatInfo.DamageDealt * 2.f)) -
-	(FMath::RoundToInt(PlayerCombatInfo.DamageTaken * 1.f)) +
+	FMath::RoundToInt(PlayerCombatInfo.DamageDealt * 2.f) -
+	FMath::RoundToInt(PlayerCombatInfo.DamageTaken * 1.f) +
 	(PlayerCombatInfo.KillCount * 5) +
-	(PlayerCombatInfo.LootCount * 3) +
-	(FMath::RoundToInt(PlayerCombatInfo.SurviveTime * 1.5f));
+	(PlayerCombatInfo.LootCount * 30) +
+	FMath::RoundToInt(PlayerCombatInfo.SurviveTime * 1.5f);
 }
 
 void APlayerCharacterState::InitializeCombatScore()

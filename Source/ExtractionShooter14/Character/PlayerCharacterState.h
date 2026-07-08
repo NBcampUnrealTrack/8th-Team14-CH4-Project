@@ -12,6 +12,7 @@
 DECLARE_MULTICAST_DELEGATE(FPlayerInfoChanged);
 DECLARE_MULTICAST_DELEGATE(FPlayerLobbyIndexChanged);
 DECLARE_MULTICAST_DELEGATE(FPlayerCombatInfoChanged);
+//DECLARE_MULTICAST_DELEGATE(FPlayerRankChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
@@ -57,6 +58,7 @@ public:
 	FPlayerInfoChanged OnPlayerInfoChanged;
 	FPlayerLobbyIndexChanged OnPlayerLobbyIndexChanged;
 	FPlayerCombatInfoChanged OnPlayerCombatInfoChanged;
+	//FPlayerRankChanged OnPlayerRankChanged;
 	UPROPERTY(BlueprintAssignable)
 	FPlayerStageInventoryChanged OnPlayerStageInventoryChanged;
 	UPROPERTY(BlueprintAssignable)
@@ -71,7 +73,7 @@ public:
 	UFUNCTION()
 	void OnRep_PlayerInfo();
 	UFUNCTION()
-	void OnRep_PlayerCombatInfo();
+	void OnRep_PlayerCombatInfo(const FCollectCombatInfo& OldCombatInfo);
 	UFUNCTION()
 	void OnRep_PlayerStageInventory();
 	UFUNCTION()
@@ -122,14 +124,17 @@ public:
 	void AddPlayerCombatInfo_KillCount(const int32 InKillCount);
 	UFUNCTION()
 	void AddPlayerCombatInfo_LootCount(const int32 InLootCount);
+	UFUNCTION()
+	void SetPlayerCombatInfo_Rank(const int32 InRank);
 	
-	const FCollectCombatInfo& GetPlayerCombatInfo();
+	const FCollectCombatInfo& GetPlayerCombatInfo() const;
 #pragma endregion 
 	
 #pragma region CombatFunction
 	void CalCulateCombatScore();
 	
 	void InitializeCombatScore();
+
 #pragma endregion 
 	
 #pragma region Properties

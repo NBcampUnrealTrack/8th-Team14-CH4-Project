@@ -61,6 +61,13 @@ public:
 	FPhaseTimerData GetGameStatePhaseTimerData() const;
 	
 	float GetRemainTime() const;
+	
+#pragma region Rank
+	public:
+	virtual void AddPlayerState(APlayerState* PlayerState) override;
+	virtual void RemovePlayerState(APlayerState* PlayerState) override;
+	void CalculatePlayerRank();
+#pragma endregion 
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInGameCount_GS)
 	int32 PlayerInGameCount_GS;

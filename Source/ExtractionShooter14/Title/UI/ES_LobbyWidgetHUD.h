@@ -51,6 +51,8 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UUserWidget> LobbyTotalGold;
 	
+	
+	
 	UPROPERTY(EditDefaultsOnly, blueprintReadOnly, Category = "Lobby|Icon")
 	TSubclassOf<UES_LobbyUserIconWidget> UserIconClass;
 	

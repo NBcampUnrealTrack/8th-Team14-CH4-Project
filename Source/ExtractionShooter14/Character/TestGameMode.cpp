@@ -34,6 +34,17 @@ void ATestGameMode::BeginPlay()
     
 }
 
+void ATestGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId,
+    FString& ErrorMessage)
+{
+    if (InGamePlayerCount >= MaxInGamePlayerCount)
+    {
+        ErrorMessage = FString::Printf(TEXT("Max Player Joined in this Game. %d/%d"), InGamePlayerCount, MaxInGamePlayerCount); 
+    }
+    
+    Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+}
+
 void ATestGameMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);
@@ -186,7 +197,7 @@ void ATestGameMode::HandleAllPlayerisReady()
                 PhaseTimerData.GameStateEnum = EGameState::LobbyWaiting;
                 PhaseTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
                 PhaseTimerData.PhaseDuration = 0.f; // 5.f
-                GS->SetGameStatePhaseTimerData(PhaseTimerData);
+                GS->SetGameStatePhaseTimerData(PhaseTimerData); // > SetGamestatePhaaseTimerData ?
             
                 // 5초뒤 move
             
@@ -266,7 +277,7 @@ void ATestGameMode::StartStage()
     SetStageTimerData.GameStateEnum = EGameState::Playing;
     SetStageTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
     SetStageTimerData.PhaseDuration = PlayDuration;
-    
+    GS->CalculatePlayerRank();
     StartPhaseTimer(SetStageTimerData);
 }
 
@@ -398,6 +409,7 @@ void ATestGameMode::CheckRemainTime()
             //ForceReadyPlayers(false);
             bForced = false;
             MoveToStage();
+            //GS->CalculatePlayerRank();
             
             if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
             {
