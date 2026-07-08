@@ -48,16 +48,16 @@ void AMyPlayerController::BeginPlay()
         }
     }
     
-    if (IsLocalController())
-    {
-        if (!IsValid(ResultWidgetClass)) return;
-        UES_ResaultWidgetHUD* ResultWidgetInstance = CreateWidget<UES_ResaultWidgetHUD>(this, ResultWidgetClass);
-        if (!IsValid(ResultWidgetInstance)) return;
-        
-        // if (!IsValid(OptionWidgetClass)) return;
-        // OptionWidgetInstance = CreateWidget<UUserWidget>(this, OptionWidgetClass);
-        // if (!IsValid(OptionWidgetInstance)) return;
-        
+    // if (IsLocalController())
+    // {
+    //     if (!IsValid(ResultWidgetClass)) return;
+    //     UES_ResaultWidgetHUD* ResultWidgetInstance = CreateWidget<UES_ResaultWidgetHUD>(this, ResultWidgetClass);
+    //     if (!IsValid(ResultWidgetInstance)) return;
+    //     
+    //     if (!IsValid(OptionWidgetClass)) return;
+    //     OptionWidgetInstance = CreateWidget<UUserWidget>(this, OptionWidgetClass);
+    //     if (!IsValid(OptionWidgetInstance)) return;
+    //     
     //     if (!IsValid(LobbyWidgetClass)) return;
     //     LobbyWidgetInstance = CreateWidget<UES_LobbyWidgetHUD>(this, LobbyWidgetClass);
     //     if (!IsValid(LobbyWidgetInstance)) return;
@@ -70,8 +70,8 @@ void AMyPlayerController::BeginPlay()
     //     InputMode.SetWidgetToFocus(LobbyWidgetInstance->TakeWidget());
     //     SetInputMode(InputMode);
     //     bShowMouseCursor = true;
-
-    }
+    //
+    // }
 }
 
 void AMyPlayerController::Find_ApplyLobbyCamera()
@@ -110,14 +110,17 @@ void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
     UWidgetLayoutLibrary::RemoveAllWidgets(this);
 
     APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
+    ATestGameState* GameStateES = Cast<ATestGameState>(UGameplayStatics::GetGameState(this));
     
     if (!IsValid(PlayerStateES)) return;
+    if (!IsValid(GameStateES)) return;
     if (!IsValid(LobbyWidgetClass)) return;
     //if (!IsValid(LobbyWidgetInstance)) return;
     
     LobbyWidgetInstance = CreateWidget<UES_LobbyWidgetHUD>(this, LobbyWidgetClass);
     
     LobbyWidgetInstance->CachedPlayerState(PlayerStateES);
+    LobbyWidgetInstance->CachedGameState(GameStateES);
     LobbyWidgetInstance->CachedPlayerController(this);
     
     LobbyWidgetInstance->AddToViewport();

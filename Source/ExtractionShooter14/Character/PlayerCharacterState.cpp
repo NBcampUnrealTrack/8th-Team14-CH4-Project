@@ -131,9 +131,8 @@ void APlayerCharacterState::TakenDamage(
 	// ## todo::record combatinfo ##
 	UE_LOG(LogTemp, Warning, TEXT("SERVER :: %.1f / %.1f"),CurrentHealth,MaxHealth);
 	
-	APlayerCharacterState* AttackerPlayerState = EventInstigator->GetPlayerState<APlayerCharacterState>();
-	
 	AddPlayerCombatInfo_DamageTaken(ActualDamage);
+	APlayerCharacterState* AttackerPlayerState = EventInstigator->GetPlayerState<APlayerCharacterState>();
 	
 	if (IsValid(AttackerPlayerState))
 	{
@@ -336,6 +335,7 @@ void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
 	if (HasAuthority())
 	{
 		if (PlayerCombatInfo.Rank == InRank) return;
+		
 		PlayerCombatInfo.Rank = InRank;
 		OnPlayerCombatInfoChanged.Broadcast();
 		//OnPlayerRankChanged.Broadcast();

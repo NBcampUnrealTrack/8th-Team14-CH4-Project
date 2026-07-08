@@ -3,6 +3,7 @@
 #include "AI/Controllers/ZombieAIController.h"
 
 #include "AIController.h"
+#include "Character/PlayerCharacterState.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -48,7 +49,7 @@ float AZombieCharacter::TakeDamage(
 	AController* EventInstigator,
 	AActor* DamageCauser)
 {
-	// µ¥¹ÌÁö´Â ¼­¹ö¸¸ Ã³¸®
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½
 	if (!HasAuthority())
 	{
 		return 0.f;
@@ -79,7 +80,7 @@ float AZombieCharacter::TakeDamage(
 		0.f,
 		MaxHP);
 
-	// µ¥¹ÌÁö ·Î±× Ãâ·Â
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Î±ï¿½ ï¿½ï¿½ï¿½
 	UE_LOG(LogTemp, Warning, TEXT("[%s] TakeDamage! Damage: %.1f / HP: %.1f / %.1f"),
 		*ZombieName.ToString(),
 		ActualDamage,
@@ -94,9 +95,21 @@ float AZombieCharacter::TakeDamage(
 				CurrentHP,
 				MaxHP));
 	}
-
+	// Combat Data // ============================= // PlayerDealt
+	APlayerCharacterState* AttackerPlayerState = EventInstigator->GetPlayerState<APlayerCharacterState>();
+	
+	if (IsValid(AttackerPlayerState))
+	{
+		AttackerPlayerState->AddPlayerCombatInfo_DamageDealt(ActualDamage);
+	}
+	// Combat Data // ============================= // PlayerDealt
 	if (CurrentHP <= 0.f)
 	{
+		if (IsValid(AttackerPlayerState))
+		{
+			// Combat Data // ============================= // PlayerKillCount
+			AttackerPlayerState->AddPlayerCombatInfo_KillCount(1);
+		}
 		Die();
 	}
 
@@ -131,7 +144,7 @@ void AZombieCharacter::OnRep_IsDead()
 
 	GetCharacterMovement()->DisableMovement();
 
-	// OnRep¿¡¼­´Â Multicast¸¦ ´Ù½Ã È£ÃâÇÏÁö ¾Ê´Â´Ù.
+	// OnRepï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Multicastï¿½ï¿½ ï¿½Ù½ï¿½ È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´Â´ï¿½.
 	if (DeathMontage)
 	{
 		PlayAnimMontage(DeathMontage);
@@ -158,7 +171,7 @@ void AZombieCharacter::Die()
 
 	GetCharacterMovement()->DisableMovement();
 
-	// ¼­¹ö°¡ ¸ðµç Å¬¶óÀÌ¾ðÆ®¿¡°Ô »ç¸Á ¸ùÅ¸ÁÖ Àç»ý
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½
 	Multicast_PlayDeathMontage();
 
 	float DestroyDelay = 2.0f;

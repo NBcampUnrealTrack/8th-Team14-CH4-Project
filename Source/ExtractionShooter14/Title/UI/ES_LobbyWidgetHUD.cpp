@@ -151,6 +151,11 @@ void UES_LobbyWidgetHUD::CachedPlayerState(APlayerCharacterState* InPlayerState)
 	OwningPlayerState = InPlayerState;
 }
 
+void UES_LobbyWidgetHUD::CachedGameState(ATestGameState* InTestGameState)
+{
+	OwningGameState = InTestGameState;
+}
+
 void UES_LobbyWidgetHUD::CachedPlayerController(AMyPlayerController* InPlayerController)
 {
 	OwningPlayerController = InPlayerController;
@@ -191,7 +196,7 @@ void UES_LobbyWidgetHUD::ApplyTextColorAnimation(float LeftTime)
 	if (!IsValid(OwningGameState)) return;
 	
 	const EGameState GamePhase = OwningGameState->GetGameStatePhaseTimerData().GameStateEnum;
-	const float PassedTime = OwningGameState->GetServerWorldTimeSeconds() - OwningGameState->GetGameStatePhaseTimerData().PhaseStartServerTime;
+	const float PassedTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds() - OwningGameState->GetGameStatePhaseTimerData().PhaseStartServerTime;
 	const float Ratio = PassedTime / OwningGameState->GetGameStatePhaseTimerData().PhaseDuration;
 	
 	if (GamePhase == EGameState::LobbyWaiting)

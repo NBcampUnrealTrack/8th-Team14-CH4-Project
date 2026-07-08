@@ -37,12 +37,26 @@ void ATestGameMode::BeginPlay()
 void ATestGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId,
     FString& ErrorMessage)
 {
+    Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+    
     if (InGamePlayerCount >= MaxInGamePlayerCount)
     {
-        ErrorMessage = FString::Printf(TEXT("Max Player Joined in this Game. %d/%d"), InGamePlayerCount, MaxInGamePlayerCount); 
+        ErrorMessage = FString::Printf(TEXT("Max Player Joined in this Game. %d/%d"), InGamePlayerCount, MaxInGamePlayerCount);
+        return;
     }
     
-    Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+    for (APlayerState* PS : GameState->PlayerArray)
+    {
+        if (!IsValid(PS))
+            continue;
+
+        if (PS->GetUniqueId() == UniqueId)
+        {
+            ErrorMessage = TEXT("Already Connected");
+            return;
+        }
+    }
+    
 }
 
 void ATestGameMode::PostLogin(APlayerController* NewPlayer)
@@ -297,7 +311,9 @@ void ATestGameMode::MoveToStage()
             if (!IsValid(PlayerCharacterStateES)) continue;
             APawn* PlayerPawn = PlayerControllerES->GetPawn();
             if (!IsValid(PlayerPawn)) continue;
-        
+            ATestGameState* GameStateES = GetGameState<ATestGameState>();
+            if (!IsValid(GameStateES)) return;
+            
             const int32 StartIndex = Pair.Value;
         
         
@@ -318,6 +334,7 @@ void ATestGameMode::MoveToStage()
                         StageSpawnLocationPoints[StartIndex]->GetActorLocation(),
                         StageSpawnLocationPoints[StartIndex]->GetActorRotation()
                         );
+                    GameStateES->CalculatePlayerRank();
                     FRotator PlayerRotation = StageSpawnLocationPoints[StartIndex]->GetActorRotation();
                     PlayerRotation.Pitch = 0.0f;
                     PlayerRotation.Roll = 0.0f;

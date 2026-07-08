@@ -38,6 +38,7 @@ public:
 	void ApplyTextColorAnimation(float LeftTime);
 	
 	void CachedPlayerState(APlayerCharacterState* InPlayerState);
+	void CachedGameState(ATestGameState* InTestGameState);
 	void CachedPlayerController(AMyPlayerController* InPlayerController);
 public:
 	UPROPERTY(meta = (BindWidget))

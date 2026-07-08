@@ -113,7 +113,16 @@ void ATestGameState::CalculatePlayerRank()
 	{
 		if (GameStatePhaseTimerData.GameStateEnum == EGameState::Playing)
 		{
-			TArray<APlayerCharacterState*> CopyPlayerStates = LobbyPlayerStates;
+			TArray<APlayerCharacterState*> CopyPlayerStates;
+			
+			for (auto State : LobbyPlayerStates)
+			{
+				if (State->GetPlayerStagePlace() == EPlayerPlace::Stage)
+				{
+					if (!IsValid(State)) continue;
+					CopyPlayerStates.Add(State);
+				}  
+			}
 			
 			CopyPlayerStates.Sort(
 				[](const APlayerCharacterState& A, const APlayerCharacterState& B)
