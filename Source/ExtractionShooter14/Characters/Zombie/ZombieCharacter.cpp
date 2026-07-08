@@ -54,6 +54,15 @@ float AZombieCharacter::TakeDamage(
 		return 0.f;
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("[ZombieCharacter] TakeDamage Called! Amount: %.1f"), DamageAmount);
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1, 5.f, FColor::Cyan,
+			FString::Printf(TEXT("TakeDamage Called! %.1f"), DamageAmount));
+	}
+
 	const float ActualDamage = Super::TakeDamage(
 		DamageAmount,
 		DamageEvent,
@@ -69,6 +78,22 @@ float AZombieCharacter::TakeDamage(
 		CurrentHP - ActualDamage,
 		0.f,
 		MaxHP);
+
+	// 데미지 로그 출력
+	UE_LOG(LogTemp, Warning, TEXT("[%s] TakeDamage! Damage: %.1f / HP: %.1f / %.1f"),
+		*ZombieName.ToString(),
+		ActualDamage,
+		CurrentHP,
+		MaxHP);
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1, 2.f, FColor::Green,
+			FString::Printf(TEXT("Server: HP : %.0f / %.0f"),
+				CurrentHP,
+				MaxHP));
+	}
 
 	if (CurrentHP <= 0.f)
 	{
