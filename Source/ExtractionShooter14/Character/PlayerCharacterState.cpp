@@ -42,9 +42,20 @@ void APlayerCharacterState::ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData)
 	OnPlayerInfoChanged.Broadcast();
 }
 
-const FPlayerDatas& APlayerCharacterState::GetPlayerInfo() const
+FPlayerDatas& APlayerCharacterState::GetPlayerInfo()
 {
 	return PlayerInfo;
+}
+
+void APlayerCharacterState::BuyItem_Implementation(const FInventoryItemData& InItemData)
+{
+	if (HasAuthority())
+	{
+		FPlayerDatas& info = GetPlayerInfo();
+		info.GoldStorage -= 100;
+		
+		AddItemInPlayerStageInventory(InItemData);
+	}
 }
 
 void APlayerCharacterState::SetLobbyIndex(int32 PlayerSlotIndex)

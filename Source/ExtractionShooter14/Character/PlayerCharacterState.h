@@ -50,8 +50,10 @@ public:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	void ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData);
-	const FPlayerDatas& GetPlayerInfo() const;
 	
+	FPlayerDatas& GetPlayerInfo();
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void BuyItem(const FInventoryItemData& InItemData);
 	
 	void ClearPlayerStageInventory();
 	void ApplyPlayerStageInventoryToPlayerStorage();
