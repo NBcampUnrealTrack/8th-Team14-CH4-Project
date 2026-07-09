@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "AIController.h"
 #include "Characters/Zombie/ZombieCharacter.h"
+#include "GameFramework/Character.h"
 
 UBTS_FindPlayer::UBTS_FindPlayer()
 {
@@ -28,24 +29,51 @@ void UBTS_FindPlayer::TickNode(
 	AZombieCharacter* Zombie = AIController ? Cast<AZombieCharacter>(AIController->GetPawn()) : nullptr;
 	if (!Zombie)
 	{
-		return;
-	}
-
-	AActor* Player = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	if (!Player)
-	{
 		BB->SetValueAsObject(TEXT("TargetActor"), nullptr);
 		return;
 	}
 
-	const float Distance = FVector::Dist(Zombie->GetActorLocation(), Player->GetActorLocation());
+	// 모든 플레이어 중 가장 가까운 플레이어 찾기
+	TArray<AActor*> AllPlayers;
+	UGameplayStatics::GetAllActorsOfClass(
+		GetWorld(),
+		ACharacter::StaticClass(),
+		AllPlayers);
 
-	if (Distance <= Zombie->DetectRange)
+	AActor* NearestPlayer = nullptr;
+	float NearestDistance = FLT_MAX;
+
+	for (AActor* Actor : AllPlayers)
 	{
-		BB->SetValueAsObject(TEXT("TargetActor"), Player);
+		// 좀비는 제외
+		if (Cast<AZombieCharacter>(Actor))
+		{
+			continue;
+		}
+
+		// AI 컨트롤러가 있는 폰은 제외 (좀비 등)
+		ACharacter* Character = Cast<ACharacter>(Actor);
+		if (!Character)
+		{
+			continue;
+		}
+
+		// 플레이어 컨트롤러가 있는 것만
+		if (!Character->GetController() || !Character->GetController()->IsPlayerController())
+		{
+			continue;
+		}
+
+		const float Distance = FVector::Dist(
+			Zombie->GetActorLocation(),
+			Actor->GetActorLocation());
+
+		if (Distance <= Zombie->DetectRange && Distance < NearestDistance)
+		{
+			NearestDistance = Distance;
+			NearestPlayer = Actor;
+		}
 	}
-	else
-	{
-		BB->SetValueAsObject(TEXT("TargetActor"), nullptr);
-	}
+
+	BB->SetValueAsObject(TEXT("TargetActor"), NearestPlayer);
 }
