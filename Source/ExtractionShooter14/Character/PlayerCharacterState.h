@@ -42,6 +42,8 @@ public:
        	void Server_SetGold(int32 SetGold);
 		UFUNCTION(Server, Reliable)
        	void Server_SetStageGold(int32 SetGold);
+		UFUNCTION(Server, Reliable)
+		void Server_SetStageItem(const FInventoryItemData InItemName);
 #pragma endregion 
 	
 	APlayerCharacterState();
@@ -115,7 +117,7 @@ public:
 	
 	UFUNCTION()  // Put Gold In StageGold
 	void AddPlayerStageGold(int32 AddGoldValue); //server only
-	UFUNCTION() // Put Item In StageInventory
+	UFUNCTION(BlueprintCallable) // Put Item In StageInventory
 	void AddItemInPlayerStageInventory(const FInventoryItemData& InItemName); //serveronly
 	// FInventoryItemData == <FName, int32>
 	

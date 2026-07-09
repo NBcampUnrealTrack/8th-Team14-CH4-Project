@@ -314,6 +314,24 @@ void AMyPlayerController::SetCheatStageCoin(int32 InCheatCoin)
     PlayerStateES->Server_SetStageGold(InCheatCoin);
 }
 
+void AMyPlayerController::SetCheatItem(FName ItemName, int32 ItemCount)
+{
+    APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PlayerStateES)) return;
+    
+}
+
+void AMyPlayerController::SetCheatStageItem(FName ItemName, int32 ItemCount)
+{
+    APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
+    if (!IsValid(PlayerStateES)) return;
+    
+    FInventoryItemData ItemData;
+    ItemData.ItemName = ItemName;
+    ItemData.ItemCount = ItemCount;
+    PlayerStateES->Server_SetStageItem(ItemData);
+}
+
 
 #pragma endregion 
 

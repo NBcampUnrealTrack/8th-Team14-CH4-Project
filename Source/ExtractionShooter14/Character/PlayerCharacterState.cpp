@@ -5,11 +5,16 @@
 #include "PlayerCharacter.h"
 #include "TestGameState.h"
 
+void APlayerCharacterState::Server_SetStageItem_Implementation(const FInventoryItemData InItemName)
+{
+	AddItemInPlayerStageInventory(InItemName);
+}
+
 APlayerCharacterState::APlayerCharacterState()
 	:bIsReady(false)
 	,bIsDead(false)
 {
-	PlayerStageInventory.Reserve(30);
+	PlayerStageInventory.Init(FInventoryItemData(), 12);
 }
 
 void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -206,6 +211,7 @@ void APlayerCharacterState::OnRep_PlayerCombatInfo(const FCollectCombatInfo& Old
 void APlayerCharacterState::OnRep_PlayerStageInventory()
 {
 	OnPlayerStageInventoryChanged.Broadcast();
+	UKismetSystemLibrary::PrintString(GetWorld(), FString(TEXT("CLIENT :: StageInventoryChanged")));
 }
 
 void APlayerCharacterState::OnRep_PlayerStageGold(int32 OldGold)
@@ -268,30 +274,47 @@ void APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemDa
 	{
 		bool bIsItemChanged = false;
 		
-		FInventoryItemData* FoundItem =
-	PlayerStageInventory.FindByPredicate(
-	[&InItemName](const FInventoryItemData& StorageItem)
-	{
-		return StorageItem.ItemName == InItemName.ItemName;
-	});
+		// 1. 같은 아이템 이름 찾기
+		FInventoryItemData* FoundItem = PlayerStageInventory.FindByPredicate(
+			[&InItemName](const FInventoryItemData& StorageItem)
+			{
+				return StorageItem.ItemName == InItemName.ItemName
+					&& StorageItem.ItemName != NAME_None;
+			}
+		);
 
 		if (FoundItem)
 		{
-			// PlayerInfo.ItemStorage[].ItemCount += 10; SameMeaning
-			// FoundItem = PlayerInfo.ItemStorage[] ,  return Array's iterator
 			FoundItem->ItemCount += InItemName.ItemCount;
-			bIsItemChanged=true;
+			bIsItemChanged = true;
 		}
 		else
 		{
-			// no same item
-			// add total
-			PlayerStageInventory.Add(InItemName);
-			bIsItemChanged=true;
+			// 2. 빈 슬롯 찾기
+			FInventoryItemData* EmptySlot = PlayerStageInventory.FindByPredicate(
+				[](const FInventoryItemData& StorageItem)
+				{
+					return StorageItem.ItemName == NAME_None;
+				}
+			);
+
+			if (EmptySlot)
+			{
+				*EmptySlot = InItemName;
+				bIsItemChanged = true;
+			}
+			else
+			{
+				// 인벤토리 가득 참
+				return;
+			}
 		}
-		
-	if (bIsItemChanged) // if no add pass broadcast
-		OnPlayerStageInventoryChanged.Broadcast();
+
+		if (bIsItemChanged)
+		{
+			OnPlayerStageInventoryChanged.Broadcast();
+			ForceNetUpdate();
+		}
 	}
 }
 
