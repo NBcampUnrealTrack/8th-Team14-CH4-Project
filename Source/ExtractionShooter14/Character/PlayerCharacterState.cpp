@@ -3,6 +3,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "PlayerCharacter.h"
+#include "TestGameState.h"
 
 APlayerCharacterState::APlayerCharacterState()
 	:bIsReady(false)
@@ -17,6 +18,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
 	DOREPLIFETIME(ThisClass, PlayerCombatInfo);
+	DOREPLIFETIME(ThisClass, bIsParticipatedInThisRound);
 	DOREPLIFETIME(ThisClass, PlayerPlace);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerLobbyIndex, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerStageInventory, COND_OwnerOnly);
@@ -48,6 +50,19 @@ void APlayerCharacterState::SetLobbyIndex(int32 PlayerSlotIndex)
 const int32 APlayerCharacterState::GetLobbyIndex() const
 {
 	return PlayerLobbyIndex;
+}
+
+void APlayerCharacterState::SetIsParticipatedInThisRound(bool InIsParticipatedInThisRound)
+{
+	if (HasAuthority())
+	{
+		bIsParticipatedInThisRound = InIsParticipatedInThisRound;
+	}
+}
+
+bool APlayerCharacterState::GetIsParticipatedInThisRound() const
+{
+	return bIsParticipatedInThisRound;
 }
 
 void APlayerCharacterState::ClearPlayerStageInventory()
@@ -182,10 +197,8 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 void APlayerCharacterState::OnRep_PlayerCombatInfo(const FCollectCombatInfo& OldCombatInfo)
 {
 	//OnPlayerCombatInfoChanged.Broadcast();
-	if (OldCombatInfo.Rank == PlayerCombatInfo.Rank) return;
-	
-	
-	
+	//if (OldCombatInfo.Rank == PlayerCombatInfo.Rank) return;
+
 	OnPlayerCombatInfoChanged.Broadcast();
 	// 	OnPlayerRankChanged.Broadcast();
 }
@@ -290,7 +303,10 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageDealt(const float InGiveDm
 				
 		CalCulateCombatScore();
 		
-		//OnPlayerCombatInfoChanged.Broadcast();
+		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
+		// {
+		// 	GS->MarkRank();
+		// }
 	}
 }
 
@@ -302,7 +318,10 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageTaken(const float InReceiv
 				
 		CalCulateCombatScore();
 		
-		//OnPlayerCombatInfoChanged.Broadcast();
+		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
+		// {
+		// 	GS->MarkRank();
+		// }
 	}
 }
 
@@ -314,7 +333,10 @@ void APlayerCharacterState::AddPlayerCombatInfo_KillCount(const int32 InKillCoun
 				
 		CalCulateCombatScore();
 		
-		//OnPlayerCombatInfoChanged.Broadcast();
+		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
+		// {
+		// 	GS->MarkRank();
+		// }
 	}
 }
 
@@ -326,7 +348,10 @@ void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCoun
 		
 		CalCulateCombatScore();
 		
-		//OnPlayerCombatInfoChanged.Broadcast();
+		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
+		// {
+		// 	GS->MarkRank();
+		// }
 	}
 }
 
@@ -337,7 +362,14 @@ void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
 		if (PlayerCombatInfo.Rank == InRank) return;
 		
 		PlayerCombatInfo.Rank = InRank;
-		OnPlayerCombatInfoChanged.Broadcast();
+		
+		CalCulateCombatScore();
+		
+		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
+		// {
+		// 	GS->MarkRank();
+		// }
+		//OnPlayerCombatInfoChanged.Broadcast();
 		//OnPlayerRankChanged.Broadcast();
 	}
 }
@@ -345,6 +377,35 @@ void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
 const FCollectCombatInfo& APlayerCharacterState::GetPlayerCombatInfo() const
 {
 	return PlayerCombatInfo;
+}
+
+void APlayerCharacterState::UpdateSurviveTime()
+{
+	if (HasAuthority())
+	{
+		ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>();
+		if (!IsValid(GS)) return;
+
+		if (PlayerCombatInfo.StageStartServerTime <= 0.f) return;
+
+		PlayerCombatInfo.SurviveTime =
+			GS->GetServerWorldTimeSeconds() - PlayerCombatInfo.StageStartServerTime;
+
+		CalCulateCombatScore();
+	}
+}
+
+void APlayerCharacterState::StartSurviveTime()
+{
+	if (!HasAuthority()) return;
+
+	ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>();
+	if (!IsValid(GS)) return;
+
+	PlayerCombatInfo.StageStartServerTime = GS->GetServerWorldTimeSeconds();
+	PlayerCombatInfo.SurviveTime = 0.f;
+
+	CalCulateCombatScore();
 }
 
 void APlayerCharacterState::CalCulateCombatScore()

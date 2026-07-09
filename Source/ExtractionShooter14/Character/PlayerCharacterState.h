@@ -106,6 +106,9 @@ public:
 	
 	void SetLobbyIndex(int32 PlayerSlotIndex);
 	const int32 GetLobbyIndex() const;
+	
+	void SetIsParticipatedInThisRound(bool InIsParticipatedInThisRound);
+	bool GetIsParticipatedInThisRound() const;
 #pragma endregion 
 	
 #pragma region ItemFunction
@@ -116,6 +119,13 @@ public:
 	void AddItemInPlayerStageInventory(const FInventoryItemData& InItemName); //serveronly
 	// FInventoryItemData == <FName, int32>
 	
+#pragma endregion 
+	
+#pragma region CombatFunction
+	
+	void CalCulateCombatScore();
+	void InitializeCombatScore();
+
 	UFUNCTION()
 	void AddPlayerCombatInfo_DamageDealt(const float InGiveDmg);
 	UFUNCTION()
@@ -128,13 +138,8 @@ public:
 	void SetPlayerCombatInfo_Rank(const int32 InRank);
 	
 	const FCollectCombatInfo& GetPlayerCombatInfo() const;
-#pragma endregion 
-	
-#pragma region CombatFunction
-	void CalCulateCombatScore();
-	
-	void InitializeCombatScore();
-
+	void UpdateSurviveTime();
+	void StartSurviveTime();
 #pragma endregion 
 	
 #pragma region Properties
@@ -144,6 +149,9 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerCombatInfo)
 	FCollectCombatInfo PlayerCombatInfo;
+	
+	UPROPERTY(Replicated)
+	bool bIsParticipatedInThisRound = false;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerStageInventory)
 	TArray<FInventoryItemData> PlayerStageInventory;

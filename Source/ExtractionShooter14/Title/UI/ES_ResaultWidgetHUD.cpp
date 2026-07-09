@@ -86,7 +86,7 @@ void UES_ResaultWidgetHUD::AddRowInCollectSection()
 		// CollectSectionWidget->AddRowSetRowTitle(FText::FromString(TEXT("SurviveTime")), FText::AsNumber(PlayerCombatInfo.SurviveTime));
 		// CollectSectionWidget->AddRowSetRowTitle(FText::FromString(TEXT("Score")), FText::AsNumber(PlayerCombatInfo.Score));
 		{ FText::FromString(TEXT("LootCount")), FText::AsNumber(PlayerCombatInfo.LootCount) },
-		{ FText::FromString(TEXT("SurviveTime")), FText::AsNumber(PlayerCombatInfo.SurviveTime) },
+		{ FText::FromString(TEXT("SurviveTime")), FText::FromString(FString::Printf(TEXT("%.1f"),PlayerCombatInfo.SurviveTime)) },
 		{ FText::FromString(TEXT("Score")), FText::AsNumber(PlayerCombatInfo.Score) }
 	};	
 	

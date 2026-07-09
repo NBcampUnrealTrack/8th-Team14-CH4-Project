@@ -21,6 +21,9 @@ struct FCollectCombatInfo
 	float SurviveTime = 0.f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float StageStartServerTime = 0.f;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 LootCount = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

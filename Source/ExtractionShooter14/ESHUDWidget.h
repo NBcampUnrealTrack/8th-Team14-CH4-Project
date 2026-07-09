@@ -15,6 +15,8 @@ class EXTRACTIONSHOOTER14_API UESHUDWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	
+	void ApplyTextColorAnimationByTime(float InRemainTime);
 public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
 	void BP_UpdatePlayerHP(float CurrentHP, float MaxHP);

@@ -43,7 +43,7 @@ public:
 	void StartStage();
 	void MoveToStage();
 	void ForceReadyPlayers(bool bIsready);
-	void StartPhaseTimer(FPhaseTimerData Data);
+	void StartPhaseTimer();
 	
 	bool CheckAllPlayerStatePlace(EPlayerPlace InPlayerPlace);
 private:

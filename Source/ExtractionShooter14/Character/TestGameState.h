@@ -32,6 +32,9 @@ struct FPhaseTimerData
 
 	UPROPERTY()
 	float PhaseDuration = 0.f;
+	
+	UPROPERTY()
+	float PhaseEndServerTime = 0.f;
 };
 #pragma endregion 
 
@@ -57,7 +60,7 @@ public:
 	
 	UFUNCTION()
 	void OnRep_GameStatePhaseTimerData();
-	void SetGameStatePhaseTimerData(FPhaseTimerData InPhaseTimerData);
+	void SetGameStatePhaseTimerData(EGameState NewState, float Duration);
 	FPhaseTimerData GetGameStatePhaseTimerData() const;
 	
 	float GetRemainTime() const;
@@ -66,6 +69,16 @@ public:
 	public:
 	virtual void AddPlayerState(APlayerState* PlayerState) override;
 	virtual void RemovePlayerState(APlayerState* PlayerState) override;
+private:
+	// UPROPERTY()
+	// bool bMarkRank = false;
+	FTimerHandle RankUpdateTimerHandle;
+public:
+	//void MarkRank();
+	void StartRankUpdateTimer();
+	void StopRankUpdateTimer();
+
+	void UpdateRankIfDirty();
 	void CalculatePlayerRank();
 #pragma endregion 
 private:

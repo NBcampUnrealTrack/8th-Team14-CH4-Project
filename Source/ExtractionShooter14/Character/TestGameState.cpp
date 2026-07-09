@@ -47,14 +47,16 @@ void ATestGameState::OnRep_GameStatePhaseTimerData()
 	OnChangedGameStatePhaseTimerData.Broadcast();
 }
 
-void ATestGameState::SetGameStatePhaseTimerData(FPhaseTimerData InPhaseTimerData)
+void ATestGameState::SetGameStatePhaseTimerData(EGameState NewState, float Duration)
 {
 	if (HasAuthority())
 	{
-		GameStatePhaseTimerData.GameStateEnum = InPhaseTimerData.GameStateEnum;
-		GameStatePhaseTimerData.PhaseStartServerTime = InPhaseTimerData.PhaseStartServerTime;
-		GameStatePhaseTimerData.PhaseDuration = InPhaseTimerData.PhaseDuration;
-	
+		const float ServerNow = GetServerWorldTimeSeconds();
+		
+		GameStatePhaseTimerData.GameStateEnum = NewState;
+		GameStatePhaseTimerData.PhaseStartServerTime = ServerNow;
+		GameStatePhaseTimerData.PhaseDuration = Duration;
+		GameStatePhaseTimerData.PhaseEndServerTime = ServerNow + Duration;
 		OnRep_GameStatePhaseTimerData();
 	}
 }
@@ -66,13 +68,13 @@ FPhaseTimerData ATestGameState::GetGameStatePhaseTimerData() const
 
 float ATestGameState::GetRemainTime() const
 {
-	float CurrentServerTime = GetServerWorldTimeSeconds();
-	// total timeLength - (now total time(ing) - start total time(stop)) 
+	if (GameStatePhaseTimerData.PhaseEndServerTime <= 0.f) return 0.f;
+	
+	const float ServerNow = GetServerWorldTimeSeconds();
+	
 	return FMath::Max(
 		0.f,
-		GameStatePhaseTimerData.PhaseDuration -
-		(CurrentServerTime - GameStatePhaseTimerData.PhaseStartServerTime)
-		);
+		GameStatePhaseTimerData.PhaseEndServerTime - ServerNow);
 }
 
 void ATestGameState::AddPlayerState(APlayerState* PlayerState)
@@ -80,29 +82,71 @@ void ATestGameState::AddPlayerState(APlayerState* PlayerState)
 	Super::AddPlayerState(PlayerState);
 	if (HasAuthority())
 	{
-		APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(PlayerState);
-	
-		if (!IsValid(PlayerStateES)) return;
-		if (PlayerStateES->OnPlayerCombatInfoChanged.IsBoundToObject(this)) return;
-	
-		PlayerStateES->OnPlayerCombatInfoChanged.AddUObject(this, &ThisClass::CalculatePlayerRank);
-		CalculatePlayerRank();
+		// APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(PlayerState);
+		//
+		// if (!IsValid(PlayerStateES)) return;
+		// if (PlayerStateES->OnPlayerCombatInfoChanged.IsBoundToObject(this)) return;
+		//
+		// PlayerStateES->OnPlayerCombatInfoChanged.AddUObject(this, &ThisClass::CalculatePlayerRank);
+		// CalculatePlayerRank();
 	}
 }
 
 void ATestGameState::RemovePlayerState(APlayerState* PlayerState)
 {
-	if (HasAuthority())
-	{
-		APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(PlayerState);
-		if (!IsValid(PlayerStateES)) return;
-	
-		PlayerStateES->OnPlayerCombatInfoChanged.RemoveAll(this);
-	}
+	// if (HasAuthority())
+	// {
+	// 	APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(PlayerState);
+	// 	if (!IsValid(PlayerStateES)) return;
+	//
+	// 	PlayerStateES->OnPlayerCombatInfoChanged.RemoveAll(this);
+	// }
 	Super::RemovePlayerState(PlayerState);
 	
+	// if (HasAuthority())
+	// {
+	// 	CalculatePlayerRank();
+	// }
+}
+
+// void ATestGameState::MarkRank()
+// {
+// 	if (HasAuthority())
+// 	{
+// 		bMarkRank = true;
+// 	}
+// }
+
+void ATestGameState::StartRankUpdateTimer()
+{
 	if (HasAuthority())
 	{
+		GetWorldTimerManager().ClearTimer(RankUpdateTimerHandle);
+
+		GetWorldTimerManager().SetTimer(
+			RankUpdateTimerHandle,
+			this,
+			&ThisClass::UpdateRankIfDirty,
+			0.1f,
+			true
+		);
+	}
+}
+
+void ATestGameState::StopRankUpdateTimer()
+{
+	if (HasAuthority())
+	{
+		GetWorldTimerManager().ClearTimer(RankUpdateTimerHandle);
+		//bMarkRank = false;
+	}
+}
+
+void ATestGameState::UpdateRankIfDirty()
+{
+	if (HasAuthority())
+	{
+		//bMarkRank = false;
 		CalculatePlayerRank();
 	}
 }
@@ -117,11 +161,15 @@ void ATestGameState::CalculatePlayerRank()
 			
 			for (auto State : LobbyPlayerStates)
 			{
-				if (State->GetPlayerStagePlace() == EPlayerPlace::Stage)
+				if (State->GetIsParticipatedInThisRound())
 				{
-					if (!IsValid(State)) continue;
+					if (State->GetPlayerStagePlace() == EPlayerPlace::Stage)
+					{
+						State->UpdateSurviveTime();
+					}
+
 					CopyPlayerStates.Add(State);
-				}  
+				} 
 			}
 			
 			CopyPlayerStates.Sort(
@@ -153,8 +201,11 @@ void ATestGameState::CalculatePlayerRank()
 				CurrentPS->SetPlayerCombatInfo_Rank(CurrentRank);
 			}
 		}
+		OnChangedPlayerStates.Broadcast();
 	}
 }
+
+
 
 void ATestGameState::OnRep_PlayerInGameCount_GS()
 {

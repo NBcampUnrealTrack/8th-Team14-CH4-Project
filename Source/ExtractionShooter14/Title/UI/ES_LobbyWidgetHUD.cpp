@@ -164,9 +164,18 @@ void UES_LobbyWidgetHUD::CachedPlayerController(AMyPlayerController* InPlayerCon
 void UES_LobbyWidgetHUD::HandlePhaseTimerChanged()
 {
 	if (!IsValid(OwningGameState)) return;
-	
-	UpdateTimerText();
 
+	const FPhaseTimerData& TimerData =
+		OwningGameState->GetGameStatePhaseTimerData();
+	if (TimerData.GameStateEnum == EGameState::None ||
+		TimerData.PhaseDuration <= 0.f ||
+		TimerData.PhaseEndServerTime <= 0.f)
+	{
+		return;
+	}
+
+	UpdateTimerText();
+	GetWorld()->GetTimerManager().ClearTimer(PhaseTimerHandle);
 	GetWorld()->GetTimerManager().SetTimer(
 		PhaseTimerHandle,
 		this,
@@ -195,9 +204,18 @@ void UES_LobbyWidgetHUD::ApplyTextColorAnimation(float LeftTime)
 {
 	if (!IsValid(OwningGameState)) return;
 	
-	const EGameState GamePhase = OwningGameState->GetGameStatePhaseTimerData().GameStateEnum;
-	const float PassedTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds() - OwningGameState->GetGameStatePhaseTimerData().PhaseStartServerTime;
-	const float Ratio = PassedTime / OwningGameState->GetGameStatePhaseTimerData().PhaseDuration;
+	const FPhaseTimerData& TimerData =
+		OwningGameState->GetGameStatePhaseTimerData();
+
+	if (TimerData.PhaseDuration <= 0.f) return;
+
+	const EGameState GamePhase = TimerData.GameStateEnum;
+
+	const float PassedTime =
+		OwningGameState->GetServerWorldTimeSeconds()
+		- TimerData.PhaseStartServerTime;
+
+	const float Ratio = PassedTime / TimerData.PhaseDuration;
 	
 	if (GamePhase == EGameState::LobbyWaiting)
 	{

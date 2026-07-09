@@ -39,9 +39,9 @@ void ATestGameMode::PreLogin(const FString& Options, const FString& Address, con
 {
     Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
     
-    if (InGamePlayerCount >= MaxInGamePlayerCount)
+    if (LobbyPlayerStartPointMap.Num() >= MaxInGamePlayerCount)
     {
-        ErrorMessage = FString::Printf(TEXT("Max Player Joined in this Game. %d/%d"), InGamePlayerCount, MaxInGamePlayerCount);
+        ErrorMessage = FString::Printf(TEXT("Max Player Joined in this Game. %d/%d"),LobbyPlayerStartPointMap.Num(), MaxInGamePlayerCount);
         return;
     }
     
@@ -175,15 +175,15 @@ void ATestGameMode::Logout(AController* Exiting)
 //     return LobbyPlayerStartPoints[InGamePlayerCount++];
 // }
 
-int32 ATestGameMode::GetInGamePlayerCount() const
-{
-    return InGamePlayerCount;
-}
-
-void ATestGameMode::SetInGamePlayerCount(int32 InNewPlayerCount)
-{
-    InGamePlayerCount = InNewPlayerCount;
-}
+// int32 ATestGameMode::GetInGamePlayerCount() const
+// {
+//     return InGamePlayerCount;
+// }
+//
+// void ATestGameMode::SetInGamePlayerCount(int32 InNewPlayerCount)
+// {
+//     InGamePlayerCount = InNewPlayerCount;
+// }
 
 int32 ATestGameMode::GetMaxInGamePlayerCount() const
 {
@@ -201,17 +201,19 @@ void ATestGameMode::HandleAllPlayerisReady()
     if (!IsValid(GS)) return;
     int32 PlayerCount = GS->GetLobbyPlayerStates().Num();
     
-    if (GS->GetGameStatePhaseTimerData().GameStateEnum == EGameState::LobbyWaiting)
+    const FPhaseTimerData& Data = GS->GetGameStatePhaseTimerData();
+    
+    if (Data.GameStateEnum == EGameState::LobbyWaiting)
     {
         // if (PlayerCount >= MaxInGamePlayerCount)
         // {
             if (IsAllPlayersReady())
             {
-                FPhaseTimerData PhaseTimerData;
-                PhaseTimerData.GameStateEnum = EGameState::LobbyWaiting;
-                PhaseTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
-                PhaseTimerData.PhaseDuration = 0.f; // 5.f
-                GS->SetGameStatePhaseTimerData(PhaseTimerData); // > SetGamestatePhaaseTimerData ?
+                // FPhaseTimerData PhaseTimerData;
+                // PhaseTimerData.GameStateEnum = EGameState::LobbyWaiting;
+                // PhaseTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
+                // PhaseTimerData.PhaseDuration = 0.f; // 5.f
+                GS->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, 0.f); // > SetGamestatePhaaseTimerData ?
             
                 // 5초뒤 move
             
@@ -219,10 +221,10 @@ void ATestGameMode::HandleAllPlayerisReady()
         //}
     }
     
-    if (GS->GetGameStatePhaseTimerData().GameStateEnum == EGameState::Playing)
+    if (Data.GameStateEnum == EGameState::Playing)
     {
-        float PassedTime = GS->GetServerWorldTimeSeconds() - GS->GetGameStatePhaseTimerData().PhaseStartServerTime;
-        float Ratio = PassedTime / GS->GetGameStatePhaseTimerData().PhaseDuration;
+        float PassedTime = GS->GetServerWorldTimeSeconds() - Data.PhaseStartServerTime;
+        float Ratio = PassedTime / Data.PhaseDuration;
         // 난입허가 Playing시작후 0.3비율까지 ex 100sec in 33sec can join
         if (Ratio < 0.2f)
         { // inplaying free to restart in 0.2f
@@ -274,12 +276,13 @@ void ATestGameMode::StartLobby()
         return;
     }
     
-    FPhaseTimerData SetLobbyTimerData;
-    SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
-    SetLobbyTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
-    SetLobbyTimerData.PhaseDuration = LobbyDuration;
-    
-    StartPhaseTimer(SetLobbyTimerData);
+    // FPhaseTimerData SetLobbyTimerData;
+    // SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
+    // SetLobbyTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
+    // SetLobbyTimerData.PhaseDuration = LobbyDuration;
+    GS->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
+    StartPhaseTimer();
+    GS->StopRankUpdateTimer();
 }
 
 void ATestGameMode::StartStage()
@@ -287,12 +290,18 @@ void ATestGameMode::StartStage()
     ATestGameState* GS = GetGameState<ATestGameState>();
     if (!IsValid(GS)) return;
 
-    FPhaseTimerData SetStageTimerData;
-    SetStageTimerData.GameStateEnum = EGameState::Playing;
-    SetStageTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
-    SetStageTimerData.PhaseDuration = PlayDuration;
+    // FPhaseTimerData SetStageTimerData;
+    // SetStageTimerData.GameStateEnum = EGameState::Playing;
+    // SetStageTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
+    // SetStageTimerData.PhaseDuration = PlayDuration;
+    //GS->CalculatePlayerRank();
+    GS->SetGameStatePhaseTimerData(EGameState::Playing, PlayDuration);
+    
+    //GS->MarkRank();
     GS->CalculatePlayerRank();
-    StartPhaseTimer(SetStageTimerData);
+    
+    StartPhaseTimer();
+    GS->StartRankUpdateTimer();
 }
 
 void ATestGameMode::MoveToStage()
@@ -328,13 +337,15 @@ void ATestGameMode::MoveToStage()
                     *PlayerControllerES->GetStateName().ToString());
                     
                     PlayerCharacterStateES->InitializeCombatScore();
+                    PlayerCharacterStateES->SetIsParticipatedInThisRound(true);
                     PlayerCharacterStateES->SetPlayerStagePlace(EPlayerPlace::Stage);
+                    PlayerCharacterStateES->StartSurviveTime();
                     PlayerPawn->TeleportTo
                     (
                         StageSpawnLocationPoints[StartIndex]->GetActorLocation(),
                         StageSpawnLocationPoints[StartIndex]->GetActorRotation()
                         );
-                    GameStateES->CalculatePlayerRank();
+                    //GameStateES->CalculatePlayerRank(); //rank
                     FRotator PlayerRotation = StageSpawnLocationPoints[StartIndex]->GetActorRotation();
                     PlayerRotation.Pitch = 0.0f;
                     PlayerRotation.Roll = 0.0f;
@@ -363,12 +374,8 @@ void ATestGameMode::ForceReadyPlayers(bool bIsready)
     }
 }
 
-void ATestGameMode::StartPhaseTimer(FPhaseTimerData Data)
+void ATestGameMode::StartPhaseTimer()
 {
-    ATestGameState* GS = GetGameState<ATestGameState>();
-    if (!GS) return;
-
-    GS->SetGameStatePhaseTimerData(Data);
 
     GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
 
@@ -376,7 +383,7 @@ void ATestGameMode::StartPhaseTimer(FPhaseTimerData Data)
         CheckRemainLobbyTimeHandle,
         this,
         &ThisClass::CheckRemainTime,
-        1.0f,
+        0.5f,
         true
     );
 }
@@ -428,7 +435,7 @@ void ATestGameMode::CheckRemainTime()
             MoveToStage();
             //GS->CalculatePlayerRank();
             
-            if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
+            if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby)) // all player non ready
             {
                 StartLobby();
             }
@@ -519,12 +526,13 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     
     if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
     {
-        FPhaseTimerData SetLobbyTimerData;
-        SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
-        SetLobbyTimerData.PhaseStartServerTime = GameStateES->GetServerWorldTimeSeconds();
-        SetLobbyTimerData.PhaseDuration = LobbyDuration;
-        StartPhaseTimer(SetLobbyTimerData);
-        //StartLobby();
+        // FPhaseTimerData SetLobbyTimerData;
+        // SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
+        // SetLobbyTimerData.PhaseStartServerTime = GameStateES->GetServerWorldTimeSeconds();
+        // SetLobbyTimerData.PhaseDuration = LobbyDuration;
+        GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
+        // StartPhaseTimer();
+        StartLobby();
     }
 }
 
@@ -550,12 +558,13 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     //TargetController->Client_OpenResultUI();
     if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
     {
-        FPhaseTimerData SetLobbyTimerData;
-        SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
-        SetLobbyTimerData.PhaseStartServerTime = GameStateES->GetServerWorldTimeSeconds();
-        SetLobbyTimerData.PhaseDuration = LobbyDuration;
-        StartPhaseTimer(SetLobbyTimerData);
-        //StartLobby();
+        // FPhaseTimerData SetLobbyTimerData;
+        // SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
+        // SetLobbyTimerData.PhaseStartServerTime = GameStateES->GetServerWorldTimeSeconds();
+        // SetLobbyTimerData.PhaseDuration = LobbyDuration;
+        GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
+        // StartPhaseTimer();
+        StartLobby();
     }
 }
 
@@ -570,7 +579,7 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     APawn* OldPawn = TargetController->GetPawn();
     if (!IsValid(OldPawn)) return;
     OldPawn->Destroy();
-
+    
     InitializePlayerStats(PlayerStateES);
     TargetController->StopPlayerMovement();
 
@@ -581,12 +590,13 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     TargetController->Client_OpenResultUI();
     if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
     {
-        FPhaseTimerData SetLobbyTimerData;
-        SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
-        SetLobbyTimerData.PhaseStartServerTime = GameStateES->GetServerWorldTimeSeconds();
-        SetLobbyTimerData.PhaseDuration = LobbyDuration;
-        StartPhaseTimer(SetLobbyTimerData);
-        //StartLobby();
+        // FPhaseTimerData SetLobbyTimerData;
+        // SetLobbyTimerData.GameStateEnum = EGameState::LobbyWaiting;
+        // SetLobbyTimerData.PhaseStartServerTime = GameStateES->GetServerWorldTimeSeconds();
+        // SetLobbyTimerData.PhaseDuration = LobbyDuration;
+        GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
+        // StartPhaseTimer();
+        StartLobby();
     }
 }
 

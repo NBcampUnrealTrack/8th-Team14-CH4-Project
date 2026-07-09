@@ -69,6 +69,8 @@ void UESHUDWidget::UpdateStageTimerText()
 	int32 Seconds =	TotalSeconds % 60; // 100seconds % 60 = 40
 
 	StageTime->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"),Minutes,Seconds)));
+	
+	ApplyTextColorAnimationByTime(RemainTime);
 }
 
 void UESHUDWidget::SetOwningGameState(ATestGameState* InGameState)
@@ -80,3 +82,38 @@ void UESHUDWidget::SetOwningPlayerState(APlayerCharacterState* InPlayerCharacter
 {
 	OwningPlayerState = InPlayerCharacterState;
 }
+
+void UESHUDWidget::ApplyTextColorAnimationByTime(float InRemainTime)
+{
+	if (!IsValid(OwningGameState)) return;
+	
+	const FPhaseTimerData& TimerData =
+		OwningGameState->GetGameStatePhaseTimerData();
+
+	if (TimerData.PhaseDuration <= 0.f) return;
+
+	const EGameState GamePhase = TimerData.GameStateEnum;
+
+	const float PassedTime =
+		OwningGameState->GetServerWorldTimeSeconds()
+		- TimerData.PhaseStartServerTime;
+
+	const float Ratio = PassedTime / TimerData.PhaseDuration;
+	
+	if (GamePhase == EGameState::LobbyWaiting)
+	{
+
+	}
+	else if (GamePhase == EGameState::Playing)
+	{
+		if (Ratio < 0.2f)
+		{
+			StageTime->SetColorAndOpacity(FColor::Green);
+		}
+		else if (Ratio >= 0.2f)
+		{
+			StageTime->SetColorAndOpacity(FColor::White);
+		}
+	}
+}
+
