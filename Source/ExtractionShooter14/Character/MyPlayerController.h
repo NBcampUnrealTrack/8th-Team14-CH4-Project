@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"
 
+struct FInventoryItemData;
 class UES_ResaultWidgetHUD;
 class UES_LobbyWidgetHUD;
 class UInputMappingContext;
@@ -92,5 +93,9 @@ public:
 	UFUNCTION(Exec)
 	void SetCheatStageCoin(int32 InCheatCoin);
 	
+	UFUNCTION(Exec)
+	void SetCheatItem(FName ItemName, int32 ItemCount);
+	UFUNCTION(Exec)
+	void SetCheatStageItem(FName ItemName, int32 ItemCount);
 #pragma endregion 
 };
