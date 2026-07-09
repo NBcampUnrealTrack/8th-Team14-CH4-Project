@@ -295,6 +295,11 @@ void APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemDa
 	}
 }
 
+const TArray<FInventoryItemData>& APlayerCharacterState::GetPlayerStageInventory() const
+{
+	return PlayerStageInventory;
+}
+
 void APlayerCharacterState::AddPlayerCombatInfo_DamageDealt(const float InGiveDmg)
 {
 	if (HasAuthority())

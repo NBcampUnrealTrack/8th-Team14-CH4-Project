@@ -119,6 +119,8 @@ public:
 	void AddItemInPlayerStageInventory(const FInventoryItemData& InItemName); //serveronly
 	// FInventoryItemData == <FName, int32>
 	
+	UFUNCTION(BlueprintCallable)
+	const TArray<FInventoryItemData>& GetPlayerStageInventory() const;
 #pragma endregion 
 	
 #pragma region CombatFunction
