@@ -234,9 +234,16 @@ void UES_LobbyWidgetHUD::ApplyTextColorAnimation(float LeftTime)
 		{
 			LobbyTimerText->SetColorAndOpacity(FColor::Green);
 		}
-		else if (Ratio >= 0.2f)
+		else
 		{
-			LobbyTimerText->SetColorAndOpacity(FColor::White);
+			if (LeftTime > 5.f)
+			{
+				LobbyTimerText->SetColorAndOpacity(FColor::White);
+			}
+			else if (LeftTime <= 5.f)
+			{
+				LobbyTimerText->SetColorAndOpacity(FColor::Red);
+			}
 		}
 	}
 }

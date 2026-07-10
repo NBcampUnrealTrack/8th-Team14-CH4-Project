@@ -85,8 +85,7 @@ void UES_TitleWidgetHUD::OnFadeInAnimation_Back_Finished()
 void UES_TitleWidgetHUD::CreateLetterWidget()
 {
 	if (TimerCount < TitleName.Len())
-	{
-		if (!IsValid(LetterWidget)) return;
+	{  
 		UUserWidget* LetterWidgetInstance = CreateWidget<UUserWidget>(GetOwningPlayer(), LetterWidget);
 		if (!IsValid(LetterWidgetInstance)) return;
 		
@@ -95,7 +94,7 @@ void UES_TitleWidgetHUD::CreateLetterWidget()
 		
 		Text->SetText(FText::FromString(FString::Chr(TitleName[TimerCount])));
 		UHorizontalBoxSlot* HorizontalSlot = TitleHorizontal->AddChildToHorizontalBox(LetterWidgetInstance);
-		LetterWidgetInstance->SetRenderTranslation(FVector2D(-15.f * TimerCount, 0.f));
+		LetterWidgetInstance->SetRenderTranslation(FVector2D(-5.f * TimerCount, 0.f));
 		TimerCount++;
 	}
 	else
