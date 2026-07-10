@@ -40,7 +40,7 @@ public:
 #pragma region Cheat
        	UFUNCTION(Server, Reliable)
        	void Server_SetGold(int32 SetGold);
-		UFUNCTION(Server, Reliable)
+		UFUNCTION(Server, Reliable,BlueprintCallable)
        	void Server_SetStageGold(int32 SetGold);
 		UFUNCTION(Server, Reliable)
 		void Server_SetStageItem(const FInventoryItemData InItemName);
@@ -140,6 +140,9 @@ public:
 	void AddPlayerCombatInfo_LootCount(const int32 InLootCount);
 	UFUNCTION()
 	void SetPlayerCombatInfo_Rank(const int32 InRank);
+
+	UFUNCTION(BlueprintCallable, Category = "Player|StageGold")
+	int32 GetPlayerStageGold() const { return PlayerStageGold; }
 	
 	const FCollectCombatInfo& GetPlayerCombatInfo() const;
 	void UpdateSurviveTime();
@@ -161,7 +164,7 @@ protected:
 	TArray<FInventoryItemData> PlayerStageInventory;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerStageGold)
-	int32 PlayerStageGold;
+	int32 PlayerStageGold = 0;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerLobbyIndex)
 	int32 PlayerLobbyIndex = INDEX_NONE;

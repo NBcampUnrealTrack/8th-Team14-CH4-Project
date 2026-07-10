@@ -216,6 +216,8 @@ void APlayerCharacterState::OnRep_PlayerStageInventory()
 
 void APlayerCharacterState::OnRep_PlayerStageGold(int32 OldGold)
 {
+	UE_LOG(LogTemp, Warning, TEXT("CLIENT OnRep_PlayerStageGold Old=%d New=%d"), OldGold, PlayerStageGold);
+
 	OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
 }
 
@@ -258,14 +260,17 @@ void APlayerCharacterState::SetPlayerReady(bool SetReady)
 
 void APlayerCharacterState::AddPlayerStageGold(int32 AddGoldValue)
 {
-	if (HasAuthority())
+	if (!HasAuthority())
 	{
-		const int32 OldGold = PlayerStageGold;
-
-		PlayerStageGold += AddGoldValue;
-
-		OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
+		return;
 	}
+
+	const int32 OldGold = PlayerStageGold;
+
+	PlayerStageGold += AddGoldValue;
+
+	OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
+	ForceNetUpdate();
 }
 
 void APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemData& InItemName)
@@ -483,9 +488,17 @@ void APlayerCharacterState::Server_SetGold_Implementation(int32 SetGold)
 	PlayerInfo.GoldStorage = SetGold;
 }
 
+//서버 즉시갱신 이벤트 - 성윤
 void APlayerCharacterState::Server_SetStageGold_Implementation(int32 SetGold)
 {
-	PlayerStageGold = SetGold;
+	const int32 OldGold = PlayerStageGold;
+
+	PlayerStageGold += SetGold;
+
+	UE_LOG(LogTemp, Warning, TEXT("SERVER StageGold Old=%d New=%d"), OldGold, PlayerStageGold);
+
+	OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
+	ForceNetUpdate();
 }
 
 #pragma endregion 

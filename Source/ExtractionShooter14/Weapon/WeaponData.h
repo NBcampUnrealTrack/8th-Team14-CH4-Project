@@ -19,11 +19,11 @@ struct FWeaponData : public FTableRowBase
 
 public:
 
-	// ¹«±â Á¾·ù
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EWeaponType WeaponType = EWeaponType::Rifle;
 
-	// ÃÑ±â ¸Þ½¬
+	// ï¿½Ñ±ï¿½ ï¿½Þ½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USkeletalMesh* WeaponMesh = nullptr;
 
@@ -36,11 +36,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attach")
 	FVector AttachScale = FVector(1.0f, 1.0f, 1.0f);
 
-	// ¹ß»ç ¹æ½Ä
+	// ï¿½ß»ï¿½ ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EFireMode FireMode = EFireMode::Auto;
 
-	// µ¥¹ÌÁö
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Damage = 10.f;
 
@@ -48,35 +48,35 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MagazineSize = 30;
 
-	// ÃÖ´ë Åº¾à
+	// ï¿½Ö´ï¿½ Åºï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaxAmmo = 120;
 
-	// ¿¬»ç ¼Óµµ(ÃÊ)
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Óµï¿½(ï¿½ï¿½)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FireRate = 0.1f;
 
-	// ÀçÀåÀü ½Ã°£
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ReloadTime = 2.f;
 
-	// »ç°Å¸®
+	// ï¿½ï¿½Å¸ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Range = 10000.f;
 
-	// ÅºÆÛÁü
+	// Åºï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Spread = 0.f;
 
-	// ¼öÁ÷ ¹Ýµ¿
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ýµï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float VerticalRecoil = 1.f;
 
-	// ¼öÆò ¹Ýµ¿
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ýµï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float HorizontalRecoil = 0.5f;
 
-	// ÃÑ±¸ ¼ÒÄÏ
+	// ï¿½Ñ±ï¿½ ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName MuzzleSocketName = TEXT("Muzzle");
 

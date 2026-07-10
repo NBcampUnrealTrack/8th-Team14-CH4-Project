@@ -12,35 +12,35 @@ struct FItemData : public FTableRowBase
 
 public:
 
-	// ¾ÆÀÌÅÛ ÀÌ¸§
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Name;
 
-	// ¼³¸í
+	// ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Description;
 
-	// ¾ÆÀÌÅÛ Á¾·ù
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EItemType ItemType = EItemType::Etc;
 
-	// ¿ùµå¿¡ º¸ÀÏ ¸Þ½¬
+	// ï¿½ï¿½ï¿½å¿¡ ï¿½ï¿½ï¿½ï¿½ ï¿½Þ½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMesh* Mesh = nullptr;
 
-	// ÀÎº¥Åä¸® ¾ÆÀÌÄÜ
+	// ï¿½Îºï¿½ï¿½ä¸® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Icon = nullptr;
 
-	// ÃÖ´ë ½ºÅÃ
+	// ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaxStack = 1;
 
-	// ÃÑ±â µ¥ÀÌÅÍ Row (¹«±â°¡ ¾Æ´Ò °æ¿ì None)
+	// ï¿½Ñ±ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Row (ï¿½ï¿½ï¿½â°¡ ï¿½Æ´ï¿½ ï¿½ï¿½ï¿½ None)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName WeaponRowName;
 
-	// »óÁ¡ ÆÇ¸Å °¡°Ý ¿¬°á(ÇÊ¿ä ¾øÀ¸¸é »èÁ¦)
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ç¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½Ê¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Price = 0;
 };

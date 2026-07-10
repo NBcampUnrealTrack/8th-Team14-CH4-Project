@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	// ╬фюлеш ╦ч╫╛
+	// О©╫О©╫О©╫О©╫О©╫О©╫ О©╫ч╫О©╫
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MeshComponent;
 
