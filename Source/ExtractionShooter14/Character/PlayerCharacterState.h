@@ -77,7 +77,7 @@ public:
 	UFUNCTION()
 	void OnRep_PlayerInfo();
 	UFUNCTION()
-	void OnRep_PlayerCombatInfo(const FCollectCombatInfo& OldCombatInfo);
+	void OnRep_PlayerCommitCombatInfo(const FCollectCombatInfo& OldCombatInfo);
 	UFUNCTION()
 	void OnRep_PlayerStageInventory();
 	UFUNCTION()
@@ -156,8 +156,10 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInfo)
 	FPlayerDatas PlayerInfo;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_PlayerCombatInfo)
+	UPROPERTY()
 	FCollectCombatInfo PlayerCombatInfo;
+	UPROPERTY(ReplicatedUsing=OnRep_PlayerCommitCombatInfo)
+	FCollectCombatInfo PlayerCommitCombatInfo;
 	
 	UPROPERTY(Replicated)
 	bool bIsParticipatedInThisRound = false;

@@ -56,6 +56,8 @@ public:
 	UPROPERTY()
 	FCollectCombatInfo PlayerCombatInfo;
 	
+	FDelegateHandle PlayerCommitInfoDelegateHandle;
+	
 	FTimerHandle ReturnToLobbyTimerHandle;
 	int32 ReturnToLobbyTime = 4;
 	

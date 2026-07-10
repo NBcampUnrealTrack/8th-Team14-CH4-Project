@@ -2,6 +2,7 @@
 
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Character/MyPlayerController.h"
+#include "Character/PlayerCharacterState.h"
 #include "Components/TextBlock.h"
 #include "Pannel/ES_EndWidgetSection.h"
 
@@ -9,16 +10,19 @@ void UES_ResaultWidgetHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
+	// if (!PlayerCommitInfoDelegateHandle.IsValid())
+	// {
+	// 	APlayerCharacterState* PlayerStateES = GetOwningPlayer()->GetPlayerState<APlayerCharacterState>();
+	// 	if (!IsValid(PlayerStateES)) return;
+	// 	PlayerStateES->OnPlayerCombatInfoChanged.AddUObject(this, &ThisClass::)
+	// }
 	CombatSectionWidget->SetSectionTitle(FText::FromString(TEXT("Combat")));
 	CollectSectionWidget->SetSectionTitle(FText::FromString(TEXT("Collection")));
-	
 	RankTextBlock->SetText(FText::FromString(FString::Printf(TEXT("# %d"),PlayerCombatInfo.Rank)));
 	
 	PlayAnimation(FadeInAnimation_Com);
-	
 	FWidgetAnimationDynamicEvent Event;
 	Event.BindDynamic(this, &ThisClass::OnFadeInAnimation_Com_Finished);
-
 	BindToAnimationFinished(FadeInAnimation_Com, Event);
 }
 

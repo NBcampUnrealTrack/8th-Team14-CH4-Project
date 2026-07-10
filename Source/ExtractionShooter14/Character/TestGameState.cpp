@@ -182,7 +182,7 @@ void ATestGameState::CalculatePlayerRank()
 			
 			int32 CurrentRank = 1;
 		
-			for (int32 i = 0; i < CopyPlayerStates.Num(); ++i)
+			for (int32 i = 0; i < CopyPlayerStates.Num(); ++i) // same score = 1, 1rank 
 			{
 				APlayerCharacterState* CurrentPS = CopyPlayerStates[i];
 				if (!IsValid(CurrentPS)) continue;
@@ -199,7 +199,9 @@ void ATestGameState::CalculatePlayerRank()
 				}
 		
 				CurrentPS->SetPlayerCombatInfo_Rank(CurrentRank);
+				
 			}
+			
 		}
 		OnChangedPlayerStates.Broadcast();
 	}

@@ -83,12 +83,21 @@ float AZombieCharacter::TakeDamage(
 				CurrentHP,
 				MaxHP));
 	}
-
+	
+	APlayerCharacterState* PlayerES = EventInstigator->GetPlayerState<APlayerCharacterState>();
+	if (IsValid(PlayerES))
+	{
+		PlayerES->AddPlayerCombatInfo_DamageDealt(ActualDamage);
+	}
 	if (CurrentHP <= 0.f)
 	{
+		if (IsValid(PlayerES))
+		{
+			PlayerES->AddPlayerCombatInfo_KillCount(1);
+		}
 		Die();
 	}
-
+	
 	return ActualDamage;
 }
 
