@@ -85,7 +85,7 @@ void APlayerCharacterState::ClearPlayerStageInventory()
 {
 	if (HasAuthority())
 	{
-		PlayerStageInventory.Reset();
+		//PlayerStageInventory.Reset();
 		PlayerStageGold = 0;
 	}
 }
@@ -197,16 +197,22 @@ void APlayerCharacterState::InitiateStats()
 void APlayerCharacterState::OnRep_PlayerInfo()
 {
 	//todo:: ui, inventory update
-	UKismetSystemLibrary::PrintString
-	(
-		GetWorld(),
-		FString::Printf(TEXT("Loaded PlayerData::Coin = %d"), PlayerInfo.GoldStorage),
-		true,
-		true,
-		FColor::Red,
-		5.f
-		);
-	
+	UE_LOG(
+		LogTemp,
+		Warning,
+		TEXT("[OnRep_PlayerInfo] This=%s Gold=%d LocalRole=%s"),
+		*GetNameSafe(this),
+		PlayerInfo.GoldStorage,
+		*UEnum::GetValueAsString(GetLocalRole())
+	);
+	UE_LOG(
+	LogTemp,
+	Warning,
+	TEXT("[OnRep_PlayerInfo] This=%s Gold=%d IsBound=%d"),
+	*GetNameSafe(this),
+	PlayerInfo.GoldStorage,
+	OnPlayerInfoChanged.IsBound()
+);
 	OnPlayerInfoChanged.Broadcast();
 }
 

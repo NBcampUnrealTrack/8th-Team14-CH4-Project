@@ -10,7 +10,13 @@
 void UES_LobbyWidgetHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
+	UE_LOG(
+	 LogTemp,
+	 Warning,
+	 TEXT("[Widget Construct] Widget=%s OwningPS=%s"),
+	 *GetNameSafe(this),
+	 *GetNameSafe(OwningPlayerState)
+ );
 	SetIsFocusable(true);
 	
 	ATestGameState* GameStateES = Cast<ATestGameState>(UGameplayStatics::GetGameState(GetWorld()));
@@ -31,6 +37,14 @@ void UES_LobbyWidgetHUD::NativeConstruct()
 	if (!PlayerinfoChangedHandle.IsValid())
 	{
 		PlayerinfoChangedHandle = OwningPlayerState->OnPlayerInfoChanged.AddUObject(this, &ThisClass::RefreshPlayerInfo);
+		UE_LOG(
+	LogTemp,
+	Warning,
+	TEXT("[Delegate Bound] Widget=%s PlayerState=%s HandleValid=%d"),
+	*GetNameSafe(this),
+	*GetNameSafe(OwningPlayerState),
+	PlayerinfoChangedHandle.IsValid()
+);
 		RefreshPlayerInfo();
 	}
 	//AddUserIcon();
@@ -124,15 +138,34 @@ void UES_LobbyWidgetHUD::SetLobbyCountPlayer(const int32 InNewPlayer)
 
 void UES_LobbyWidgetHUD::RefreshPlayerInfo()
 {
+	UE_LOG(
+	LogTemp,
+	Warning,
+	TEXT("[RefreshPlayerInfo] Widget=%s PS=%s Gold=%d InViewport=%d"),
+	*GetNameSafe(this),
+	*GetNameSafe(OwningPlayerState),
+	IsValid(OwningPlayerState)
+		? OwningPlayerState->GetPlayerInfo().GoldStorage
+		: -1,
+	IsInViewport()
+);
+	
 	if (!IsValid(OwningPlayerState)) return;
 	if (!IsValid(LobbyTotalGold)) return;
 	
-	UTextBlock* GoldText = Cast<UTextBlock>(
-		LobbyTotalGold->GetWidgetFromName(TEXT("TXT_Gold_Text"))
-	);
-	const FPlayerDatas& NewPlayerData = OwningPlayerState->GetPlayerInfo();
-	GoldText->SetText(FText::AsNumber(NewPlayerData.GoldStorage));
+	// UTextBlock* GoldText = Cast<UTextBlock>(
+	// 	LobbyTotalGold->GetWidgetFromName(TEXT("TXT_Gold_Text"))
+	// );
+	UE_LOG(
+	LogTemp,
+	Error,
+	TEXT("[RefreshPlayerInfo] GoldText Invalid Widget=%s"),
+	*GetNameSafe(this)
+);
 	
+	const FPlayerDatas& NewPlayerData = OwningPlayerState->GetPlayerInfo();
+	
+	LobbyTotalGold->SetText(FText::AsNumber(NewPlayerData.GoldStorage));
 	PlayerNickName->SetText(FText::FromString(NewPlayerData.PlayerNickName));
 }
 

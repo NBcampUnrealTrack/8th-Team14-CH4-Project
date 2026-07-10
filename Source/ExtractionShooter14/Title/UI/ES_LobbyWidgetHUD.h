@@ -50,7 +50,7 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UHorizontalBox> PlayerIconHorizontal;
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UUserWidget> LobbyTotalGold;
+	TObjectPtr<UTextBlock> LobbyTotalGold;
 	
 	
 	
