@@ -360,7 +360,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageDealt(const float InGiveDm
 		// 	GS->MarkRank();
 		// }
 	}
-}w
+}
 
 void APlayerCharacterState::AddPlayerCombatInfo_DamageTaken(const float InReceiveDmg)
 {
