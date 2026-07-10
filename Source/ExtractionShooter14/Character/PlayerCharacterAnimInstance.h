@@ -65,4 +65,7 @@ protected:
 
     UPROPERTY(BlueprintReadOnly, Category = "Movement")
     FVector LocomotionDirection = FVector::ForwardVector;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Aim")
+    float AimPitch = 0.0f;
 };

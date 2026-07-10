@@ -56,6 +56,11 @@ APlayerCharacter::APlayerCharacter()
     }
 
     bIsSprinting = false;
+
+    bUseControllerRotationYaw = true;
+
+    GetCharacterMovement()->bOrientRotationToMovement = false;
+    GetCharacterMovement()->bUseControllerDesiredRotation = false;
 }
 
 void APlayerCharacter::BeginPlay()
@@ -205,6 +210,8 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
         
         AddControllerPitchInput(LookAxisVector.Y);
     }
+
+    UpdateAimPitch();
 }
 
 void APlayerCharacter::StartSprint(const FInputActionValue& Value)
@@ -712,5 +719,17 @@ void APlayerCharacter::ServerStopFire_Implementation()
     if (CurrentWeapon)
     {
         CurrentWeapon->StopFire();
+    }
+}
+
+void APlayerCharacter::UpdateAimPitch()
+{
+    if (!Controller) return;
+
+    AimPitch = Controller->GetControlRotation().Pitch;
+
+    if (AimPitch > 180.0f)
+    {
+        AimPitch -= 360.0f;
     }
 }

@@ -97,6 +97,11 @@ public:
 		AActor* DamageCauser
 	) override;
 	bool GetbIsDead() const;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Aim")
+	float AimPitch = 0.0f;
+
+	void UpdateAimPitch();
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))

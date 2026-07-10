@@ -23,6 +23,8 @@ void UPlayerCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
     if (Character == nullptr) return;
 
+    AimPitch = Character->AimPitch;
+
     FVector Velocity = Character->GetVelocity();
     Velocity.Z = 0.f;
 
