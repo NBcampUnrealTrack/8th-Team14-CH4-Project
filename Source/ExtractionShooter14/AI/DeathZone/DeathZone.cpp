@@ -4,6 +4,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Characters/Zombie/ZombieCharacter.h"
 #include "Character/PlayerCharacter.h"
+#include "Character/PlayerCharacterState.h"
+#include "Engine/DamageEvents.h"
 
 ADeathZone::ADeathZone()
 {
@@ -46,9 +48,9 @@ void ADeathZone::OnOverlapBegin(
 		return;
 	}
 
-	// 좀비인 경우 TakeDamage로 즉사
+	// 좀비인 경우 즉사
 	AZombieCharacter* Zombie = Cast<AZombieCharacter>(OtherActor);
-	if (Zombie)
+	if (Zombie && !Zombie->IsDead())
 	{
 		UGameplayStatics::ApplyDamage(
 			Zombie,
@@ -59,11 +61,32 @@ void ADeathZone::OnOverlapBegin(
 		return;
 	}
 
-	// 플레이어인 경우 Die() 직접 호출
+	// 플레이어인 경우 PS->TakenDamage로 처리 (위젯 흐름 유지)
 	APlayerCharacter* Player = Cast<APlayerCharacter>(OtherActor);
-	if (Player)
+	if (!Player)
 	{
-		Player->Die();
+		return;
 	}
+
+	APlayerCharacterState* PS = Player->GetPlayerState<APlayerCharacterState>();
+	AController* PlayerController = Player->GetController();
+
+	if (!IsValid(PS) || !IsValid(PlayerController))
+	{
+		return;
+	}
+
+	// 이미 죽어있으면 처리 안함
+	if (PS->GetbIsDead())
+	{
+		return;
+	}
+
+	FDamageEvent DamageEvent;
+	PS->TakenDamage(
+		99999.f,
+		DamageEvent,
+		PlayerController,
+		this);
 }
 

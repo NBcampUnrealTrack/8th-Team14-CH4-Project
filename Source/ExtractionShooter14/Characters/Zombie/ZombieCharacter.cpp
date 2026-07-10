@@ -1,21 +1,17 @@
 #include "ZombieCharacter.h"
-
 #include "AI/Controllers/ZombieAIController.h"
-
 #include "AIController.h"
-#include "Character/PlayerCharacterState.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Character/PlayerCharacterState.h"
+#include "GameFramework/PlayerController.h"
 
 AZombieCharacter::AZombieCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
 	AIControllerClass = AZombieAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
-	// Replication
 	bReplicates = true;
 	SetReplicateMovement(true);
 }
@@ -23,9 +19,7 @@ AZombieCharacter::AZombieCharacter()
 void AZombieCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
 	CurrentHP = MaxHP;
-
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
 }
 
@@ -38,7 +32,6 @@ void AZombieCharacter::GetLifetimeReplicatedProps(
 	TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
 	DOREPLIFETIME(AZombieCharacter, CurrentHP);
 	DOREPLIFETIME(AZombieCharacter, bIsDead);
 }
@@ -49,19 +42,14 @@ float AZombieCharacter::TakeDamage(
 	AController* EventInstigator,
 	AActor* DamageCauser)
 {
-	// �������� ������ ó��
 	if (!HasAuthority())
 	{
 		return 0.f;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("[ZombieCharacter] TakeDamage Called! Amount: %.1f"), DamageAmount);
-
-	if (GEngine)
+	if (bIsDead)
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1, 5.f, FColor::Cyan,
-			FString::Printf(TEXT("TakeDamage Called! %.1f"), DamageAmount));
+		return 0.f;
 	}
 
 	const float ActualDamage = Super::TakeDamage(
@@ -70,17 +58,17 @@ float AZombieCharacter::TakeDamage(
 		EventInstigator,
 		DamageCauser);
 
-	if (bIsDead)
-	{
-		return ActualDamage;
-	}
-
 	CurrentHP = FMath::Clamp(
 		CurrentHP - ActualDamage,
 		0.f,
 		MaxHP);
 
-	// ������ �α� ���
+	// 마지막 공격자 저장
+	if (IsValid(EventInstigator))
+	{
+		LastDamageInstigator = EventInstigator;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("[%s] TakeDamage! Damage: %.1f / HP: %.1f / %.1f"),
 		*ZombieName.ToString(),
 		ActualDamage,
@@ -95,21 +83,9 @@ float AZombieCharacter::TakeDamage(
 				CurrentHP,
 				MaxHP));
 	}
-	// Combat Data // ============================= // PlayerDealt
-	APlayerCharacterState* AttackerPlayerState = EventInstigator->GetPlayerState<APlayerCharacterState>();
-	
-	if (IsValid(AttackerPlayerState))
-	{
-		AttackerPlayerState->AddPlayerCombatInfo_DamageDealt(ActualDamage);
-	}
-	// Combat Data // ============================= // PlayerDealt
+
 	if (CurrentHP <= 0.f)
 	{
-		if (IsValid(AttackerPlayerState))
-		{
-			// Combat Data // ============================= // PlayerKillCount
-			AttackerPlayerState->AddPlayerCombatInfo_KillCount(1);
-		}
 		Die();
 	}
 
@@ -138,13 +114,9 @@ void AZombieCharacter::OnRep_IsDead()
 	{
 		return;
 	}
-
 	GetCapsuleComponent()->SetCollisionEnabled(
 		ECollisionEnabled::NoCollision);
-
 	GetCharacterMovement()->DisableMovement();
-
-	// OnRep������ Multicast�� �ٽ� ȣ������ �ʴ´�.
 	if (DeathMontage)
 	{
 		PlayAnimMontage(DeathMontage);
@@ -157,9 +129,9 @@ void AZombieCharacter::Die()
 	{
 		return;
 	}
-
 	bIsDead = true;
 
+	// AI 정지
 	if (AAIController* AIController = Cast<AAIController>(GetController()))
 	{
 		AIController->StopMovement();
@@ -168,21 +140,46 @@ void AZombieCharacter::Die()
 
 	GetCapsuleComponent()->SetCollisionEnabled(
 		ECollisionEnabled::NoCollision);
-
 	GetCharacterMovement()->DisableMovement();
 
-	// ������ ��� Ŭ���̾�Ʈ���� ��� ��Ÿ�� ���
 	Multicast_PlayDeathMontage();
 
-	float DestroyDelay = 2.0f;
+	// 마지막 공격자에게 골드 지급
+	if (IsValid(LastDamageInstigator))
+	{
+		APlayerCharacterState* KillerPS =
+			LastDamageInstigator->GetPlayerState<APlayerCharacterState>();
 
+		if (IsValid(KillerPS))
+		{
+			// 드랍률 기준 100골드 중 드랍률% 만큼 지급
+			const int32 GoldReward = FMath::RoundToInt(DropChance);
+
+			KillerPS->AddPlayerStageGold(GoldReward);
+
+			// 플레이어 이름 가져오기
+			const FString PlayerName = KillerPS->GetPlayerName();
+
+			UE_LOG(LogTemp, Warning, TEXT("[Reward] %s earned %d Gold!"),
+				*PlayerName, GoldReward);
+
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(
+					-1, 5.f, FColor::Yellow,
+					FString::Printf(TEXT("[%s] earned %d Gold!"),
+						*PlayerName, GoldReward));
+			}
+		}
+	}
+
+	float DestroyDelay = 2.0f;
 	if (DeathMontage)
 	{
 		DestroyDelay = DeathMontage->GetPlayLength();
 	}
 
 	FTimerHandle DestroyTimerHandle;
-
 	GetWorldTimerManager().SetTimer(
 		DestroyTimerHandle,
 		this,
