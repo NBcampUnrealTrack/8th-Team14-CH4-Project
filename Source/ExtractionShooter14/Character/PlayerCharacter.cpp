@@ -90,7 +90,13 @@ void APlayerCharacter::BeginPlay()
 
     if (HasAuthority())
     {
-        EquipWeaponActor(CurrentWeaponType);
+        const FDataTableRowHandle* InitialWeapon =
+            WeaponDataMap.Find(CurrentWeaponType);
+
+        if (InitialWeapon && !InitialWeapon->IsNull())
+        {
+            EquipWeaponByRowNameInternal(InitialWeapon->RowName);
+        }
     }
 }
 
@@ -335,6 +341,7 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(APlayerCharacter, bIsSprinting);
     //DOREPLIFETIME(APlayerCharacter, bIsDead);
     DOREPLIFETIME(APlayerCharacter, CurrentWeapon);
+    DOREPLIFETIME(APlayerCharacter, CurrentWeaponRowName);
 }
 
 void APlayerCharacter::StartAim()
@@ -403,47 +410,47 @@ void APlayerCharacter::FinishAimCamera()
     SetActorTickEnabled(false);
 }
 
-void APlayerCharacter::EquipWeapon(EWeaponType NewWeaponType)
-{
-    if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
-    {
-        return;
-    }
+//void APlayerCharacter::EquipWeapon(EWeaponType NewWeaponType)
+//{
+//    if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
+//    {
+//        return;
+//    }
+//
+//    if (bIsAiming)
+//    {
+//        CancelAimInstant();
+//    }
+//
+//    if (HasAuthority())
+//    {
+//        EquipWeaponInternal(NewWeaponType);
+//    }
+//    else
+//    {
+//        ServerSetWeaponType(NewWeaponType);
+//    }
+//}
 
-    if (bIsAiming)
-    {
-        CancelAimInstant();
-    }
+//void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponType NewWeaponType)
+//{
+//    EquipWeaponInternal(NewWeaponType);
+//
+//    if (IsLocallyControlled())
+//    {
+//        BP_OnWeaponChanged(GetCurrentWeaponDataRow());
+//    }
+//}
 
-    if (HasAuthority())
-    {
-        EquipWeaponInternal(NewWeaponType);
-    }
-    else
-    {
-        ServerSetWeaponType(NewWeaponType);
-    }
-}
-
-void APlayerCharacter::ServerSetWeaponType_Implementation(EWeaponType NewWeaponType)
-{
-    EquipWeaponInternal(NewWeaponType);
-
-    if (IsLocallyControlled())
-    {
-        BP_OnWeaponChanged(GetCurrentWeaponDataRow());
-    }
-}
-
-void APlayerCharacter::OnRep_CurrentWeaponType()
-{
-    //ApplyWeaponVisuals();
-    //성윤 클라이언트에서 CurrentWeaponType 복제 완료 시 장비 UI와 3D 프리뷰를 갱신하기 위한 이벤트
-    if (IsLocallyControlled())
-    {
-        BP_OnWeaponChanged(GetCurrentWeaponDataRow());
-    }
-}
+//void APlayerCharacter::OnRep_CurrentWeaponType()
+//{
+//    //ApplyWeaponVisuals();
+//    //성윤 클라이언트에서 CurrentWeaponType 복제 완료 시 장비 UI와 3D 프리뷰를 갱신하기 위한 이벤트
+//    if (IsLocallyControlled())
+//    {
+//        BP_OnWeaponChanged(GetCurrentWeaponDataRow());
+//    }
+//}
 
 void APlayerCharacter::MulticastPlayEquipMontage_Implementation(EWeaponType NewWeaponType)
 {
@@ -608,48 +615,18 @@ float APlayerCharacter::TakeDamage(
     return ActualDamage;
 }
 
-bool APlayerCharacter::EquipWeaponActor(EWeaponType NewWeaponType)
-{
-    if (!HasAuthority()) return false;
-    if (!WeaponBaseClass) return false;
-
-    const FDataTableRowHandle* FoundWeaponData = WeaponDataMap.Find(NewWeaponType);
-
-    if (!FoundWeaponData || FoundWeaponData->IsNull())
-    {
-        return false;
-    }
-
-    if (CurrentWeapon)
-    {
-        CurrentWeapon->Destroy();
-        CurrentWeapon = nullptr;
-    }
-
-    CurrentWeapon = GetWorld()->SpawnActorDeferred<AWeaponBase>(
-        WeaponBaseClass,
-        FTransform::Identity,
-        this,
-        this,
-        ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-    );
-
-    if (!CurrentWeapon) return false;
-
-    CurrentWeapon->WeaponDataRow = *FoundWeaponData;
-
-    UGameplayStatics::FinishSpawningActor(CurrentWeapon, FTransform::Identity);
-
-    CurrentWeapon->SetOwnerCharacter(this);
-
-    CurrentWeapon->AttachToComponent(
-        GetMesh(),
-        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-        TEXT("WeaponSocket")
-    );
-
-    return true;
-}
+//bool APlayerCharacter::EquipWeaponActor(EWeaponType NewWeaponType)
+//{
+//    const FDataTableRowHandle* FoundWeaponData =
+//        WeaponDataMap.Find(NewWeaponType);
+//
+//    if (!FoundWeaponData || FoundWeaponData->IsNull())
+//    {
+//        return false;
+//    }
+//
+//    return EquipWeaponActorFromRow(*FoundWeaponData);
+//}
 
 //성윤 WeaponType에 맞는 DT_Weapon RowHandle을 반환하는 함수
 FDataTableRowHandle APlayerCharacter::GetWeaponDataRowByType(EWeaponType WeaponType) const
@@ -667,7 +644,19 @@ FDataTableRowHandle APlayerCharacter::GetWeaponDataRowByType(EWeaponType WeaponT
 //성윤 현재 장착 중인 무기의 DT_Weapon RowHandle을 UI/장비 프리뷰에서 가져가기 위한 함수
 FDataTableRowHandle APlayerCharacter::GetCurrentWeaponDataRow() const
 {
-    return GetWeaponDataRowByType(CurrentWeaponType);
+    EWeaponType WeaponType{};
+    FDataTableRowHandle WeaponData;
+
+    if (FindWeaponByRowName(
+        CurrentWeaponRowName,
+        WeaponType,
+        WeaponData
+    ))
+    {
+        return WeaponData;
+    }
+
+    return FDataTableRowHandle();
 }
 
 //성윤 현재 장착 중인 Weapon Actor를 반환해서 장비 프리뷰가 실제 무기까지 함께 캡처할 수 있게 하는 함수
@@ -686,24 +675,24 @@ void APlayerCharacter::Reload()
     }
 }
 
-void APlayerCharacter::EquipWeaponInternal(EWeaponType NewWeaponType)
-{
-    if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
-    {
-        return;
-    }
-
-    bIsAiming = false;
-
-    if (!EquipWeaponActor(NewWeaponType))
-    {
-        return;
-    }
-
-    CurrentWeaponType = NewWeaponType;
-
-    MulticastPlayEquipMontage(NewWeaponType);
-}
+//void APlayerCharacter::EquipWeaponInternal(EWeaponType NewWeaponType)
+//{
+//    if (CurrentWeaponType == NewWeaponType && CurrentWeapon)
+//    {
+//        return;
+//    }
+//
+//    bIsAiming = false;
+//
+//    if (!EquipWeaponActor(NewWeaponType))
+//    {
+//        return;
+//    }
+//
+//    CurrentWeaponType = NewWeaponType;
+//
+//    MulticastPlayEquipMontage(NewWeaponType);
+//}
 
 void APlayerCharacter::ServerStartFire_Implementation()
 {
@@ -732,4 +721,200 @@ void APlayerCharacter::UpdateAimPitch()
     {
         AimPitch -= 360.0f;
     }
+}
+
+bool APlayerCharacter::FindWeaponByRowName(
+    FName WeaponRowName,
+    EWeaponType& OutWeaponType,
+    FDataTableRowHandle& OutWeaponData
+) const
+{
+    if (WeaponRowName.IsNone())
+    {
+        return false;
+    }
+
+    for (const TPair<EWeaponType, FDataTableRowHandle>& Pair : WeaponDataMap)
+    {
+        const FDataTableRowHandle& RowHandle = Pair.Value;
+
+        if (RowHandle.IsNull() || RowHandle.RowName != WeaponRowName)
+        {
+            continue;
+        }
+        if (!RowHandle.DataTable ||
+            !RowHandle.DataTable->FindRowUnchecked(WeaponRowName))
+        {
+            return false;
+        }
+
+        OutWeaponType = Pair.Key;
+        OutWeaponData = RowHandle;
+        return true;
+    }
+
+    return false;
+}
+
+void APlayerCharacter::EquipWeaponByRowName(FName WeaponRowName)
+{
+    if (WeaponRowName.IsNone())
+    {
+        return;
+    }
+
+    if (HasAuthority())
+    {
+        EquipWeaponByRowNameInternal(WeaponRowName);
+    }
+    else
+    {
+        ServerEquipWeaponByRowName(WeaponRowName);
+    }
+}
+
+void APlayerCharacter::ServerEquipWeaponByRowName_Implementation(
+    FName WeaponRowName
+)
+{
+    EquipWeaponByRowNameInternal(WeaponRowName);
+}
+
+void APlayerCharacter::EquipWeaponByRowNameInternal(FName WeaponRowName)
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    if (CurrentWeaponRowName == WeaponRowName && IsValid(CurrentWeapon))
+    {
+        return;
+    }
+
+    EWeaponType NewWeaponType;
+    FDataTableRowHandle WeaponData;
+
+    if (!FindWeaponByRowName(
+        WeaponRowName,
+        NewWeaponType,
+        WeaponData
+    ))
+    {
+        UE_LOG(
+            LogTemp,
+            Warning,
+            TEXT("장착할 수 없는 무기 RowName: %s"),
+            *WeaponRowName.ToString()
+        );
+        return;
+    }
+
+    if (bIsAiming)
+    {
+        CancelAimInstant();
+    }
+
+    if (!EquipWeaponActorFromRow(WeaponData))
+    {
+        return;
+    }
+
+    CurrentWeaponType = NewWeaponType;
+    CurrentWeaponRowName = WeaponRowName;
+
+    MulticastPlayEquipMontage(NewWeaponType);
+
+    // Standalone 또는 Listen Server의 로컬 플레이어 처리
+    if (IsLocallyControlled())
+    {
+        BP_OnWeaponChanged(WeaponData);
+    }
+}
+
+bool APlayerCharacter::EquipWeaponActorFromRow(
+    const FDataTableRowHandle& WeaponData
+)
+{
+    if (!HasAuthority() ||
+        !WeaponBaseClass ||
+        WeaponData.IsNull())
+    {
+        return false;
+    }
+
+    if (IsValid(CurrentWeapon))
+    {
+        CurrentWeapon->Destroy();
+        CurrentWeapon = nullptr;
+    }
+
+    CurrentWeapon = GetWorld()->SpawnActorDeferred<AWeaponBase>(
+        WeaponBaseClass,
+        FTransform::Identity,
+        this,
+        this,
+        ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+    );
+
+    if (!CurrentWeapon)
+    {
+        return false;
+    }
+
+    // FinishSpawning 전에 RowHandle 전달
+    CurrentWeapon->WeaponDataRow = WeaponData;
+
+    UGameplayStatics::FinishSpawningActor(
+        CurrentWeapon,
+        FTransform::Identity
+    );
+
+    CurrentWeapon->SetOwnerCharacter(this);
+
+    CurrentWeapon->AttachToComponent(
+        GetMesh(),
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        TEXT("WeaponSocket")
+    );
+
+    return true;
+}
+
+void APlayerCharacter::OnRep_CurrentWeaponRowName()
+{
+    if (!IsLocallyControlled())
+    {
+        return;
+    }
+
+    EWeaponType WeaponType{};
+    FDataTableRowHandle WeaponData;
+
+    if (FindWeaponByRowName(
+        CurrentWeaponRowName,
+        WeaponType,
+        WeaponData
+    ))
+    {
+        BP_OnWeaponChanged(WeaponData);
+    }
+}
+
+void APlayerCharacter::EquipDefaultWeapon()
+{
+    const FDataTableRowHandle DefaultWeaponData =
+        GetWeaponDataRowByType(EWeaponType::Pistol);
+
+    if (DefaultWeaponData.IsNull())
+    {
+        UE_LOG(
+            LogTemp,
+            Warning,
+            TEXT("Default pistol weapon data is not configured.")
+        );
+        return;
+    }
+
+    EquipWeaponByRowName(DefaultWeaponData.RowName);
 }

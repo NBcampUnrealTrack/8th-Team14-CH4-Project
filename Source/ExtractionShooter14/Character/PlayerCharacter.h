@@ -29,9 +29,18 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	ECharacterMovementDirection LastInputDirection;
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void EquipWeaponByRowName(FName WeaponRowName);
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	FName GetCurrentWeaponRowName() const
+	{
+		return CurrentWeaponRowName;
+	} 
+
 protected:
 
-	bool EquipWeaponActor(EWeaponType NewWeaponType);
+	//bool EquipWeaponActor(EWeaponType NewWeaponType);
 
 	virtual void BeginPlay() override;
 
@@ -102,6 +111,9 @@ public:
 	float AimPitch = 0.0f;
 
 	void UpdateAimPitch();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void EquipDefaultWeapon();
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -198,17 +210,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aim|Camera")
 	UCurveFloat* AimCameraCurve = nullptr;
 
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponType, BlueprintReadOnly, Category = "Weapon")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Weapon")
 	EWeaponType CurrentWeaponType = EWeaponType::Pistol;
 
-	UFUNCTION()
-	void OnRep_CurrentWeaponType();
+	
+	/* 
 
-	UFUNCTION(Server, Reliable)
-	void ServerSetWeaponType(EWeaponType NewWeaponType);
+	/*UFUNCTION(Server, Reliable)
+	void ServerSetWeaponType(EWeaponType NewWeaponType);*/
 
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void EquipWeapon(EWeaponType NewWeaponType);
+	/*UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void EquipWeapon(EWeaponType NewWeaponType);*/
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
 	void ApplyWeaponVisuals();
@@ -233,7 +245,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")
 	UAnimMontage* StageSpawnMontage;
 
-	void EquipWeaponInternal(EWeaponType NewWeaponType);
+	/*void EquipWeaponInternal(EWeaponType NewWeaponType);*/
 	
 
 
@@ -245,4 +257,29 @@ protected:
 
 	// UFUNCTION(BlueprintCallable, Category = "Death")
 	// void CheckDeath();
+
+	UFUNCTION(Server, Reliable)
+	void ServerEquipWeaponByRowName(FName WeaponRowName);
+
+	void EquipWeaponByRowNameInternal(FName WeaponRowName);
+
+	bool FindWeaponByRowName(
+		FName WeaponRowName,
+		EWeaponType& OutWeaponType,
+		FDataTableRowHandle& OutWeaponData
+	) const;
+
+	bool EquipWeaponActorFromRow(
+		const FDataTableRowHandle& WeaponData
+	);
+
+	UFUNCTION()
+	void OnRep_CurrentWeaponRowName();
+
+	UPROPERTY(
+		ReplicatedUsing = OnRep_CurrentWeaponRowName,
+		BlueprintReadOnly,
+		Category = "Weapon"
+	)
+	FName CurrentWeaponRowName = NAME_None;
 };
