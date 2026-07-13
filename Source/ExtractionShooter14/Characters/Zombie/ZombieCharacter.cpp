@@ -154,33 +154,33 @@ void AZombieCharacter::Die()
 	Multicast_PlayDeathMontage();
 
 	// 마지막 공격자에게 골드 지급
-	if (IsValid(LastDamageInstigator))
-	{
-		APlayerCharacterState* KillerPS =
-			LastDamageInstigator->GetPlayerState<APlayerCharacterState>();
-
-		if (IsValid(KillerPS))
-		{
-			// 드랍률 기준 100골드 중 드랍률% 만큼 지급
-			const int32 GoldReward = FMath::RoundToInt(DropChance);
-
-			KillerPS->AddPlayerStageGold(GoldReward);
-
-			// 플레이어 이름 가져오기
-			const FString PlayerName = KillerPS->GetPlayerName();
-
-			UE_LOG(LogTemp, Warning, TEXT("[Reward] %s earned %d Gold!"),
-				*PlayerName, GoldReward);
-
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1, 5.f, FColor::Yellow,
-					FString::Printf(TEXT("[%s] earned %d Gold!"),
-						*PlayerName, GoldReward));
-			}
-		}
-	}
+	// if (IsValid(LastDamageInstigator))
+	// {
+	// 	APlayerCharacterState* KillerPS =
+	// 		LastDamageInstigator->GetPlayerState<APlayerCharacterState>();
+	//
+	// 	if (IsValid(KillerPS))
+	// 	{
+	// 		// 드랍률 기준 100골드 중 드랍률% 만큼 지급
+	// 		const int32 GoldReward = FMath::RoundToInt(DropChance);
+	//
+	// 		KillerPS->AddPlayerStageGold(GoldReward);
+	//
+	// 		// 플레이어 이름 가져오기
+	// 		const FString PlayerName = KillerPS->GetPlayerName();
+	//
+	// 		UE_LOG(LogTemp, Warning, TEXT("[Reward] %s earned %d Gold!"),
+	// 			*PlayerName, GoldReward);
+	//
+	// 		if (GEngine)
+	// 		{
+	// 			GEngine->AddOnScreenDebugMessage(
+	// 				-1, 5.f, FColor::Yellow,
+	// 				FString::Printf(TEXT("[%s] earned %d Gold!"),
+	// 					*PlayerName, GoldReward));
+	// 		}
+	// 	}
+	// }
 
 	float DestroyDelay = 2.0f;
 	if (DeathMontage)
@@ -206,4 +206,3 @@ void AZombieCharacter::DestroyZombie()
 		Destroy();
 	}
 }
-
