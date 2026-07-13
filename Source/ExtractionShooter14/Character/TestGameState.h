@@ -66,15 +66,11 @@ public:
 	float GetRemainTime() const;
 	
 #pragma region Rank
-	public:
-	virtual void AddPlayerState(APlayerState* PlayerState) override;
-	virtual void RemovePlayerState(APlayerState* PlayerState) override;
+
 private:
-	// UPROPERTY()
-	// bool bMarkRank = false;
 	FTimerHandle RankUpdateTimerHandle;
 public:
-	//void MarkRank();
+
 	void StartRankUpdateTimer();
 	void StopRankUpdateTimer();
 

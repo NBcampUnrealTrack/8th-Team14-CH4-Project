@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "ES_TitleWidgetHUD.generated.h"
 
+class UES_SessionSubsystem;
 class UHorizontalBox;
 class UTextBlock;
 class UImage;
@@ -19,22 +20,42 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void OnClickedPlayButton();
 	UFUNCTION(BlueprintCallable)
+	void OnClickedSetutton();
+	UFUNCTION(BlueprintCallable)
 	void OnClickedExitButton();
 	
 	UFUNCTION()
 	void OnFadeInAnimation_Back_Finished();
+	
+	UFUNCTION()
+	void OnConnectionStateChanged(const FString& StateMessage);
+	UFUNCTION()
+	void OnConnectionCompleted(bool bWasSuccessful);
+	
 public:
-	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
-	// TObjectPtr<UButton> PlayinButton;
-	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
-	// TObjectPtr<UButton> ExitoutButton;
-	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
-	// TObjectPtr<UUserWidget> WBP_TitleMenu;
+	UPROPERTY()
+	TObjectPtr<UButton> PlayButton;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
+	TObjectPtr<UUserWidget> PlayButtonWidget;
+	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
+	TObjectPtr<UUserWidget> SettingsButtonWidget;
+	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
+	TObjectPtr<UUserWidget> ExitButtonWidget;
+	
+	UPROPERTY(meta=(BindWidgetAnim), Transient)
+	TObjectPtr<UWidgetAnimation> TempSideMoveAnimation_PlB;
+	UPROPERTY(meta=(BindWidgetAnim), Transient)
+	TObjectPtr<UWidgetAnimation> TempSideMoveAnimation_SeB;
+	UPROPERTY(meta=(BindWidgetAnim), Transient)
+	TObjectPtr<UWidgetAnimation> TempSideMoveAnimation_EnB;
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	TObjectPtr<UWidgetAnimation> BlackFadeOut;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
 	TObjectPtr<UTextBlock> IPTextBlock;
-	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidgetAnim), Transient)
-	TObjectPtr<UWidgetAnimation> BlackFadeOut;
+	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
+	TObjectPtr<UTextBlock> ConnectionStateText;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Title|UI")
 	FString TitleName = "DedicatedX";
@@ -49,4 +70,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Title|UI")
 	TSubclassOf<UUserWidget> LetterWidget; 
+private:
+	UPROPERTY()
+	TObjectPtr<UES_SessionSubsystem> SessionSubsystem;
 };

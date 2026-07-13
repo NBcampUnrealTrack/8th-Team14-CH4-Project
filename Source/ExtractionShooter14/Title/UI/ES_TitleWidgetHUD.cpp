@@ -5,6 +5,7 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/HorizontalBox.h"
 #include "Components/TextBlock.h"
+#include "Game/ES_SessionSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Slate/SGameLayerManager.h"
@@ -14,50 +15,119 @@ void UES_TitleWidgetHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
+// ===================== Session ====================	
+// ===================== Session ====================	
+	
+	UGameInstance* GameInstance =
+		GetGameInstance();
+
+	if (!IsValid(GameInstance))
+	{
+		return;
+	}
+
+	SessionSubsystem =
+		GameInstance
+			->GetSubsystem<UES_SessionSubsystem>();
+
+	if (!IsValid(SessionSubsystem))
+	{
+		return;
+	}
+
+	SessionSubsystem
+		->OnConnectionStateChanged
+		.AddUniqueDynamic(
+			this,
+			&ThisClass::OnConnectionStateChanged
+		);
+
+	SessionSubsystem
+		->OnConnectionCompleted
+		.AddUniqueDynamic(
+			this,
+			&ThisClass::OnConnectionCompleted
+		);
+	
+// ===================== Session ====================	
+// ===================== Session ====================	
+	
 	APlayerController* Player = GetOwningPlayer();
 	if (!IsValid(Player)) return;
 	
 	if (!Player->IsLocalController()) return;
 	
 	PlayAnimation(BlackFadeOut);
+	PlayAnimation(TempSideMoveAnimation_PlB);
+	PlayAnimation(TempSideMoveAnimation_SeB);
+	PlayAnimation(TempSideMoveAnimation_EnB);
+
+	FWidgetAnimationDynamicEvent Event;
+	Event.BindDynamic(this, &ThisClass::OnFadeInAnimation_Back_Finished);
+	BindToAnimationFinished(BlackFadeOut, Event);
 	
-	// PlayinButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedPlayButton);
-	// ExitoutButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedExitButton);
-	// FWidgetAnimationDynamicEvent Event;
-	// Event.BindDynamic(this, &ThisClass::OnFadeInAnimation_Back_Finished);
-	// BindToAnimationFinished(BlackFadeOut, Event);
-	
-	GetWorld()->GetTimerManager().SetTimer(
-		StartDelayTimer,
-		[this]()
-		{
-			OnFadeInAnimation_Back_Finished();
-		},
-		1.f,
-		false);
+	PlayButton = Cast<UButton>(PlayButtonWidget->GetWidgetFromName(TEXT("PlayButton")));
+	UButton* ButtonSet = Cast<UButton>(SettingsButtonWidget->GetWidgetFromName(TEXT("PlayButton")));
+	UButton* ButtonExit = Cast<UButton>(ExitButtonWidget->GetWidgetFromName(TEXT("PlayButton")));
+	PlayButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedPlayButton);
+	ButtonSet->OnClicked.AddDynamic(this, &ThisClass::OnClickedSetutton);
+	ButtonExit->OnClicked.AddDynamic(this, &ThisClass::OnClickedExitButton);
 }
 
 void UES_TitleWidgetHUD::NativeDestruct()
 {
 	Super::NativeDestruct();
 	
-	//UnbindAllFromAnimationFinished(BlackFadeOut);
+	UnbindAllFromAnimationFinished(BlackFadeOut);
 	
 }
 
 void UES_TitleWidgetHUD::OnClickedPlayButton()
 {
-	APlayerController* Player = GetOwningPlayer();
-	if (!IsValid(Player)) return;
+	if (!IsValid(SessionSubsystem))
+	{
+		UE_LOG(
+			LogTemp,
+			Error,
+			TEXT("[TitleWidget] SessionSubsystem is invalid.")
+		);
 	
-	FInputModeGameOnly InputMode;
-	Player->SetInputMode(InputMode);
-	Player->bShowMouseCursor = false;
+		return;
+	}
 	
-	UWidgetLayoutLibrary::RemoveAllWidgets(this);
+	if (SessionSubsystem->IsConnecting())
+	{
+		return;
+	}
 	
-	const FName IPString = FName(*IPTextBlock->GetText().ToString());
-	UGameplayStatics::OpenLevel(GetWorld(), IPString);
+	if (IsValid(PlayButton))
+	{
+		PlayButton->SetIsEnabled(false);
+	}
+	
+	// SessionSubsystem->FindAndJoinDedicatedServer();
+	
+	
+// ========================== Session ===========================
+// ========================== Session ===========================
+	
+	 const FName IPString = FName(*IPTextBlock->GetText().ToString());
+	 UGameplayStatics::OpenLevel(GetWorld(), IPString);
+	// APlayerController* PlayerControllerES = GetOwningPlayer();
+	// if (!IsValid(PlayerControllerES))
+	// {
+	// 	return;
+	// }
+	//
+	// PlayerControllerES->ClientTravel(
+	// 	TEXT("127.0.0.1:7777"),
+	// 	ETravelType::TRAVEL_Absolute
+	// );
+}
+
+void UES_TitleWidgetHUD::OnClickedSetutton()
+{
+	
 }
 
 void UES_TitleWidgetHUD::OnClickedExitButton()
@@ -100,5 +170,32 @@ void UES_TitleWidgetHUD::CreateLetterWidget()
 	else
 	{
 		GetWorld()->GetTimerManager().ClearTimer(TitleLetterTimerHandle);
+	}
+}
+
+void UES_TitleWidgetHUD::OnConnectionStateChanged(
+	const FString& StateMessage
+)
+{
+	if (IsValid(ConnectionStateText))
+	{
+		ConnectionStateText->SetText(
+			FText::FromString(StateMessage)
+		);
+	}
+}
+
+void UES_TitleWidgetHUD::OnConnectionCompleted(
+	bool bWasSuccessful
+)
+{
+	if (bWasSuccessful)
+	{
+		return;
+	}
+
+	if (IsValid(PlayButton))
+	{
+		PlayButton->SetIsEnabled(true);
 	}
 }

@@ -15,6 +15,7 @@ void ATestGameState::SetPlayerInGameCount_GS(int32 InNewPlayerInGameCount)
 {
 	// in server
 	PlayerInGameCount_GS = InNewPlayerInGameCount;
+	OnChangedPlayerInGameCount.Broadcast(PlayerInGameCount_GS);
 }
 
 int32 ATestGameState::GetPlayerInGameCount_GS() const
@@ -35,6 +36,7 @@ void ATestGameState::RemoveLobbyPlayerStates(APlayerCharacterState* InOutPlayerS
 {
 	// in server
 	LobbyPlayerStates.Remove(InOutPlayerState);
+	OnChangedPlayerStates.Broadcast();
 }
 
 const TArray<APlayerCharacterState*>& ATestGameState::GetLobbyPlayerStates() const
@@ -77,45 +79,6 @@ float ATestGameState::GetRemainTime() const
 		GameStatePhaseTimerData.PhaseEndServerTime - ServerNow);
 }
 
-void ATestGameState::AddPlayerState(APlayerState* PlayerState)
-{
-	Super::AddPlayerState(PlayerState);
-	if (HasAuthority())
-	{
-		// APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(PlayerState);
-		//
-		// if (!IsValid(PlayerStateES)) return;
-		// if (PlayerStateES->OnPlayerCombatInfoChanged.IsBoundToObject(this)) return;
-		//
-		// PlayerStateES->OnPlayerCombatInfoChanged.AddUObject(this, &ThisClass::CalculatePlayerRank);
-		// CalculatePlayerRank();
-	}
-}
-
-void ATestGameState::RemovePlayerState(APlayerState* PlayerState)
-{
-	// if (HasAuthority())
-	// {
-	// 	APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(PlayerState);
-	// 	if (!IsValid(PlayerStateES)) return;
-	//
-	// 	PlayerStateES->OnPlayerCombatInfoChanged.RemoveAll(this);
-	// }
-	Super::RemovePlayerState(PlayerState);
-	
-	// if (HasAuthority())
-	// {
-	// 	CalculatePlayerRank();
-	// }
-}
-
-// void ATestGameState::MarkRank()
-// {
-// 	if (HasAuthority())
-// 	{
-// 		bMarkRank = true;
-// 	}
-// }
 
 void ATestGameState::StartRankUpdateTimer()
 {
@@ -198,7 +161,7 @@ void ATestGameState::CalculatePlayerRank()
 					}
 				}
 		
-				CurrentPS->SetPlayerCombatInfo_Rank(CurrentRank);
+				CurrentPS->SetPlayerCombatInfo_Rank(CurrentRank); // rep-struct = nonrep-struct
 				
 			}
 			

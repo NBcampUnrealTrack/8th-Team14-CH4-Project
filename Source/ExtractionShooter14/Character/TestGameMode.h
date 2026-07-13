@@ -39,6 +39,7 @@ public:
 	void HandleAllPlayerisReady();
 	bool IsAllPlayersReady();
 	
+	void StartNone();
 	void StartLobby();
 	void StartStage();
 	void MoveToStage();

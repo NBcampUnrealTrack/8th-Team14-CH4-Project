@@ -95,7 +95,7 @@ void AMyPlayerController::Find_ApplyLobbyCamera()
         
         FoundCameras.Sort([](const AActor& A, const AActor& B)
         {
-            return A.GetActorLabel() < B.GetActorLabel();
+            return A.GetName() < B.GetName();
         }); // sort by name camera_1 , camera_2 , camera_3
         
         if (!FoundCameras.IsValidIndex(PlayerSlotIndex)) return;
