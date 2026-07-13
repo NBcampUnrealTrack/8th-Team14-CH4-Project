@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "ES_TitleWidgetHUD.generated.h"
 
+class UVerticalBox;
 class UES_SessionSubsystem;
 class UHorizontalBox;
 class UTextBlock;
@@ -65,8 +66,10 @@ public:
 	int32 TimerCount = 0;
 	void CreateLetterWidget();
 	
-	UPROPERTY(meta=(BindWidget))
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	TObjectPtr<UHorizontalBox> TitleHorizontal;
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	TObjectPtr<UVerticalBox> ButtonsVerticalBox;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Title|UI")
 	TSubclassOf<UUserWidget> LetterWidget; 
