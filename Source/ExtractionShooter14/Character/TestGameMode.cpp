@@ -489,6 +489,7 @@ void ATestGameMode::MoveToStage()
                     PlayerPawn->SetActorRotation(PlayerRotation);
                     PlayerControllerES->Client_ApplySpawnRotation(PlayerRotation);
                     PlayerControllerES->StartPlayerMovement();
+                    PlayerControllerES->Client_StopBGM();
                     PlayerControllerES->Client_WhenMoveToStagePopUpUI();
                 }
             }

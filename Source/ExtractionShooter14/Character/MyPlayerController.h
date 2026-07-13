@@ -14,6 +14,8 @@ class UUserWidget;
 class APlayerCharacterState;
 class UUserWidget;
 class UESHUDWidget;
+class USoundBase;
+class UAudioComponent;
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API AMyPlayerController : public APlayerController
@@ -53,6 +55,15 @@ public:
 	void Server_OnClickedResultUI();
 	UFUNCTION()
 	void OnPlayerHealthChanged(float CurrentHP, float MaxHP);
+
+	UFUNCTION(BlueprintCallable, Category = "Audio|BGM")
+	void PlayLobbyBGM();
+
+	UFUNCTION(BlueprintCallable, Category = "Audio|BGM")
+	void StopBGM(float FadeTime = 0.5f);
+
+	UFUNCTION(Client, Reliable)
+	void Client_StopBGM();
 public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
@@ -98,4 +109,22 @@ public:
 	UFUNCTION(Exec)
 	void SetCheatStageItem(FName ItemName, int32 ItemCount);
 #pragma endregion 
+
+protected:
+	void PlayBGM(USoundBase* NewBGM, float Volume = 0.3f);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio|BGM")
+	TObjectPtr<USoundBase> LobbyBGM;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio|BGM")
+	float LobbyBGMVolume = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio|BGM")
+	float BGMFadeTime = 0.5f;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent> CurrentBGMComponent;
+
+	UPROPERTY(Transient)
+	TObjectPtr<USoundBase> CurrentBGMSound;
 };
