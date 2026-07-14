@@ -39,6 +39,16 @@ public:
 	float AttackCooldown = 1.5f;
 
 	/*==========================
+	Patrol
+==========================*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie|Patrol")
+	float PatrolRadius = 300.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie|Patrol")
+	float PatrolWaitTimeMin = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie|Patrol")
+	float PatrolWaitTimeMax = 3.0f;
+
+	/*==========================
 		Reward
 	==========================*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie|Reward")
