@@ -86,8 +86,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<class USoundBase> FireSound = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<class UNiagaraSystem> MuzzleFlash = nullptr;
+	UPROPERTY(
+		EditAnywhere,
+		BlueprintReadWrite,
+		Category = "Effects"
+	)
+	TObjectPtr<UNiagaraSystem> MuzzleFlash = nullptr;
 
+	UPROPERTY(
+		EditAnywhere,
+		BlueprintReadWrite,
+		Category = "Effects"
+	)
+	TObjectPtr<UNiagaraSystem> TracerEffect = nullptr;
 	
 };

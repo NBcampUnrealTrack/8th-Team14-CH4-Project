@@ -13,6 +13,8 @@
 class UStaticMeshMeshComponent;
 class USceneComponent;
 class APlayerCharacter;
+class UNiagaraSystem;
+
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API AWeaponBase : public AActor
@@ -62,8 +64,9 @@ protected:
 	void BurstFire();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayFireEffects();
-
+	void MulticastPlayFireEffects(
+		FVector_NetQuantize MuzzleLocation,
+		FVector_NetQuantize TraceEnd);
 
 public:
 	UFUNCTION(Server, Reliable)
@@ -119,6 +122,12 @@ public:
 	// ���� ���� ź��
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentReserveAmmo, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	int32 CurrentReserveAmmo = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effects")
+	TObjectPtr<UNiagaraSystem> TracerEffect = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effects")
+	TObjectPtr<UNiagaraSystem> ImpactEffect = nullptr;
 
 	float LastFireTime = -100.f;
 

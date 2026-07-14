@@ -91,6 +91,38 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Death")
 	void Die();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayReloadMontage(
+		EWeaponType WeaponType
+	);
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Animation|Weapon"
+	)
+	TObjectPtr<UAnimMontage> RifleAttackMontage = nullptr;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Animation|Weapon"
+	)
+	TObjectPtr<UAnimMontage> PistolAttackMontage = nullptr;
+
+	void PlayAttackMontage(EWeaponType WeaponType);
+
+	bool IsSprinting() const
+	{
+		return bIsSprinting;
+	}
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void HandleChangeWeaponNotify();
+
+	UFUNCTION(Server, Reliable)
+	void ServerHandleChangeWeaponNotify();
+
 	//성윤 현재 장착 중인 무기의 DataTable RowHandle을 UI/프리뷰 블루프린트에서 읽기 위한 함수
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	FDataTableRowHandle GetCurrentWeaponDataRow() const;
@@ -129,6 +161,11 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
+
+	UPROPERTY()
+	FName PendingWeaponRowName = NAME_None;
+
+	void CommitPendingWeaponChange();
 
 protected:
 
@@ -251,6 +288,21 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")
 	UAnimMontage* StageSpawnMontage;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Animation|Reload"
+	)
+	TObjectPtr<UAnimMontage> RifleReloadMontage = nullptr;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Animation|Reload"
+	)
+	TObjectPtr<UAnimMontage> PistolReloadMontage = nullptr;
+	
 
 	/*void EquipWeaponInternal(EWeaponType NewWeaponType);*/
 	

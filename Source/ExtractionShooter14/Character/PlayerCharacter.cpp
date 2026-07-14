@@ -222,7 +222,17 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 
 void APlayerCharacter::StartSprint(const FInputActionValue& Value)
 {
-    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+    if (bIsAiming)
+    {
+        return;
+    }
+
+    StopFire();
+
+    bIsSprinting = true;
+
+    if (UCharacterMovementComponent* MovementComp =
+        GetCharacterMovement())
     {
         MovementComp->MaxWalkSpeed = 600.f;
     }
@@ -235,9 +245,12 @@ void APlayerCharacter::StartSprint(const FInputActionValue& Value)
 
 void APlayerCharacter::StopSprint(const FInputActionValue& Value)
 {
-    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+    bIsSprinting = false;
+
+    if (UCharacterMovementComponent* MovementComp =
+        GetCharacterMovement())
     {
-        MovementComp->MaxWalkSpeed = 300.f;
+        MovementComp->MaxWalkSpeed = WalkSpeed;
     }
 
     if (IsLocallyControlled())
@@ -315,21 +328,28 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
 
 void APlayerCharacter::ServerStartSprint_Implementation()
 {
-    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+    if (CurrentWeapon)
     {
-        
+        CurrentWeapon->StopFire();
+    }
+
+    bIsSprinting = true;
+
+    if (UCharacterMovementComponent* MovementComp =
+        GetCharacterMovement())
+    {
         MovementComp->MaxWalkSpeed = 600.f;
-        bIsSprinting = true;
     }
 }
 
 void APlayerCharacter::ServerStopSprint_Implementation()
 {
-    if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+    bIsSprinting = false;
+
+    if (UCharacterMovementComponent* MovementComp =
+        GetCharacterMovement())
     {
-        
-        MovementComp->MaxWalkSpeed = 300.f;
-        bIsSprinting = false;
+        MovementComp->MaxWalkSpeed = WalkSpeed;
     }
 }
 
@@ -347,6 +367,20 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void APlayerCharacter::StartAim()
 {
     bIsAiming = true;
+
+    bIsSprinting = false;
+
+    if (UCharacterMovementComponent* MovementComp =
+        GetCharacterMovement())
+    {
+        MovementComp->MaxWalkSpeed = WalkSpeed;
+    }
+
+ 
+    if (IsLocallyControlled())
+    {
+        ServerStopSprint();
+    }
 
     SetActorTickEnabled(true);
 
@@ -746,14 +780,22 @@ void APlayerCharacter::ServerStopFire_Implementation()
 
 void APlayerCharacter::UpdateAimPitch()
 {
-    if (!Controller) return;
-
-    AimPitch = Controller->GetControlRotation().Pitch;
-
-    if (AimPitch > 180.0f)
+    if (!Controller)
     {
-        AimPitch -= 360.0f;
+        return;
     }
+
+    const float NormalizedPitch =
+        FRotator::NormalizeAxis(
+            Controller->GetControlRotation().Pitch
+        );
+
+   
+    AimPitch = FMath::Clamp(
+        NormalizedPitch,
+        -70.0f,
+        70.0f
+    );
 }
 
 bool APlayerCharacter::FindWeaponByRowName(
@@ -820,7 +862,13 @@ void APlayerCharacter::EquipWeaponByRowNameInternal(FName WeaponRowName)
         return;
     }
 
-    if (CurrentWeaponRowName == WeaponRowName && IsValid(CurrentWeapon))
+    if (WeaponRowName.IsNone())
+    {
+        return;
+    }
+
+    if (CurrentWeaponRowName == WeaponRowName &&
+        IsValid(CurrentWeapon))
     {
         return;
     }
@@ -831,15 +879,15 @@ void APlayerCharacter::EquipWeaponByRowNameInternal(FName WeaponRowName)
     if (!FindWeaponByRowName(
         WeaponRowName,
         NewWeaponType,
-        WeaponData
-    ))
+        WeaponData))
     {
         UE_LOG(
             LogTemp,
             Warning,
-            TEXT("장착할 수 없는 무기 RowName: %s"),
+            TEXT("Weapon RowName not found: %s"),
             *WeaponRowName.ToString()
         );
+
         return;
     }
 
@@ -848,21 +896,11 @@ void APlayerCharacter::EquipWeaponByRowNameInternal(FName WeaponRowName)
         CancelAimInstant();
     }
 
-    if (!EquipWeaponActorFromRow(WeaponData))
-    {
-        return;
-    }
+   
+    PendingWeaponRowName = WeaponRowName;
 
-    CurrentWeaponType = NewWeaponType;
-    CurrentWeaponRowName = WeaponRowName;
-
+    
     MulticastPlayEquipMontage(NewWeaponType);
-
-    // Standalone 또는 Listen Server의 로컬 플레이어 처리
-    if (IsLocallyControlled())
-    {
-        BP_OnWeaponChanged(WeaponData);
-    }
 }
 
 bool APlayerCharacter::EquipWeaponActorFromRow(
@@ -951,4 +989,150 @@ void APlayerCharacter::EquipDefaultWeapon()
     }
 
     EquipWeaponByRowName(DefaultWeaponData.RowName);
+}
+
+void APlayerCharacter::MulticastPlayReloadMontage_Implementation(EWeaponType WeaponType)
+{
+    if (!GetMesh())
+    {
+        return;
+    }
+
+    UAnimInstance* AnimInstance =
+        GetMesh()->GetAnimInstance();
+
+    if (!AnimInstance)
+    {
+        return;
+    }
+
+    UAnimMontage* MontageToPlay = nullptr;
+
+    switch (WeaponType)
+    {
+    case EWeaponType::Rifle:
+        MontageToPlay = RifleReloadMontage;
+        break;
+
+    case EWeaponType::Pistol:
+        MontageToPlay = PistolReloadMontage;
+        break;
+
+    case EWeaponType::Shotgun:
+        // 전용 몽타주를 만들기 전까지 Rifle 재사용
+        MontageToPlay = RifleReloadMontage;
+        break;
+
+    default:
+        break;
+    }
+
+    if (!MontageToPlay)
+    {
+        return;
+    }
+
+    AnimInstance->Montage_Play(MontageToPlay);
+}
+
+void APlayerCharacter::PlayAttackMontage(
+    EWeaponType WeaponType)
+{
+    if (!GetMesh())
+    {
+        return;
+    }
+
+    UAnimInstance* AnimInstance =
+        GetMesh()->GetAnimInstance();
+
+    if (!AnimInstance)
+    {
+        return;
+    }
+
+    UAnimMontage* MontageToPlay = nullptr;
+
+    switch (WeaponType)
+    {
+    case EWeaponType::Rifle:
+        MontageToPlay = RifleAttackMontage;
+        break;
+
+    case EWeaponType::Pistol:
+        MontageToPlay = PistolAttackMontage;
+        break;
+
+    default:
+        break;
+    }
+
+    if (!MontageToPlay)
+    {
+        return;
+    }
+
+    AnimInstance->Montage_Play(MontageToPlay);
+}
+
+void APlayerCharacter::CommitPendingWeaponChange()
+{
+    if (!HasAuthority() ||
+        PendingWeaponRowName.IsNone())
+    {
+        return;
+    }
+
+    const FName WeaponRowName = PendingWeaponRowName;
+
+    EWeaponType NewWeaponType;
+    FDataTableRowHandle WeaponData;
+
+    if (!FindWeaponByRowName(
+        WeaponRowName,
+        NewWeaponType,
+        WeaponData))
+    {
+        PendingWeaponRowName = NAME_None;
+        return;
+    }
+
+    if (!EquipWeaponActorFromRow(WeaponData))
+    {
+        PendingWeaponRowName = NAME_None;
+        return;
+    }
+
+    CurrentWeaponType = NewWeaponType;
+    CurrentWeaponRowName = WeaponRowName;
+
+    
+    PendingWeaponRowName = NAME_None;
+
+    
+    if (IsLocallyControlled())
+    {
+        BP_OnWeaponChanged(WeaponData);
+    }
+}
+
+void APlayerCharacter::HandleChangeWeaponNotify()
+{
+    
+    if (HasAuthority())
+    {
+        CommitPendingWeaponChange();
+        return;
+    }
+
+   
+    if (IsLocallyControlled())
+    {
+        ServerHandleChangeWeaponNotify();
+    }
+}
+
+void APlayerCharacter::ServerHandleChangeWeaponNotify_Implementation()
+{
+    CommitPendingWeaponChange();
 }

@@ -4,6 +4,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/SceneComponent.h"
+#include "NiagaraComponent.h"
+
 
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -83,6 +85,12 @@ void AWeaponBase::ApplyWeaponData()
 
 bool AWeaponBase::CanFire() const
 {
+
+	if (OwnerCharacter && OwnerCharacter->IsSprinting())
+	{
+		return false;
+	}
+
 	if (CurrentMagazineAmmo <= 0)
 	{
 		return false;
@@ -179,6 +187,10 @@ void AWeaponBase::FireTrace()
 		Params
 	);
 
+	const FVector TracerEndLocation = bWeaponHit
+		? WeaponHit.ImpactPoint
+		: MuzzleEnd;
+
 	if (HasAuthority() && bWeaponHit && OwnerCharacter)
 	{
 		AActor* HitActor = WeaponHit.GetActor();
@@ -238,6 +250,15 @@ void AWeaponBase::FireTrace()
 		false,
 		2.f
 	);
+
+	if (HasAuthority())
+	{
+		MulticastPlayFireEffects(
+			MuzzleLocation,
+			TracerEndLocation
+		);
+	}
+
 }
 
 void AWeaponBase::Fire()
@@ -268,7 +289,6 @@ void AWeaponBase::Fire()
 
 	FireTrace();
 
-	MulticastPlayFireEffects();
 
 	ClientApplyRecoil();
 
@@ -365,6 +385,11 @@ void AWeaponBase::Reload()
 
 	bIsReloading = true;
 
+	if (HasAuthority() && OwnerCharacter)
+	{
+		OwnerCharacter->MulticastPlayReloadMontage(CurrentWeaponData.WeaponType);
+	}
+
 	GetWorld()->GetTimerManager().SetTimer(
 		ReloadTimerHandle,
 		this,
@@ -388,9 +413,16 @@ void AWeaponBase::OnRep_CurrentReserveAmmo()
 
 void AWeaponBase::StartFire()
 {
+
 	if (CurrentMagazineAmmo <= 0)
 	{
 		Reload();
+
+		return;
+	}
+
+	if (!CanFire())
+	{
 		return;
 	}
 
@@ -429,8 +461,18 @@ void AWeaponBase::StartFire()
 
 void AWeaponBase::StopFire()
 {
+	if (!GetWorld())
+	{
+		return;
+	}
+
 	GetWorld()->GetTimerManager().ClearTimer(FireTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(BurstTimerHandle);
+
+	BurstCount = 0;
+
 }
+
 
 void AWeaponBase::ClientApplyRecoil_Implementation()
 {
@@ -467,11 +509,29 @@ void AWeaponBase::ClientApplyRecoil_Implementation()
 			CurrentWeaponData.HorizontalRecoil));
 }
 
-void AWeaponBase::MulticastPlayFireEffects_Implementation()
+
+void AWeaponBase::MulticastPlayFireEffects_Implementation(
+	FVector_NetQuantize MuzzleLocation,
+	FVector_NetQuantize TracerEndLocation)
 {
 	if (!MeshComponent)
 	{
 		return;
+	}
+
+	APlayerCharacter* PlayerCharacter =
+		Cast<APlayerCharacter>(GetOwner());
+
+	if (!PlayerCharacter)
+	{
+		PlayerCharacter = OwnerCharacter;
+	}
+
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->PlayAttackMontage(
+			CurrentWeaponData.WeaponType
+		);
 	}
 
 	// �ѱ� ȭ��
@@ -488,6 +548,36 @@ void AWeaponBase::MulticastPlayFireEffects_Implementation()
 		);
 	}
 
+	if (CurrentWeaponData.TracerEffect)
+{
+	UNiagaraComponent* TracerComponent =
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			CurrentWeaponData.TracerEffect,
+			MuzzleLocation,
+			FRotator::ZeroRotator,
+			FVector::OneVector,
+			true,
+			false,
+			ENCPoolMethod::None,
+			true
+		);
+
+	if (TracerComponent)
+	{
+		TracerComponent->SetVariablePosition(
+			TEXT("User.BeamStart"),
+			FVector(MuzzleLocation)
+		);
+
+		TracerComponent->SetVariablePosition(
+			TEXT("User.BeamEnd"),
+			FVector(TracerEndLocation)
+		);
+
+		TracerComponent->Activate(true);
+	}
+}
 	// �߻� ����
 	if (CurrentWeaponData.FireSound)
 	{
