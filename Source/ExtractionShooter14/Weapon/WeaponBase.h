@@ -44,6 +44,8 @@ protected:
 
 	void FinishReload();
 
+	void NotifyAmmoChanged();
+
 	UPROPERTY(Replicated)
 	bool bIsReloading = false;
 
@@ -61,6 +63,8 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayFireEffects();
+
+
 public:
 	UFUNCTION(Server, Reliable)
 	void ServerFire();
@@ -97,22 +101,22 @@ public:
 	UPROPERTY()
 	FWeaponData CurrentWeaponData;
 
-	// ÃÑ±â ¸Þ½¬
+	// ï¿½Ñ±ï¿½ ï¿½Þ½ï¿½
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MeshComponent;
 
-	// À¥Æùµ¥ÀÌÅÍ Å×ÀÌºí ·Î¿ì³×ÀÓ
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ìºï¿½ ï¿½Î¿ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponData, EditAnywhere, BlueprintReadOnly, Category = "Weapon")
 	FDataTableRowHandle WeaponDataRow;
 
 	UFUNCTION()
 	void OnRep_WeaponData();
 
-	// ÇöÀç ÅºÃ¢ Åº¾à
+	// ï¿½ï¿½ï¿½ï¿½ ÅºÃ¢ Åºï¿½ï¿½
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentMagazineAmmo, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	int32 CurrentMagazineAmmo = 0;
 
-	// ÇöÀç ¿¹ºñ Åº¾à
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Åºï¿½ï¿½
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentReserveAmmo, VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	int32 CurrentReserveAmmo = 0;
 

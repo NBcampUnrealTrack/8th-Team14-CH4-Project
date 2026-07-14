@@ -260,6 +260,9 @@ void AWeaponBase::Fire()
 	}
 
 	CurrentMagazineAmmo--;
+	//성윤 호출용
+
+	NotifyAmmoChanged();
 
 	LastFireTime = GetWorld()->GetTimeSeconds();
 
@@ -293,6 +296,9 @@ void AWeaponBase::FinishReload()
 	CurrentReserveAmmo -= ReloadAmmo;
 
 	bIsReloading = false;
+
+	NotifyAmmoChanged();
+	//성윤 호출용
 
 	UE_LOG(LogTemp, Warning, TEXT("Reload! Magazine : %d / Reserve : %d"),
 		CurrentMagazineAmmo,
@@ -370,11 +376,13 @@ void AWeaponBase::Reload()
 
 void AWeaponBase::OnRep_CurrentMagazineAmmo()
 {
+	NotifyAmmoChanged();
 	//źâ ź�� �� UI����
 }
 
 void AWeaponBase::OnRep_CurrentReserveAmmo()
 {
+	NotifyAmmoChanged();
 	//���� ź�� �� UI����
 }
 
@@ -529,4 +537,29 @@ int32 AWeaponBase::GetCurrentReserveAmmo() const
 bool AWeaponBase::IsReloading() const
 {
 	return bIsReloading;
+}
+
+void AWeaponBase::NotifyAmmoChanged()
+{
+	APlayerCharacter* PlayerCharacter = OwnerCharacter;
+
+	if (!IsValid(PlayerCharacter))
+	{
+		PlayerCharacter = Cast<APlayerCharacter>(GetOwner());
+	}
+
+	if (!IsValid(PlayerCharacter))
+	{
+		return;
+	}
+
+	if (!PlayerCharacter->IsLocallyControlled())
+	{
+		return;
+	}
+
+	PlayerCharacter->BP_OnWeaponAmmoChanged(
+		CurrentMagazineAmmo,
+		CurrentReserveAmmo
+	);
 }

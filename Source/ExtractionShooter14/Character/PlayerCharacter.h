@@ -99,6 +99,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
 	void BP_OnWeaponChanged(FDataTableRowHandle NewWeaponDataRow);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
+	void BP_OnWeaponAmmoChanged(int32 CurrentMagazineAmmo, int32 CurrentReserveAmmo);
+
 	//성윤 현재 장착 중인 Weapon Actor를 장비 프리뷰 SceneCapture에서 ShowOnly 대상으로 등록하기 위한 함수
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	AWeaponBase* GetCurrentWeaponActor() const;
