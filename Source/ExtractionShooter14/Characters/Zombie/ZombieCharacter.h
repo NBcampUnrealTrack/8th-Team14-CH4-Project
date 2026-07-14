@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Item/CoinBase.h"
 #include "Animation/AnimMontage.h"
 #include "ZombieCharacter.generated.h"
 
@@ -46,6 +47,8 @@ public:
 	float DropChance = 20.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zombie|Info")
 	FName ZombieName = "Zombie";
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Drop")
+	int32 DropCoinValue = 1;
 
 	/*==========================
 		Animation
@@ -80,6 +83,9 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(
 		TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop")
+	TSubclassOf<ACoinBase> CoinClass;
 
 protected:
 	void Die();

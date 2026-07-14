@@ -3,15 +3,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
-#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Net/UnrealNetwork.h"
 
 #include "WeaponData.h"
 
 #include "WeaponBase.generated.h"
 
-class USkeletalMeshComponent;
+class UStaticMeshMeshComponent;
 class USceneComponent;
+class APlayerCharacter;
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API AWeaponBase : public AActor
@@ -86,7 +87,8 @@ public:
 
 	void StopFire();
 
-
+	UFUNCTION(Client, Reliable)
+	void ClientApplyRecoil();
 public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -97,7 +99,7 @@ public:
 
 	// 총기 메쉬
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USkeletalMeshComponent* MeshComponent;
+	UStaticMeshComponent* MeshComponent;
 
 	// 웹폰데이터 테이블 로우네임
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponData, EditAnywhere, BlueprintReadOnly, Category = "Weapon")
@@ -125,7 +127,8 @@ public:
 	bool IsHeadShot(const FHitResult& HitResult) const;
 
 protected:
-	UPROPERTY()
+
+	UPROPERTY(Replicated)
 	class APlayerCharacter* OwnerCharacter = nullptr;
 
 public:

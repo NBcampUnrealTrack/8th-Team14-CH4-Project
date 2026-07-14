@@ -153,16 +153,28 @@ void AZombieCharacter::Die()
 
 	Multicast_PlayDeathMontage();
 
+	if (CoinClass)
+	{
+		FVector SpawnLocation = GetActorLocation();
+		SpawnLocation.Z += 30.f;
+
+		ACoinBase::SpawnCoins(
+			GetWorld(),
+			CoinClass,
+			SpawnLocation,
+			DropCoinValue);
+	}
+
 	// 마지막 공격자에게 골드 지급
 	if (IsValid(LastDamageInstigator))
 	{
 		APlayerCharacterState* KillerPS =
 			LastDamageInstigator->GetPlayerState<APlayerCharacterState>();
 
+		const int32 GoldReward = FMath::RoundToInt(DropChance);
+
 		if (IsValid(KillerPS))
 		{
-			// 드랍률 기준 100골드 중 드랍률% 만큼 지급
-			const int32 GoldReward = FMath::RoundToInt(DropChance);
 
 			KillerPS->AddPlayerStageGold(GoldReward);
 

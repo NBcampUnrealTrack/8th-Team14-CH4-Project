@@ -528,6 +528,37 @@ void APlayerCharacter::Die()
         EndDelegate.BindUObject(this, &APlayerCharacter::OnDeathMontageEnded);
         GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate, DeathMontage);
     }
+
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
+
+    if (!PS)
+    {
+        return;
+    }
+
+    const int32 Gold = PS->GetPlayerStageGold();
+
+    UE_LOG(LogTemp, Warning, TEXT("Player Gold : %d"), Gold);
+
+    if (CoinClass && Gold > 0)
+    {
+        FVector SpawnLocation = GetActorLocation();
+        SpawnLocation.Z += 30.f;
+
+        ACoinBase::SpawnCoins(
+            GetWorld(),
+            CoinClass,
+            SpawnLocation,
+            Gold
+        );
+
+        PS->SetPlayerStageGold(0);
+    }
     
     //if (!HasAuthority()) return;
     // if (bIsDead) return;
@@ -640,6 +671,7 @@ bool APlayerCharacter::EquipWeaponActor(EWeaponType NewWeaponType)
 
     UGameplayStatics::FinishSpawningActor(CurrentWeapon, FTransform::Identity);
 
+    CurrentWeapon->SetOwner(this);
     CurrentWeapon->SetOwnerCharacter(this);
 
     CurrentWeapon->AttachToComponent(
