@@ -1,4 +1,6 @@
 ﻿#include "PlayerCharacterState.h"
+
+#include "MyPlayerController.h"
 #include "TestGameMode.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -48,14 +50,27 @@ FPlayerDatas& APlayerCharacterState::GetPlayerInfo()
 	return PlayerInfo;
 }
 
-void APlayerCharacterState::BuyItem_Implementation(const FInventoryItemData& InItemData)
+void APlayerCharacterState::BuyItem_Implementation(const FInventoryItemData& InItemData, int32 InItemCost)
 {
 	if (HasAuthority())
 	{
-		FPlayerDatas& info = GetPlayerInfo();
-		info.GoldStorage -= 100;
+		AMyPlayerController* PC = Cast<AMyPlayerController>(GetPlayerController());
+		if (!IsValid(PC)) return;
 		
-		AddItemInPlayerStageInventory(InItemData);
+		FPlayerDatas& info = GetPlayerInfo();
+		if (info.GoldStorage >= InItemCost)
+		{
+			info.GoldStorage -= InItemCost;
+			AddItemInPlayerStageInventory(InItemData);
+			
+			PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, true);
+			PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, true);
+		}
+		else
+		{
+			PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, false);
+			PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, false);
+		}
 	}
 }
 

@@ -59,15 +59,20 @@ public:
 	TObjectPtr<UTextBlock> ConnectionStateText;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Title|UI")
-	FString TitleName = "DedicatedX";
+	FString TitleName1 = "The";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Title|UI")
+	FString TitleName2 = "Lost";
 	
 	FTimerHandle StartDelayTimer;
-	FTimerHandle TitleLetterTimerHandle;
+	FTimerHandle TitleUpperLetterTimerHandle;
+	FTimerHandle TitleDownLetterTimerHandle;
 	int32 TimerCount = 0;
 	void CreateLetterWidget();
-	
+	void CreateDownLetterWidget();
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	TObjectPtr<UHorizontalBox> TitleHorizontal;
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	TObjectPtr<UHorizontalBox> TitleHorizontal_1;
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	TObjectPtr<UVerticalBox> ButtonsVerticalBox;
 	

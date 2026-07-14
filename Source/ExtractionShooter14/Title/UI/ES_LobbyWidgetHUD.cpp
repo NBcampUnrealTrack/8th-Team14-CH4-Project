@@ -153,9 +153,9 @@ void UES_LobbyWidgetHUD::RefreshPlayerInfo()
 	if (!IsValid(OwningPlayerState)) return;
 	if (!IsValid(LobbyTotalGold)) return;
 	
-	// UTextBlock* GoldText = Cast<UTextBlock>(
-	// 	LobbyTotalGold->GetWidgetFromName(TEXT("TXT_Gold_Text"))
-	// );
+	UTextBlock* GoldText = Cast<UTextBlock>(
+		LobbyTotalGold->GetWidgetFromName(TEXT("TXT_Gold_Text"))
+	);
 	UE_LOG(
 	LogTemp,
 	Error,
@@ -165,7 +165,7 @@ void UES_LobbyWidgetHUD::RefreshPlayerInfo()
 	
 	const FPlayerDatas& NewPlayerData = OwningPlayerState->GetPlayerInfo();
 	
-	LobbyTotalGold->SetText(FText::AsNumber(NewPlayerData.GoldStorage));
+	GoldText->SetText(FText::AsNumber(NewPlayerData.GoldStorage));
 	PlayerNickName->SetText(FText::FromString(NewPlayerData.PlayerNickName));
 }
 

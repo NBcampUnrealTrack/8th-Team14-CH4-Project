@@ -145,7 +145,7 @@ void UES_TitleWidgetHUD::OnClickedExitButton()
 void UES_TitleWidgetHUD::OnFadeInAnimation_Back_Finished()
 {
 	GetWorld()->GetTimerManager().SetTimer(
-		TitleLetterTimerHandle,
+		TitleUpperLetterTimerHandle,
 		this,
 		&ThisClass::CreateLetterWidget,
 		0.2f,
@@ -154,7 +154,7 @@ void UES_TitleWidgetHUD::OnFadeInAnimation_Back_Finished()
 
 void UES_TitleWidgetHUD::CreateLetterWidget()
 {
-	if (TimerCount < TitleName.Len())
+	if (TimerCount < TitleName1.Len())
 	{  
 		UUserWidget* LetterWidgetInstance = CreateWidget<UUserWidget>(GetOwningPlayer(), LetterWidget);
 		if (!IsValid(LetterWidgetInstance)) return;
@@ -162,14 +162,42 @@ void UES_TitleWidgetHUD::CreateLetterWidget()
 		UTextBlock* Text =
 		Cast<UTextBlock>(LetterWidgetInstance->GetWidgetFromName(TEXT("TextLetter")));
 		
-		Text->SetText(FText::FromString(FString::Chr(TitleName[TimerCount])));
+		Text->SetText(FText::FromString(FString::Chr(TitleName1[TimerCount])));
 		UHorizontalBoxSlot* HorizontalSlot = TitleHorizontal->AddChildToHorizontalBox(LetterWidgetInstance);
-		LetterWidgetInstance->SetRenderTranslation(FVector2D(-5.f * TimerCount, 0.f));
+		//LetterWidgetInstance->SetRenderTranslation(FVector2D(TimerCount, 0.f));
 		TimerCount++;
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().ClearTimer(TitleLetterTimerHandle);
+		GetWorld()->GetTimerManager().ClearTimer(TitleUpperLetterTimerHandle);
+		TimerCount = 0;
+		GetWorld()->GetTimerManager().SetTimer(
+			TitleDownLetterTimerHandle,
+			this,
+			&ThisClass::CreateDownLetterWidget,
+			0.2f,
+			true);
+	}
+}
+
+void UES_TitleWidgetHUD::CreateDownLetterWidget()
+{
+	if (TimerCount < TitleName2.Len())
+	{  
+		UUserWidget* LetterWidgetInstance = CreateWidget<UUserWidget>(GetOwningPlayer(), LetterWidget);
+		if (!IsValid(LetterWidgetInstance)) return;
+		
+		UTextBlock* Text =
+		Cast<UTextBlock>(LetterWidgetInstance->GetWidgetFromName(TEXT("TextLetter")));
+		
+		Text->SetText(FText::FromString(FString::Chr(TitleName2[TimerCount])));
+		UHorizontalBoxSlot* HorizontalSlot = TitleHorizontal_1->AddChildToHorizontalBox(LetterWidgetInstance);
+		//LetterWidgetInstance->SetRenderTranslation(FVector2D(TimerCount, 0.f));
+		TimerCount++;
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TitleDownLetterTimerHandle);
 	}
 }
 

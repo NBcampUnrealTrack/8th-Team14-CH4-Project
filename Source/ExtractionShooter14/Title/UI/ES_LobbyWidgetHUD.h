@@ -37,6 +37,9 @@ public:
 	
 	void ApplyTextColorAnimation(float LeftTime);
 	
+	// UFUNCTION(BlueprintImplementableEvent)
+	// void ItemRowWidgetPlayAnim(const FName& RowWidgetItemName);
+	
 	void CachedPlayerState(APlayerCharacterState* InPlayerState);
 	void CachedGameState(ATestGameState* InTestGameState);
 	void CachedPlayerController(AMyPlayerController* InPlayerController);
@@ -50,7 +53,7 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UHorizontalBox> PlayerIconHorizontal;
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UTextBlock> LobbyTotalGold;
+	TObjectPtr<UUserWidget> LobbyTotalGold;
 	
 	
 	

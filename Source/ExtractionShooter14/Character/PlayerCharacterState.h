@@ -53,7 +53,7 @@ public:
 	
 	FPlayerDatas& GetPlayerInfo();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void BuyItem(const FInventoryItemData& InItemData);
+	void BuyItem(const FInventoryItemData& InItemData, int32 InItemcost);
 	
 	void ClearPlayerStageInventory();
 	void ApplyPlayerStageInventoryToPlayerStorage();

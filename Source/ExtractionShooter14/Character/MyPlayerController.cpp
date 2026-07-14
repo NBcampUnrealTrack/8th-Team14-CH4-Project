@@ -351,6 +351,11 @@ void AMyPlayerController::OnPlayerHealthChanged(float CurrentHP, float MaxHP)
     StageWidgetInstance.Get()->BP_PlayerDamageFlash();
 }
 
+void AMyPlayerController::Client_OnReceiveBuyItemResult_Implementation(const FName& BuyItemID, bool Result)
+{
+    OnReceiveBuyItemResult.Broadcast(BuyItemID, Result);
+}
+
 void AMyPlayerController::PlayBGM(USoundBase* NewBGM, float Volume)
 {
     UE_LOG(LogTemp, Warning, TEXT("PlayBGM Called / Local=%d / BGM=%s / Volume=%.2f"),
