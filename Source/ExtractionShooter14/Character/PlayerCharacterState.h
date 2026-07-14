@@ -57,6 +57,9 @@ public:
 	
 	void ClearPlayerStageInventory();
 	void ApplyPlayerStageInventoryToPlayerStorage();
+
+	UPROPERTY(ReplicatedUsing = OnRep_Coin)
+	int32 Coin = 0;
 	
 #pragma region Delegate
 	FPlayerInfoChanged OnPlayerInfoChanged;
@@ -92,6 +95,8 @@ public:
 	void OnRep_bIsDead();
 	UFUNCTION()
 	void OnRep_Health();
+	UFUNCTION()
+	void OnRep_Coin();
 #pragma endregion 
 	
 #pragma region SetterGetter(LobbyFunction)
@@ -101,6 +106,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	EPlayerPlace GetPlayerStagePlace();
 	void SetPlayerStagePlace(EPlayerPlace InPlayerStagePlace);
+
+	void SetPlayerStageGold(int32 NewGold);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerReady(bool bReady);

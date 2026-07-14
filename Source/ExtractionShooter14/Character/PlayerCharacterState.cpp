@@ -31,6 +31,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	DOREPLIFETIME(ThisClass, bIsReady);
 	DOREPLIFETIME(ThisClass, bIsDead);
 	DOREPLIFETIME(ThisClass, CurrentHealth);
+	DOREPLIFETIME(ThisClass, Coin);
 }
 
 void APlayerCharacterState::ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData)
@@ -249,6 +250,10 @@ void APlayerCharacterState::OnRep_Health()
 {
 	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
 	UE_LOG(LogTemp, Warning, TEXT("CLIENT :: %.1f / %.1f"),CurrentHealth,MaxHealth);
+}
+
+void APlayerCharacterState::OnRep_Coin()
+{
 }
 
 void APlayerCharacterState::OnRep_bIsReady()
@@ -500,6 +505,22 @@ void APlayerCharacterState::SetPlayerStagePlace(EPlayerPlace InPlayerStagePlace)
 	
 	PlayerPlace = InPlayerStagePlace;
 	OnRep_PlayerStagePlace();
+	ForceNetUpdate();
+}
+
+void APlayerCharacterState::SetPlayerStageGold(int32 NewGold)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	const int32 OldGold = PlayerStageGold;
+
+	PlayerStageGold = FMath::Max(0, NewGold);
+
+	OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
+
 	ForceNetUpdate();
 }
 

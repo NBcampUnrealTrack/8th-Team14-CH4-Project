@@ -7,6 +7,7 @@
 #include "PlayerCharacterAnimInstance.h"
 #include "InputActionValue.h"
 #include "Weapon/WeaponType.h"
+#include "Item/CoinBase.h"
 #include "GameFramework/Character.h"
 #include "Engine/DataTable.h"
 #include "PlayerCharacter.generated.h"
@@ -67,6 +68,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TMap<EWeaponType, FDataTableRowHandle> WeaponDataMap;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Drop")
+	TSubclassOf<class ACoinBase> CoinClass;
 public:	
 
 	virtual void Tick(float DeltaTime) override;

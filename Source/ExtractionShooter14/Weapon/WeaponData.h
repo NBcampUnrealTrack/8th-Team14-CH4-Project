@@ -10,7 +10,7 @@
 
 #include "WeaponData.generated.h"
 
-class USkeletalMesh;
+class UStaticMesh;
 
 USTRUCT(BlueprintType)
 struct FWeaponData : public FTableRowBase
@@ -25,7 +25,7 @@ public:
 
 	// �ѱ� �޽�
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USkeletalMesh* WeaponMesh = nullptr;
+	UStaticMesh* WeaponMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attach")
 	FVector AttachLocationOffset = FVector::ZeroVector;

@@ -13,6 +13,7 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(AWeaponBase, CurrentReserveAmmo);
 	DOREPLIFETIME(AWeaponBase, bIsReloading);
 	DOREPLIFETIME(AWeaponBase, WeaponDataRow);
+	DOREPLIFETIME(AWeaponBase, OwnerCharacter);
 }
 
 AWeaponBase::AWeaponBase()
@@ -22,7 +23,7 @@ AWeaponBase::AWeaponBase()
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	RootComponent = SceneRoot;
 
-	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComponent->SetupAttachment(SceneRoot);
 
 	bReplicates = true;
@@ -65,7 +66,7 @@ void AWeaponBase::ApplyWeaponData()
 
 	if (CurrentWeaponData.WeaponMesh)
 	{
-		MeshComponent->SetSkeletalMesh(CurrentWeaponData.WeaponMesh);
+		MeshComponent->SetStaticMesh(CurrentWeaponData.WeaponMesh);
 	}
 
 	MeshComponent->SetRelativeLocation(CurrentWeaponData.AttachLocationOffset);
@@ -266,6 +267,8 @@ void AWeaponBase::Fire()
 
 	MulticastPlayFireEffects();
 
+	ClientApplyRecoil();
+
 	UE_LOG(LogTemp, Warning, TEXT("Fire! Ammo : %d"), CurrentMagazineAmmo);
 }
 
@@ -377,6 +380,12 @@ void AWeaponBase::OnRep_CurrentReserveAmmo()
 
 void AWeaponBase::StartFire()
 {
+	if (CurrentMagazineAmmo <= 0)
+	{
+		Reload();
+		return;
+	}
+
 	switch (CurrentWeaponData.FireMode)
 	{
 	case EFireMode::Single:
@@ -413,6 +422,41 @@ void AWeaponBase::StartFire()
 void AWeaponBase::StopFire()
 {
 	GetWorld()->GetTimerManager().ClearTimer(FireTimerHandle);
+}
+
+void AWeaponBase::ClientApplyRecoil_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ClientApplyRecoil Called"));
+
+	if (!OwnerCharacter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No OwnerCharacter"));
+		return;
+	}
+
+	if (!OwnerCharacter->IsLocallyControlled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Not Local"));
+		return;
+	}
+
+	APlayerController* PC =
+		Cast<APlayerController>(OwnerCharacter->GetController());
+
+	if (!PC)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No PC"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Apply Recoil"));
+
+	PC->AddPitchInput(-CurrentWeaponData.VerticalRecoil);
+
+	PC->AddYawInput(
+		FMath::FRandRange(
+			-CurrentWeaponData.HorizontalRecoil,
+			CurrentWeaponData.HorizontalRecoil));
 }
 
 void AWeaponBase::MulticastPlayFireEffects_Implementation()
