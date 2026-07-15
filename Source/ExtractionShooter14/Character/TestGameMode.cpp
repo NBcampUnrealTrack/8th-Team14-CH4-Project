@@ -38,28 +38,28 @@ void ATestGameMode::BeginPlay()
 //====================== session =============================
 //====================== session =============================
 #pragma region Session  
-    //if (IsRunningDedicatedServer())
-    //{
-    //    if (UGameInstance* GameInstance = GetGameInstance())
-    //    {
-    //        if (UES_SessionSubsystem* SessionSubsystem =
-    //            GameInstance->GetSubsystem<UES_SessionSubsystem>())
-    //        {
-    //            SessionSubsystem->CreateDedicatedSession(
-    //                3,
-    //                TEXT("Extraction Shooter Server")
-    //            );
-    //        }
-    //        else
-    //        {
-    //            UE_LOG(
-    //                LogTemp,
-    //                Error,
-    //                TEXT("[TestGameMode] SessionSubsystem is invalid.")
-    //            );
-    //        }
-    //    }
-    //}
+    // if (IsRunningDedicatedServer())
+    // {
+    //     if (UGameInstance* GameInstance = GetGameInstance())
+    //     {
+    //         if (UES_SessionSubsystem* SessionSubsystem =
+    //             GameInstance->GetSubsystem<UES_SessionSubsystem>())
+    //         {
+    //             SessionSubsystem->CreateDedicatedSession(
+    //                 3,
+    //                 TEXT("Extraction Shooter Server")
+    //             );
+    //         }
+    //         else
+    //         {
+    //             UE_LOG(
+    //                 LogTemp,
+    //                 Error,
+    //                 TEXT("[TestGameMode] SessionSubsystem is invalid.")
+    //             );
+    //         }
+    //     }
+    // }
 #pragma endregion 
     
     UGameplayStatics::GetAllActorsOfClass(
@@ -235,18 +235,14 @@ void ATestGameMode::Logout(AController* Exiting)
         }
     }
 
-    APlayerController* ExitingPlayerController =
-        Cast<APlayerController>(Exiting);
+    APlayerController* ExitingPlayerController = Cast<APlayerController>(Exiting);
 
     if (IsValid(ExitingPlayerController))
     {
-        LobbyPlayerStartPointMap.Remove(
-            ExitingPlayerController
-        );
+        LobbyPlayerStartPointMap.Remove(ExitingPlayerController);
     }
 
-    ATestGameState* GS =
-        GetGameState<ATestGameState>();
+    ATestGameState* GS = GetGameState<ATestGameState>();
 
     if (IsValid(GS))
     {
@@ -255,12 +251,9 @@ void ATestGameMode::Logout(AController* Exiting)
             GS->RemoveLobbyPlayerStates(PS);
         }
 
-        const int32 RemainingPlayerCount =
-            LobbyPlayerStartPointMap.Num();
+        const int32 RemainingPlayerCount = LobbyPlayerStartPointMap.Num();
 
-        GS->SetPlayerInGameCount_GS(
-            RemainingPlayerCount
-        );
+        GS->SetPlayerInGameCount_GS(RemainingPlayerCount);
 
         UE_LOG(
             LogTemp,
@@ -383,16 +376,16 @@ void ATestGameMode::StartNone()
         return;
     }
 
-    // 모든 진행 타이머 종료
+    // gamemode timer clear
     GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
 
-    // 강제 Ready 상태 초기화
+    // initialize force ready
     bForced = false;
 
-    // 랭킹 타이머도 종료
+    // end rank timer
     GS->StopRankUpdateTimer();
 
-    // 플레이어가 없는 상태로 전환
+    // gs state convert
     GS->SetGameStatePhaseTimerData(
         EGameState::None,
         0.0f

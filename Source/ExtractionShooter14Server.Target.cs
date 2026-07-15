@@ -10,20 +10,9 @@ public class ExtractionShooter14ServerTarget : TargetRules
         IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_4;
         ExtraModuleNames.Add("ExtractionShooter14");
 
-        ProjectDefinitions.Add(
-            "UE_PROJECT_STEAMPRODUCTNAME=\"480\""
-);
-
-        ProjectDefinitions.Add(
-            "UE_PROJECT_STEAMGAMEDIR=\"spacewar\""
-        );
-
-        ProjectDefinitions.Add(
-            "UE_PROJECT_STEAMGAMEDESC=\"Extraction Shooter 14\""
-        );
-
-        ProjectDefinitions.Add(
-            "UE_PROJECT_STEAMSHIPPINGID=480"
-        );
+        GlobalDefinitions.Add("UE_PROJECT_STEAMSHIPPINGID=480");
+        GlobalDefinitions.Add("UE_PROJECT_STEAMPRODUCTNAME=\"spacewar\"");
+        GlobalDefinitions.Add("UE_PROJECT_STEAMGAMEDIR=\"spacewar\"");
+        GlobalDefinitions.Add("UE_PROJECT_STEAMGAMEDESC=\"Spacewar\"");
     }
 }

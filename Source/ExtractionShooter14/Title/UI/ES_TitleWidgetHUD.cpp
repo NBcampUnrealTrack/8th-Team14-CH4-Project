@@ -76,10 +76,16 @@ void UES_TitleWidgetHUD::NativeConstruct()
 
 void UES_TitleWidgetHUD::NativeDestruct()
 {
-	Super::NativeDestruct();
-	
 	UnbindAllFromAnimationFinished(BlackFadeOut);
-	
+
+	if (IsValid(SessionSubsystem))
+	{
+		SessionSubsystem->OnConnectionStateChanged
+			.RemoveDynamic(this, &ThisClass::OnConnectionStateChanged);
+		SessionSubsystem->OnConnectionCompleted
+			.RemoveDynamic(this, &ThisClass::OnConnectionCompleted);
+	}
+	Super::NativeDestruct();
 }
 
 void UES_TitleWidgetHUD::OnClickedPlayButton()
@@ -105,7 +111,7 @@ void UES_TitleWidgetHUD::OnClickedPlayButton()
 		PlayButton->SetIsEnabled(false);
 	}
 	
-	// SessionSubsystem->FindAndJoinDedicatedServer();
+	//SessionSubsystem->FindAndJoinDedicatedServer();
 	
 	
 // ========================== Session ===========================
