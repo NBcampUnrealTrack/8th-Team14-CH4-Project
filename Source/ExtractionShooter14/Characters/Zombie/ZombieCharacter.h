@@ -107,7 +107,7 @@ private:
 	UFUNCTION()
 	void DestroyZombie();
 
-	// ╕╢┴Ў╕╖└╕╖╬ ╡е╣╠┴Ў╕ж ┴╪ ─┴╞о╖╤╖п └·└х
+	// я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜ я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜я┐╜ я┐╜я┐╜ я┐╜я┐╜╞оя┐╜╤╖я┐╜ я┐╜я┐╜я┐╜я┐╜
 	UPROPERTY()
 	AController* LastDamageInstigator = nullptr;
 };

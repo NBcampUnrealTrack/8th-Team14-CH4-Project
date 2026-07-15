@@ -70,6 +70,12 @@ public:
 	void StopBGM(float FadeTime = 0.5f);
 	UFUNCTION(Client, Reliable)
 	void Client_StopBGM();
+
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "HUD")
+	void Client_ShowHitMarker(bool bCritical);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
+	void BP_ShowHitMarker(bool bCritical);
 public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")

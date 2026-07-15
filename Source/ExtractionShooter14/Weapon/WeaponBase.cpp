@@ -5,6 +5,9 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Components/SceneComponent.h"
 #include "NiagaraComponent.h"
+#include "Character/MyPlayerController.h"
+#include "Characters/Zombie/ZombieCharacter.h"
+
 
 
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -197,22 +200,40 @@ void AWeaponBase::FireTrace()
 
 		if (HitActor)
 		{
-			float Damage = CurrentWeaponData.Damage;
+			const bool bCanShowHitMarker =
+				HitActor->IsA<APlayerCharacter>() ||
+				HitActor->IsA<AZombieCharacter>();
 
-			if (IsHeadShot(WeaponHit))
+			if (bCanShowHitMarker)
 			{
-				Damage *= CurrentWeaponData.HeadShotMultiplier;
+				float Damage = CurrentWeaponData.Damage;
+				bool bCritical = false;
 
-				UE_LOG(LogTemp, Warning, TEXT("HeadShot!"));
+				if (IsHeadShot(WeaponHit))
+				{
+					Damage *= CurrentWeaponData.HeadShotMultiplier;
+					bCritical = true;
+
+					UE_LOG(LogTemp, Warning, TEXT("HeadShot!"));
+				}
+
+				const float AppliedDamage = UGameplayStatics::ApplyDamage(
+					HitActor,
+					Damage,
+					OwnerCharacter->GetController(),
+					this,
+					nullptr
+				);
+
+				if (AppliedDamage > 0.0f)
+				{
+					if (AMyPlayerController* MyPC =
+						Cast<AMyPlayerController>(OwnerCharacter->GetController()))
+					{
+						MyPC->Client_ShowHitMarker(bCritical);
+					}
+				}
 			}
-
-			UGameplayStatics::ApplyDamage(
-				HitActor,
-				Damage,
-				OwnerCharacter->GetController(),
-				this,
-				nullptr
-			);
 		}
 	}
 
