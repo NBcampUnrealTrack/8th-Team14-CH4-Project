@@ -22,7 +22,6 @@ EBTNodeResult::Type UBTTask_Patrol::ExecuteTask(
 	UBehaviorTreeComponent& OwnerComp,
 	uint8* NodeMemory)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Execute Patrol"));
 
 	FBTPatrolMemory* Memory = reinterpret_cast<FBTPatrolMemory*>(NodeMemory);
 	Memory->ElapsedTime = 0.0f;
@@ -55,11 +54,7 @@ EBTNodeResult::Type UBTTask_Patrol::ExecuteTask(
 		Memory->bIsReturningHome = true;
 		Memory->PatrolTarget = HomeLocation;
 
-		FAIMoveRequest MoveRequest;
-		MoveRequest.SetGoalLocation(HomeLocation);
-		MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
-		MoveRequest.SetUsePathfinding(true);
-		AIController->MoveTo(MoveRequest);
+		MoveToLocation(AIController, HomeLocation);
 
 		UE_LOG(LogTemp, Warning, TEXT("[Patrol] Returning Home..."));
 	}
@@ -96,14 +91,10 @@ EBTNodeResult::Type UBTTask_Patrol::ExecuteTask(
 			Zombie->PatrolWaitTimeMin,
 			Zombie->PatrolWaitTimeMax);
 
-		FAIMoveRequest MoveRequest;
-		MoveRequest.SetGoalLocation(Memory->PatrolTarget);
-		MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
-		MoveRequest.SetUsePathfinding(true);
-		AIController->MoveTo(MoveRequest);
+		MoveToLocation(AIController, Memory->PatrolTarget);
 
-		UE_LOG(LogTemp, Warning, TEXT("[Patrol] Patrolling to: %s"),
-			*Memory->PatrolTarget.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("[Patrol] Patrolling to: %s"),
+		//	*Memory->PatrolTarget.ToString());
 	}
 
 	return EBTNodeResult::InProgress;
@@ -134,9 +125,11 @@ void UBTTask_Patrol::TickTask(
 		Memory->ElapsedTime += DeltaSeconds;
 		if (Memory->ElapsedTime >= Memory->WaitTime)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("PATROL FINISHED (Wait End)"));
-			// 대기 끝 - 다시 Patrol 시작
-			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+			Memory->bIsWaiting = false;
+
+			FinishLatentTask(
+				OwnerComp,
+				EBTNodeResult::Succeeded);
 		}
 		return;
 	}
@@ -166,25 +159,52 @@ void UBTTask_Patrol::TickTask(
 	//}
 	// AI가 실제 이동을 끝냈는지 확인
 
-	UE_LOG(LogTemp, Warning,
-		TEXT("MoveStatus = %d"),
-		(int32)AIController->GetMoveStatus());
+	UPathFollowingComponent* PathComp =
+		AIController->GetPathFollowingComponent();
 
-	if (AIController->GetMoveStatus() == EPathFollowingStatus::Idle)
+	if (!PathComp)
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+		return;
+	}
+
+	if (PathComp->GetStatus() == EPathFollowingStatus::Idle)
 	{
 		if (Memory->bIsReturningHome)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("[Patrol] Return Home Complete"));
 
 			Memory->bIsReturningHome = false;
-			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+
+			// 귀환 후 잠깐 쉬기
+			Memory->bIsWaiting = true;
+			Memory->ElapsedTime = 0.0f;
+			Memory->WaitTime = FMath::FRandRange(1.0f, 2.0f);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[Patrol] Arrived Patrol Point"));
 
 			Memory->bIsWaiting = true;
 			Memory->ElapsedTime = 0.0f;
 		}
 	}
+
+
+}
+
+void UBTTask_Patrol::MoveToLocation(
+	AAIController* AIController,
+	const FVector& TargetLocation)
+{
+	if (!AIController)
+	{
+		return;
+	}
+
+	FAIMoveRequest MoveRequest;
+	MoveRequest.SetGoalLocation(TargetLocation);
+	MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
+	MoveRequest.SetUsePathfinding(true);
+
+	AIController->MoveTo(MoveRequest);
 }

@@ -193,33 +193,33 @@ void AZombieCharacter::Die()
 	// 		}
 	// 	}
 	// }
-	if (IsValid(LastDamageInstigator))
-	{
-		APlayerCharacterState* KillerPS =
-			LastDamageInstigator->GetPlayerState<APlayerCharacterState>();
+	//if (IsValid(LastDamageInstigator))
+	//{
+	//	APlayerCharacterState* KillerPS =
+	//		LastDamageInstigator->GetPlayerState<APlayerCharacterState>();
 
-		const int32 GoldReward = FMath::RoundToInt(DropChance);
+	//	const int32 GoldReward = FMath::RoundToInt(DropChance);
 
-		if (IsValid(KillerPS))
-		{
+	//	if (IsValid(KillerPS))
+	//	{
 
-			KillerPS->AddPlayerStageGold(GoldReward);
+	//		KillerPS->AddPlayerStageGold(GoldReward);
 
-			// 플레이어 이름 가져오기
-			const FString PlayerName = KillerPS->GetPlayerName();
+	//		// 플레이어 이름 가져오기
+	//		const FString PlayerName = KillerPS->GetPlayerName();
 
-			UE_LOG(LogTemp, Warning, TEXT("[Reward] %s earned %d Gold!"),
-				*PlayerName, GoldReward);
+	//		UE_LOG(LogTemp, Warning, TEXT("[Reward] %s earned %d Gold!"),
+	//			*PlayerName, GoldReward);
 
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1, 5.f, FColor::Yellow,
-					FString::Printf(TEXT("[%s] earned %d Gold!"),
-						*PlayerName, GoldReward));
-			}
-		}
-	}
+	//		if (GEngine)
+	//		{
+	//			GEngine->AddOnScreenDebugMessage(
+	//				-1, 5.f, FColor::Yellow,
+	//				FString::Printf(TEXT("[%s] earned %d Gold!"),
+	//					*PlayerName, GoldReward));
+	//		}
+	//	}
+	//}
 
 	float DestroyDelay = 2.0f;
 	if (DeathMontage)

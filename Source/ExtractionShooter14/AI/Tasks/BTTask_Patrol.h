@@ -35,4 +35,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Patrol")
 	float AcceptanceRadius = 100.0f;
+private:
+	void MoveToLocation(
+		AAIController* AIController,
+		const FVector& TargetLocation);
 };
