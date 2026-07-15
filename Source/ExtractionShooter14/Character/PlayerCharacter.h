@@ -85,7 +85,8 @@ public:
 	
 	UFUNCTION()
 	void OnbIsDeadChanged(uint8 changedbisdead);
-	
+
+	UFUNCTION(BlueprintCallable)
 	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	
 	UFUNCTION(BlueprintCallable, Category = "Death")
@@ -196,11 +197,7 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerFire();
 
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	float TestDamage = 10.0f;*/
-
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	float FireRange = 10000.0f;*/
+	
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float WalkSpeed = 300.f;
@@ -213,6 +210,8 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Aim")
 	bool bIsAiming = false;
+
+	bool bWantsToSprint = false;
 	
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -288,6 +287,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")
 	UAnimMontage* StageSpawnMontage;
+
+
 
 	UPROPERTY(
 		EditDefaultsOnly,

@@ -23,6 +23,7 @@
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Weapon/WeaponType.h"
+#include "Weapon/WeaponBase.h"
 
 
 APlayerCharacter::APlayerCharacter()
@@ -35,9 +36,6 @@ APlayerCharacter::APlayerCharacter()
     {
         GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f));
         GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-
-        
-        GetMesh()->SetupAttachment(RootComponent);
     }
 
     
@@ -133,6 +131,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
             EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &APlayerCharacter::StartSprint);
             
             EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
+            EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Canceled, this, &APlayerCharacter::StopSprint);
         }
         
         if (OptionAction)
@@ -222,7 +221,14 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 
 void APlayerCharacter::StartSprint(const FInputActionValue& Value)
 {
-    if (bIsAiming)
+    if (!IsLocallyControlled())
+    {
+        return;
+    }
+
+    bWantsToSprint = true;
+
+    if (bIsAiming || bIsSprinting)
     {
         return;
     }
@@ -234,10 +240,10 @@ void APlayerCharacter::StartSprint(const FInputActionValue& Value)
     if (UCharacterMovementComponent* MovementComp =
         GetCharacterMovement())
     {
-        MovementComp->MaxWalkSpeed = 600.f;
+        MovementComp->MaxWalkSpeed = SprintSpeed;
     }
 
-    if (IsLocallyControlled())
+    if (!HasAuthority())
     {
         ServerStartSprint();
     }
@@ -245,6 +251,18 @@ void APlayerCharacter::StartSprint(const FInputActionValue& Value)
 
 void APlayerCharacter::StopSprint(const FInputActionValue& Value)
 {
+    if (!IsLocallyControlled())
+    {
+        return;
+    }
+
+    bWantsToSprint = false;
+
+    if (!bIsSprinting)
+    {
+        return;
+    }
+
     bIsSprinting = false;
 
     if (UCharacterMovementComponent* MovementComp =
@@ -253,7 +271,7 @@ void APlayerCharacter::StopSprint(const FInputActionValue& Value)
         MovementComp->MaxWalkSpeed = WalkSpeed;
     }
 
-    if (IsLocallyControlled())
+    if (!HasAuthority())
     {
         ServerStopSprint();
     }
@@ -312,8 +330,21 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
     if (USkeletalMeshComponent* MeshComp = GetMesh())
     {
 
-        //MeshComp->SetVisibility(false);
+        MeshComp->SetVisibility(false, true);
     }
+
+    if (IsValid(CurrentWeapon))
+    {
+        CurrentWeapon->SetActorHiddenInGame(true);
+    }
+
+    // 복제 Actor인 무기의 실제 제거는 서버에서만
+    if (HasAuthority() && IsValid(CurrentWeapon))
+    {
+        CurrentWeapon->Destroy();
+        CurrentWeapon = nullptr;
+    }
+
     
     if (IsLocallyControlled())  
     {
@@ -324,10 +355,17 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
         //Destroy();
     }
     
+
+ 
 }
 
 void APlayerCharacter::ServerStartSprint_Implementation()
 {
+    if (bIsSprinting)
+    {
+        return;
+    }
+
     if (CurrentWeapon)
     {
         CurrentWeapon->StopFire();
@@ -338,12 +376,17 @@ void APlayerCharacter::ServerStartSprint_Implementation()
     if (UCharacterMovementComponent* MovementComp =
         GetCharacterMovement())
     {
-        MovementComp->MaxWalkSpeed = 600.f;
+        MovementComp->MaxWalkSpeed = SprintSpeed;
     }
 }
 
 void APlayerCharacter::ServerStopSprint_Implementation()
 {
+    if (!bIsSprinting)
+    {
+        return;
+    }
+
     bIsSprinting = false;
 
     if (UCharacterMovementComponent* MovementComp =
@@ -358,7 +401,12 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(APlayerCharacter, CurrentWeaponType);
-    DOREPLIFETIME(APlayerCharacter, bIsSprinting);
+
+    DOREPLIFETIME_CONDITION(
+        APlayerCharacter,
+        bIsSprinting,
+        COND_SkipOwner
+    );
     //DOREPLIFETIME(APlayerCharacter, bIsDead);
     DOREPLIFETIME(APlayerCharacter, CurrentWeapon);
     DOREPLIFETIME(APlayerCharacter, CurrentWeaponRowName);
@@ -366,20 +414,27 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void APlayerCharacter::StartAim()
 {
-    bIsAiming = true;
-
-    bIsSprinting = false;
-
-    if (UCharacterMovementComponent* MovementComp =
-        GetCharacterMovement())
+    if (!IsLocallyControlled())
     {
-        MovementComp->MaxWalkSpeed = WalkSpeed;
+        return;
     }
 
- 
-    if (IsLocallyControlled())
+    bIsAiming = true;
+
+    if (bIsSprinting)
     {
-        ServerStopSprint();
+        bIsSprinting = false;
+
+        if (UCharacterMovementComponent* MovementComp =
+            GetCharacterMovement())
+        {
+            MovementComp->MaxWalkSpeed = WalkSpeed;
+        }
+
+        if (!HasAuthority())
+        {
+            ServerStopSprint();
+        }
     }
 
     SetActorTickEnabled(true);
@@ -397,7 +452,28 @@ void APlayerCharacter::StartAim()
 
 void APlayerCharacter::StopAim()
 {
+    if (!IsLocallyControlled())
+    {
+        return;
+    }
+
     bIsAiming = false;
+
+    if (bWantsToSprint && !bIsSprinting)
+    {
+        bIsSprinting = true;
+
+        if (UCharacterMovementComponent* MovementComp =
+            GetCharacterMovement())
+        {
+            MovementComp->MaxWalkSpeed = SprintSpeed;
+        }
+
+        if (!HasAuthority())
+        {
+            ServerStartSprint();
+        }
+    }
 
     SetActorTickEnabled(true);
 
@@ -565,9 +641,9 @@ void APlayerCharacter::Die()
     {
         GetMesh()->GetAnimInstance()->Montage_Play(DeathMontage);
         
-        FOnMontageEnded EndDelegate;
-        EndDelegate.BindUObject(this, &APlayerCharacter::OnDeathMontageEnded);
-        GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate, DeathMontage);
+       // FOnMontageEnded EndDelegate;
+       // EndDelegate.BindUObject(this, &APlayerCharacter::OnDeathMontageEnded);
+       // GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(EndDelegate, DeathMontage);
     }
 
     if (!HasAuthority())
@@ -1137,7 +1213,9 @@ void APlayerCharacter::ServerHandleChangeWeaponNotify_Implementation()
     CommitPendingWeaponChange();
 }
 
-void AMyPlayerController::Client_ShowHitMarker_Implementation(bool bCritical)
-{
-    BP_ShowHitMarker(bCritical);
-}
+
+//void AMyPlayerController::Client_ShowHitMarker_Implementation(bool bCritical)
+//{
+   // BP_ShowHitMarker(bCritical);
+//}
+

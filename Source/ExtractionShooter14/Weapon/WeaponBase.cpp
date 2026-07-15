@@ -25,15 +25,32 @@ AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	SceneRoot =
+		CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+
 	RootComponent = SceneRoot;
 
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	MeshComponent =
+		CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+
 	MeshComponent->SetupAttachment(SceneRoot);
+
+	
+	MeshComponent->SetCollisionEnabled(
+		ECollisionEnabled::NoCollision
+	);
+
+	MeshComponent->SetCollisionResponseToAllChannels(
+		ECollisionResponse::ECR_Ignore
+	);
+
+	MeshComponent->SetGenerateOverlapEvents(false);
+	MeshComponent->SetSimulatePhysics(false);
 
 	bReplicates = true;
 
-	SetReplicateMovement(true);
+	
+	SetReplicateMovement(false);
 }
 
 void AWeaponBase::BeginPlay()
@@ -52,15 +69,20 @@ void AWeaponBase::OnConstruction(const FTransform& Transform)
 
 void AWeaponBase::ApplyWeaponData()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ApplyWeaponData : %s"),
-		WeaponDataRow.IsNull() ? TEXT("NULL") : TEXT("VALID"));
+	UE_LOG(
+		LogTemp,
+		Warning,
+		TEXT("ApplyWeaponData : %s"),
+		WeaponDataRow.IsNull() ? TEXT("NULL") : TEXT("VALID")
+	);
 
 	if (WeaponDataRow.IsNull())
 	{
 		return;
 	}
 
-	const FWeaponData* WeaponData = WeaponDataRow.GetRow<FWeaponData>(TEXT("Weapon"));
+	const FWeaponData* WeaponData =
+		WeaponDataRow.GetRow<FWeaponData>(TEXT("Weapon"));
 
 	if (WeaponData == nullptr)
 	{
@@ -71,19 +93,50 @@ void AWeaponBase::ApplyWeaponData()
 
 	if (CurrentWeaponData.WeaponMesh)
 	{
-		MeshComponent->SetStaticMesh(CurrentWeaponData.WeaponMesh);
+		MeshComponent->SetStaticMesh(
+			CurrentWeaponData.WeaponMesh
+		);
 	}
 
-	MeshComponent->SetRelativeLocation(CurrentWeaponData.AttachLocationOffset);
-	MeshComponent->SetRelativeRotation(CurrentWeaponData.AttachRotationOffset);
-	MeshComponent->SetRelativeScale3D(CurrentWeaponData.AttachScale);
 
-	UE_LOG(LogTemp, Warning, TEXT("Weapon Offset: %s / %s"),
+	MeshComponent->SetCollisionEnabled(
+		ECollisionEnabled::NoCollision
+	);
+
+	MeshComponent->SetCollisionResponseToAllChannels(
+		ECollisionResponse::ECR_Ignore
+	);
+
+	MeshComponent->SetGenerateOverlapEvents(false);
+	MeshComponent->SetSimulatePhysics(false);
+
+	MeshComponent->SetRelativeLocation(
+		CurrentWeaponData.AttachLocationOffset
+	);
+
+	MeshComponent->SetRelativeRotation(
+		CurrentWeaponData.AttachRotationOffset
+	);
+
+	MeshComponent->SetRelativeScale3D(
+		CurrentWeaponData.AttachScale
+	);
+
+	
+
+	UE_LOG(
+		LogTemp,
+		Warning,
+		TEXT("Weapon Offset: %s / %s"),
 		*CurrentWeaponData.AttachLocationOffset.ToString(),
-		*CurrentWeaponData.AttachRotationOffset.ToString());
+		*CurrentWeaponData.AttachRotationOffset.ToString()
+	);
 
-	CurrentMagazineAmmo = CurrentWeaponData.MagazineSize;
-	CurrentReserveAmmo = CurrentWeaponData.MaxAmmo;
+	CurrentMagazineAmmo =
+		CurrentWeaponData.MagazineSize;
+
+	CurrentReserveAmmo =
+		CurrentWeaponData.MaxAmmo;
 }
 
 bool AWeaponBase::CanFire() const
@@ -561,7 +614,7 @@ void AWeaponBase::MulticastPlayFireEffects_Implementation(
 		UNiagaraFunctionLibrary::SpawnSystemAttached(
 			CurrentWeaponData.MuzzleFlash,
 			MeshComponent,
-			TEXT("Muzzle"),
+			CurrentWeaponData.MuzzleSocketName,
 			FVector::ZeroVector,
 			FRotator::ZeroRotator,
 			EAttachLocation::SnapToTarget,
@@ -581,8 +634,19 @@ void AWeaponBase::MulticastPlayFireEffects_Implementation(
 			true,
 			false,
 			ENCPoolMethod::None,
-			true
+			false
 		);
+
+	if (!TracerComponent)
+	{
+		UE_LOG(
+			LogTemp,
+			Error,
+			TEXT("TracerComponent Spawn Failed")
+		);
+
+		return;
+	}
 
 	if (TracerComponent)
 	{
@@ -597,6 +661,12 @@ void AWeaponBase::MulticastPlayFireEffects_Implementation(
 		);
 
 		TracerComponent->Activate(true);
+
+		UE_LOG(
+			LogTemp,
+			Warning,
+			TEXT("Tracer Activated")
+		);
 	}
 }
 	// �߻� ����
