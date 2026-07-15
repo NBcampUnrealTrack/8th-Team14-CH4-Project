@@ -1213,9 +1213,3 @@ void APlayerCharacter::ServerHandleChangeWeaponNotify_Implementation()
     CommitPendingWeaponChange();
 }
 
-
-//void AMyPlayerController::Client_ShowHitMarker_Implementation(bool bCritical)
-//{
-   // BP_ShowHitMarker(bCritical);
-//}
-

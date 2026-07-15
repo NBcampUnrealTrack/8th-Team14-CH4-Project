@@ -444,3 +444,7 @@ void AMyPlayerController::Client_StopBGM_Implementation()
 
     StopBGM(0.0f);
 }
+void AMyPlayerController::Client_ShowHitMarker_Implementation(bool bCritical)
+{
+   BP_ShowHitMarker(bCritical);
+}
