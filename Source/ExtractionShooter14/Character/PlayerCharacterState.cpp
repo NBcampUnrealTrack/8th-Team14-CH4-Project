@@ -592,4 +592,49 @@ void APlayerCharacterState::Server_SetStageGold_Implementation(int32 SetGold)
 	ForceNetUpdate();
 }
 
+//힐팩갯수 줄이기 - 성윤
+bool APlayerCharacterState::ConsumeItemInPlayerStageInventory(FName ItemName, int32 ConsumeCount)
+{
+	if (!HasAuthority())
+	{
+		return false;
+	}
+
+	if (ItemName.IsNone() || ConsumeCount <= 0)
+	{
+		return false;
+	}
+
+	const int32 FoundIndex = PlayerStageInventory.IndexOfByPredicate(
+		[ItemName](const FInventoryItemData& StorageItem)
+		{
+			return StorageItem.ItemName == ItemName
+				&& StorageItem.ItemName != NAME_None;
+		}
+	);
+
+	if (FoundIndex == INDEX_NONE)
+	{
+		return false;
+	}
+
+	FInventoryItemData& FoundItem = PlayerStageInventory[FoundIndex];
+
+	if (FoundItem.ItemCount < ConsumeCount)
+	{
+		return false;
+	}
+
+	FoundItem.ItemCount -= ConsumeCount;
+
+	if (FoundItem.ItemCount <= 0)
+	{
+		FoundItem = FInventoryItemData();
+	}
+
+	OnPlayerStageInventoryChanged.Broadcast();
+	ForceNetUpdate();
+
+	return true;
+}
 #pragma endregion 

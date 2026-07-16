@@ -133,6 +133,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	const TArray<FInventoryItemData>& GetPlayerStageInventory() const;
+	UFUNCTION(BlueprintCallable, Category = "Item")
+	bool ConsumeItemInPlayerStageInventory(FName ItemName, int32 ConsumeCount = 1);
 #pragma endregion 
 	
 #pragma region CombatFunction

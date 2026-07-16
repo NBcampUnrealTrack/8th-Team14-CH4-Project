@@ -61,12 +61,28 @@ APlayerCharacter::APlayerCharacter()
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
 }
 
-void APlayerCharacter::ServerUseHealItem_Implementation(float HealAmount)
+//사용위해 흐름 수정
+void APlayerCharacter::ServerUseHealItem_Implementation(FName HealItemRowName, float HealAmount)
 {
     APlayerCharacterState* PS =
         GetPlayerState<APlayerCharacterState>();
 
     if (!PS)
+    {
+        return;
+    }
+
+    if (HealItemRowName.IsNone() || HealAmount <= 0.0f)
+    {
+        return;
+    }
+
+    if (PS->GetCurrentHealth() >= PS->GetMaxHealth())
+    {
+        return;
+    }
+
+    if (!PS->ConsumeItemInPlayerStageInventory(HealItemRowName, 1))
     {
         return;
     }

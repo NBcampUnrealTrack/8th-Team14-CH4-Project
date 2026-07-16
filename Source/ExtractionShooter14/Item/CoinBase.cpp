@@ -16,7 +16,7 @@ ACoinBase::ACoinBase()
 
     SphereComponent->SetSphereRadius(60.f);
 
-    // Áß¿ä
+    // ï¿½ß¿ï¿½
     SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     SphereComponent->SetCollisionObjectType(ECC_WorldDynamic);
     SphereComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -59,7 +59,7 @@ void ACoinBase::Tick(float DeltaTime)
 
     AddActorLocalRotation(FRotator(0, RotateSpeed * DeltaTime, 0));
 
-    // 1. ³¯¾Æ°¡´Â Áß
+    // 1. ï¿½ï¿½ï¿½Æ°ï¿½ï¿½ï¿½ ï¿½ï¿½
     if (bLaunching)
     {
         LaunchVelocity.Z -= Gravity * DeltaTime;
@@ -67,7 +67,7 @@ void ACoinBase::Tick(float DeltaTime)
         FVector Location = GetActorLocation();
         Location += LaunchVelocity * DeltaTime;
 
-        // ¹Ù´Ú µµÂø
+        // ï¿½Ù´ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (Location.Z <= GroundZ)
         {
             Location.Z = GroundZ;
@@ -83,7 +83,7 @@ void ACoinBase::Tick(float DeltaTime)
         return;
     }
 
-    // 2. µÕ½ÇµÕ½Ç
+    // 2. ï¿½Õ½ÇµÕ½ï¿½
     if (bFloating)
     {
         RunningTime += DeltaTime;
