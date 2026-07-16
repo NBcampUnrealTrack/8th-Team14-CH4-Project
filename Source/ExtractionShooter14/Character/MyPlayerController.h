@@ -4,10 +4,11 @@
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
 	FOnBuyItemResult,
 	FName, ItemName,
-	bool, Result
+	bool, Result,
+	int32, StageInventoryIndex
 );
 
 struct FInventoryItemData;
@@ -62,7 +63,7 @@ public:
 	void OnPlayerHealthChanged(float CurrentHP, float MaxHP);
 	
 	UFUNCTION(Client, Reliable)
-	void Client_OnReceiveBuyItemResult(const FName& BuyItemID, bool Result);
+	void Client_OnReceiveBuyItemResult(const FName& BuyItemID, bool Result, int32 InventoryIndex);
 	
 	UFUNCTION(BlueprintCallable, Category = "Audio|BGM")
 	void PlayLobbyBGM();

@@ -56,21 +56,33 @@ void APlayerCharacterState::BuyItem_Implementation(const FInventoryItemData& InI
 	{
 		AMyPlayerController* PC = Cast<AMyPlayerController>(GetPlayerController());
 		if (!IsValid(PC)) return;
-		
-		FPlayerDatas& info = GetPlayerInfo();
-		if (info.GoldStorage >= InItemCost)
+
+		FPlayerDatas& Info = GetPlayerInfo();
+
+		// not enough money
+		if (Info.GoldStorage < InItemCost)
 		{
-			info.GoldStorage -= InItemCost;
-			AddItemInPlayerStageInventory(InItemData);
-			
-			PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, true);
-			PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, true);
+			PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, false, INDEX_NONE);
+			PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, false, INDEX_NONE);
+			return;
 		}
-		else
+
+		// yes money try put in
+		int32 AddedSlotIndex = AddItemInPlayerStageInventory(InItemData);
+		// put > return index // no > return null
+		if (AddedSlotIndex == INDEX_NONE)
 		{
-			PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, false);
-			PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, false);
+			// full inventory
+			PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, false, INDEX_NONE);
+			PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, false, INDEX_NONE);
+			return;
 		}
+
+		// yes money, have empty slot, not full
+		Info.GoldStorage -= InItemCost;
+
+		PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, true, AddedSlotIndex);
+		PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, true, AddedSlotIndex);
 	}
 }
 
@@ -97,12 +109,21 @@ bool APlayerCharacterState::GetIsParticipatedInThisRound() const
 	return bIsParticipatedInThisRound;
 }
 
-void APlayerCharacterState::ClearPlayerStageInventory()
+void APlayerCharacterState::ClearPlayerStageInventoryGold()
 {
 	if (HasAuthority())
 	{
 		//PlayerStageInventory.Reset();
 		PlayerStageGold = 0;
+	}
+}
+
+void APlayerCharacterState::ClearPlayerStageInventory()
+{
+	if (HasAuthority())
+	{
+		PlayerStageInventory.Reset();
+		//PlayerStageGold = 0;
 	}
 }
 
@@ -312,54 +333,48 @@ void APlayerCharacterState::AddPlayerStageGold(int32 AddGoldValue)
 	ForceNetUpdate();
 }
 
-void APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemData& InItemName)
+int32 APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemData& InItemName)
 {
 	if (HasAuthority())
 	{
-		bool bIsItemChanged = false;
-		
-		// 1. 같은 아이템 이름 찾기
-		FInventoryItemData* FoundItem = PlayerStageInventory.FindByPredicate(
+		int32 ChangedSlotIndex = INDEX_NONE;
+
+		int32 FoundIndex = PlayerStageInventory.IndexOfByPredicate(
 			[&InItemName](const FInventoryItemData& StorageItem)
 			{
 				return StorageItem.ItemName == InItemName.ItemName
-					&& StorageItem.ItemName != NAME_None;
-			}
-		);
+					&& StorageItem.ItemName != NAME_None; // itemName = None : defence code
+			});
 
-		if (FoundItem)
+		if (FoundIndex != INDEX_NONE) // find index
 		{
-			FoundItem->ItemCount += InItemName.ItemCount;
-			bIsItemChanged = true;
+			PlayerStageInventory[FoundIndex].ItemCount += InItemName.ItemCount;
+			ChangedSlotIndex = FoundIndex;
 		}
-		else
+		else // not find index
 		{
-			// 2. 빈 슬롯 찾기
-			FInventoryItemData* EmptySlot = PlayerStageInventory.FindByPredicate(
+			int32 EmptyIndex = PlayerStageInventory.IndexOfByPredicate(
 				[](const FInventoryItemData& StorageItem)
 				{
-					return StorageItem.ItemName == NAME_None;
-				}
-			);
+					return StorageItem.ItemName == NAME_None; // find empty array slot
+				});
 
-			if (EmptySlot)
+			if (EmptyIndex == INDEX_NONE) // not find empty slot
 			{
-				*EmptySlot = InItemName;
-				bIsItemChanged = true;
+				return INDEX_NONE;  // full
 			}
-			else
-			{
-				// 인벤토리 가득 참
-				return;
-			}
+					// not full find empty array slot
+			PlayerStageInventory[EmptyIndex] = InItemName;
+			ChangedSlotIndex = EmptyIndex;
 		}
 
-		if (bIsItemChanged)
-		{
-			OnPlayerStageInventoryChanged.Broadcast();
-			ForceNetUpdate();
-		}
+		OnPlayerStageInventoryChanged.Broadcast();
+		ForceNetUpdate();
+
+		return ChangedSlotIndex;   // cached index when [+itemcount, +item]
 	}
+
+	return INDEX_NONE; // not authority
 }
 
 const TArray<FInventoryItemData>& APlayerCharacterState::GetPlayerStageInventory() const

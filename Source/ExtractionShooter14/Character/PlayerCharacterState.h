@@ -55,6 +55,7 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void BuyItem(const FInventoryItemData& InItemData, int32 InItemcost);
 	
+	void ClearPlayerStageInventoryGold();
 	void ClearPlayerStageInventory();
 	void ApplyPlayerStageInventoryToPlayerStorage();
 
@@ -127,7 +128,7 @@ public:
 	UFUNCTION()  // Put Gold In StageGold
 	void AddPlayerStageGold(int32 AddGoldValue); //server only
 	UFUNCTION(BlueprintCallable) // Put Item In StageInventory
-	void AddItemInPlayerStageInventory(const FInventoryItemData& InItemName); //serveronly
+	int32 AddItemInPlayerStageInventory(const FInventoryItemData& InItemName); //serveronly
 	// FInventoryItemData == <FName, int32>
 	
 	UFUNCTION(BlueprintCallable)

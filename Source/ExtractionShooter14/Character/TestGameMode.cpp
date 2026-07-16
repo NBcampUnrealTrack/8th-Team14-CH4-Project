@@ -737,6 +737,7 @@ void ATestGameMode::InitializePlayerStats(APlayerCharacterState* InPlayerState)
     InPlayerState->SetPlayerStagePlace(EPlayerPlace::Lobby);
     
     InPlayerState->InitiateStats();
+    InPlayerState->ClearPlayerStageInventoryGold();
     InPlayerState->ClearPlayerStageInventory();
 }
 
