@@ -231,6 +231,24 @@ void APlayerCharacterState::InitiateStats()
 	}
 }
 
+void APlayerCharacterState::Heal(float HealAmount)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	CurrentHealth = FMath::Clamp(
+		CurrentHealth + HealAmount,
+		0.f,
+		MaxHealth
+	);
+
+	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+
+	ForceNetUpdate();
+}
+
 void APlayerCharacterState::OnRep_PlayerInfo()
 {
 	//todo:: ui, inventory update

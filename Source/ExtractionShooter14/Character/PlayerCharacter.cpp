@@ -61,6 +61,19 @@ APlayerCharacter::APlayerCharacter()
     GetCharacterMovement()->bUseControllerDesiredRotation = false;
 }
 
+void APlayerCharacter::ServerUseHealItem_Implementation(float HealAmount)
+{
+    APlayerCharacterState* PS =
+        GetPlayerState<APlayerCharacterState>();
+
+    if (!PS)
+    {
+        return;
+    }
+
+    PS->Heal(HealAmount);
+}
+
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();

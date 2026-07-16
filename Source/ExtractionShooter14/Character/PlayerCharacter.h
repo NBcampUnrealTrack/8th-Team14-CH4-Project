@@ -39,6 +39,9 @@ public:
 		return CurrentWeaponRowName;
 	} 
 
+	UFUNCTION(Server, Reliable)
+	void ServerUseHealItem(float HealAmount);
+
 protected:
 
 	//bool EquipWeaponActor(EWeaponType NewWeaponType);

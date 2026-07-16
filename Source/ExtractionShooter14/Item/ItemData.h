@@ -43,4 +43,8 @@ public:
 	// ���� �Ǹ� ���� ����(�ʿ� ������ ����)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Price = 0;
+
+	// 회복량
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HealAmount = 0.f;
 };

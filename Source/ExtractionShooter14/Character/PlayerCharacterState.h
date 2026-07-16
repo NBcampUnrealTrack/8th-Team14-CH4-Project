@@ -219,4 +219,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player|Health")
 	void InitiateStats();
 
+	UFUNCTION(BlueprintCallable, Category = "Player|Health")
+	void Heal(float HealAmount);
+
 };
