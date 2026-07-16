@@ -14,6 +14,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "ESHUDWidget.h"
 #include "Components/AudioComponent.h"
+#include "Game/ES_AudioSubsystem.h"
 #include "Sound/SoundBase.h"
 
 class APlayerCharacter;
@@ -132,7 +133,11 @@ void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
     SetInputMode(InputMode);
     bShowMouseCursor = true;
 
-    PlayLobbyBGM();
+    //PlayLobbyBGM();
+    if (UES_AudioSubsystem* Audio = GetGameInstance()->GetSubsystem<UES_AudioSubsystem>())
+    {
+        Audio->PlayBGM(LobbyBGM);
+    }
 }
 
 void AMyPlayerController::StopPlayerMovement()
@@ -196,6 +201,12 @@ void AMyPlayerController::Client_WhenMoveToLobbyUI_Implementation()
     StopPlayerMovement();
     InitLobbyWidgetandCachedPlayerState();
     Find_ApplyLobbyCamera();
+    
+    UES_AudioSubsystem* Audio = GetGameInstance()->GetSubsystem<UES_AudioSubsystem>();
+    if (Audio)
+    {
+        Audio->PlayBGM(LobbyBGM);
+    }
 }
 
 void AMyPlayerController::Server_OnClickedResultUI_Implementation()
@@ -228,7 +239,7 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
     if (IsLocalController())
     {
         UE_LOG(LogTemp, Warning, TEXT("Client_WhenMoveToStagePopUpUI Called"));
-        StopBGM(0.5f);
+        //StopBGM(0.5f);
 
         APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
         if (!IsValid(PS)) return;
@@ -257,11 +268,17 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
 
         PS->OnHealthChanged.RemoveDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
         PS->OnHealthChanged.AddDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
-
+        
         StageWidgetInstance.Get()->BP_UpdatePlayerHP(
             PS->GetCurrentHealth(),
             PS->GetMaxHealth()
         );
+        
+        UES_AudioSubsystem* Audio = GetGameInstance()->GetSubsystem<UES_AudioSubsystem>();
+        if (Audio)
+        {
+            Audio->PlayBGM(StageBGM);
+        }
     }
 }
 
@@ -356,94 +373,94 @@ void AMyPlayerController::Client_OnReceiveBuyItemResult_Implementation(const FNa
     OnReceiveBuyItemResult.Broadcast(BuyItemID, Result, InventoryIndex);
 }
 
-void AMyPlayerController::PlayBGM(USoundBase* NewBGM, float Volume)
-{
-    UE_LOG(LogTemp, Warning, TEXT("PlayBGM Called / Local=%d / BGM=%s / Volume=%.2f"),
-        IsLocalController(),
-        *GetNameSafe(NewBGM),
-        Volume
-    );
+// void AMyPlayerController::PlayBGM(USoundBase* NewBGM, float Volume)
+// {
+//     UE_LOG(LogTemp, Warning, TEXT("PlayBGM Called / Local=%d / BGM=%s / Volume=%.2f"),
+//         IsLocalController(),
+//         *GetNameSafe(NewBGM),
+//         Volume
+//     );
+//
+//     if (!IsLocalController())
+//     {
+//         UE_LOG(LogTemp, Warning, TEXT("PlayBGM Failed: Not Local"));
+//         return;
+//     }
+//
+//     if (!IsValid(NewBGM))
+//     {
+//         UE_LOG(LogTemp, Warning, TEXT("PlayBGM Failed: NewBGM invalid"));
+//         return;
+//     }
+//
+//     if (CurrentBGMSound == NewBGM &&
+//         IsValid(CurrentBGMComponent) &&
+//         CurrentBGMComponent->IsPlaying())
+//     {
+//         UE_LOG(LogTemp, Warning, TEXT("PlayBGM Skipped: Already playing"));
+//         return;
+//     }
+//
+//     if (IsValid(CurrentBGMComponent))
+//     {
+//         CurrentBGMComponent->Stop();
+//         CurrentBGMComponent = nullptr;
+//     }
+//
+//     CurrentBGMComponent = UGameplayStatics::SpawnSound2D(
+//         this,
+//         NewBGM,
+//         Volume,
+//         1.0f,
+//         0.0f,
+//         nullptr,
+//         false,
+//         false
+//     );
+//
+//     CurrentBGMSound = NewBGM;
+//
+//     UE_LOG(LogTemp, Warning, TEXT("PlayBGM Spawned / Component=%s"),
+//         *GetNameSafe(CurrentBGMComponent)
+//     );
+// }
+// void AMyPlayerController::PlayLobbyBGM()
+// {
+//     PlayBGM(LobbyBGM, LobbyBGMVolume);
+// }
 
-    if (!IsLocalController())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("PlayBGM Failed: Not Local"));
-        return;
-    }
+// void AMyPlayerController::StopBGM(float FadeTime)
+// {
+//     UE_LOG(LogTemp, Warning, TEXT("StopBGM Called / Local=%d / Component=%s"),
+//         IsLocalController(),
+//         *GetNameSafe(CurrentBGMComponent)
+//     );
+//
+//     if (!IsLocalController())
+//     {
+//         return;
+//     }
+//
+//     if (IsValid(CurrentBGMComponent))
+//     {
+//         UE_LOG(LogTemp, Warning, TEXT("StopBGM Success"));
+//         CurrentBGMComponent->Stop();
+//         CurrentBGMComponent = nullptr;
+//     }
+//     else
+//     {
+//         UE_LOG(LogTemp, Warning, TEXT("StopBGM Failed: CurrentBGMComponent invalid"));
+//     }
+//
+//     CurrentBGMSound = nullptr;
+// }
 
-    if (!IsValid(NewBGM))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("PlayBGM Failed: NewBGM invalid"));
-        return;
-    }
-
-    if (CurrentBGMSound == NewBGM &&
-        IsValid(CurrentBGMComponent) &&
-        CurrentBGMComponent->IsPlaying())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("PlayBGM Skipped: Already playing"));
-        return;
-    }
-
-    if (IsValid(CurrentBGMComponent))
-    {
-        CurrentBGMComponent->Stop();
-        CurrentBGMComponent = nullptr;
-    }
-
-    CurrentBGMComponent = UGameplayStatics::SpawnSound2D(
-        this,
-        NewBGM,
-        Volume,
-        1.0f,
-        0.0f,
-        nullptr,
-        false,
-        false
-    );
-
-    CurrentBGMSound = NewBGM;
-
-    UE_LOG(LogTemp, Warning, TEXT("PlayBGM Spawned / Component=%s"),
-        *GetNameSafe(CurrentBGMComponent)
-    );
-}
-void AMyPlayerController::PlayLobbyBGM()
-{
-    PlayBGM(LobbyBGM, LobbyBGMVolume);
-}
-
-void AMyPlayerController::StopBGM(float FadeTime)
-{
-    UE_LOG(LogTemp, Warning, TEXT("StopBGM Called / Local=%d / Component=%s"),
-        IsLocalController(),
-        *GetNameSafe(CurrentBGMComponent)
-    );
-
-    if (!IsLocalController())
-    {
-        return;
-    }
-
-    if (IsValid(CurrentBGMComponent))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("StopBGM Success"));
-        CurrentBGMComponent->Stop();
-        CurrentBGMComponent = nullptr;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("StopBGM Failed: CurrentBGMComponent invalid"));
-    }
-
-    CurrentBGMSound = nullptr;
-}
-
-void AMyPlayerController::Client_StopBGM_Implementation()
-{
-    UE_LOG(LogTemp, Warning, TEXT("Client_StopBGM Called"));
-
-    StopBGM(0.0f);
-}
+// void AMyPlayerController::Client_StopBGM_Implementation()
+// {
+//     UE_LOG(LogTemp, Warning, TEXT("Client_StopBGM Called"));
+//
+//     StopBGM(0.0f);
+// }
 void AMyPlayerController::Client_ShowHitMarker_Implementation(bool bCritical)
 {
    BP_ShowHitMarker(bCritical);

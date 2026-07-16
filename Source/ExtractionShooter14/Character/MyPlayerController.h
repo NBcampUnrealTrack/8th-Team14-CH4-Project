@@ -65,12 +65,12 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_OnReceiveBuyItemResult(const FName& BuyItemID, bool Result, int32 InventoryIndex);
 	
-	UFUNCTION(BlueprintCallable, Category = "Audio|BGM")
-	void PlayLobbyBGM();
-	UFUNCTION(BlueprintCallable, Category = "Audio|BGM")
-	void StopBGM(float FadeTime = 0.5f);
-	UFUNCTION(Client, Reliable)
-	void Client_StopBGM();
+	// UFUNCTION(BlueprintCallable, Category = "Audio|BGM")
+	// void PlayLobbyBGM();
+	// UFUNCTION(BlueprintCallable, Category = "Audio|BGM")
+	// void StopBGM(float FadeTime = 0.5f);
+	// UFUNCTION(Client, Reliable)
+	// void Client_StopBGM();
 
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "HUD")
 	void Client_ShowHitMarker(bool bCritical);
@@ -124,20 +124,22 @@ public:
 #pragma endregion 
 
 protected:
-	void PlayBGM(USoundBase* NewBGM, float Volume = 0.3f);
+	// void PlayBGM(USoundBase* NewBGM, float Volume = 0.3f);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio|BGM")
 	TObjectPtr<USoundBase> LobbyBGM;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio|BGM")
-	float LobbyBGMVolume = 0.3f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio|BGM")
-	float BGMFadeTime = 0.5f;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UAudioComponent> CurrentBGMComponent;
-
-	UPROPERTY(Transient)
-	TObjectPtr<USoundBase> CurrentBGMSound;
+	TObjectPtr<USoundBase> StageBGM;
+	//
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio|BGM")
+	// float LobbyBGMVolume = 0.3f;
+	//
+	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio|BGM")
+	// float BGMFadeTime = 0.5f;
+	//
+	// UPROPERTY(Transient)
+	// TObjectPtr<UAudioComponent> CurrentBGMComponent;
+	//
+	// UPROPERTY(Transient)
+	// TObjectPtr<USoundBase> CurrentBGMSound;
 };

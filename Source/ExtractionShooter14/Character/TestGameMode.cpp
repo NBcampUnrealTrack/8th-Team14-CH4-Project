@@ -135,6 +135,14 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
     {
         // 기존 데이터 복원
         PS->ApplySavedDataToPlayer(GetPlayerData);
+        
+        UE_LOG(LogTemp, Warning, TEXT("[Apply] Inventory Num=%d"),
+        PS->GetPlayerInfo().ItemStorage.Num());
+                
+        for (const auto& ItemName: PS->GetPlayerInfo().ItemStorage)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Apply] Inventory Name=%s"),*ItemName.ItemName.ToString());
+        }
     }
     else
     {
@@ -144,6 +152,15 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
 
         SaveSubsystem->SavePlayerData(PlayerKey, NewPlayerData);
         PS->ApplySavedDataToPlayer(NewPlayerData);
+        PS->InitializeInventoryMaxSlot(12);
+        
+        UE_LOG(LogTemp, Warning, TEXT("[Apply Newbie] Inventory Num=%d"),
+        PS->GetPlayerInfo().ItemStorage.Num());
+                
+        for (const auto& ItemName: PS->GetPlayerInfo().ItemStorage)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[Apply Newbie] Inventory Name=%s"),*ItemName.ItemName.ToString());
+        }
     }
     
     UGameplayStatics::GetAllActorsOfClass(
@@ -217,7 +234,8 @@ void ATestGameMode::Logout(AController* Exiting)
     if (IsValid(PS))
     {
         PS->SetPlayerStagePlace(EPlayerPlace::None);
-
+        PS->ApplyPlayerStageInventoryToPlayerStorage();
+        
         if (PS->GetUniqueId().IsValid())
         {
             const FString PlayerKey =
@@ -227,6 +245,14 @@ void ATestGameMode::Logout(AController* Exiting)
                 GetGameInstance()
                 ->GetSubsystem<UES_GameInstanceSubsystem>())
             {
+                UE_LOG(LogTemp, Warning, TEXT("[Save] Inventory Num=%d"),
+                PS->GetPlayerInfo().ItemStorage.Num());
+                
+                for (const auto& ItemName: PS->GetPlayerInfo().ItemStorage)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("[Save] Inventory Name=%s"),*ItemName.ItemName.ToString());
+                }
+                
                 SaveSubsystem->SavePlayerData(
                     PlayerKey,
                     PS->GetPlayerInfo()
@@ -252,7 +278,7 @@ void ATestGameMode::Logout(AController* Exiting)
         }
 
         const int32 RemainingPlayerCount = LobbyPlayerStartPointMap.Num();
-
+        
         GS->SetPlayerInGameCount_GS(RemainingPlayerCount);
 
         UE_LOG(
@@ -482,8 +508,8 @@ void ATestGameMode::MoveToStage()
                     PlayerPawn->SetActorRotation(PlayerRotation);
                     PlayerControllerES->Client_ApplySpawnRotation(PlayerRotation);
                     PlayerControllerES->StartPlayerMovement();
-                    PlayerControllerES->Client_StopBGM();
                     PlayerControllerES->Client_WhenMoveToStagePopUpUI();
+                    //PlayerControllerES->Client_StopBGM();
                 }
             }
         }
@@ -643,9 +669,15 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     if (!IsValid(GameStateES)) return;
     
     PlayerStateES->ApplyPlayerStageInventoryToPlayerStorage();
-    InitializePlayerStats(PlayerStateES);
-    TargetController->StopPlayerMovement();
+
+    // ======================= init playerstates ========================
+    PlayerStateES->ClearPlayerStageInventoryGold();
+    PlayerStateES->SetPlayerStagePlace(EPlayerPlace::Lobby);
+    PlayerStateES->SetPlayerReady(false);
+    // ======================= init playerstates ========================
     
+    // ======================= Player Move ===========================
+    TargetController->StopPlayerMovement();
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     ACharacter* CharacterES = Cast<ACharacter>(TargetController->GetPawn());
     //CharacterES->GetCharacterMovement()->Velocity = FVector::ZeroVector;
@@ -660,9 +692,12 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     TargetController->SetControlRotation(Rotation);
     CharacterES->SetActorRotation(Rotation);
     TargetController->Client_ApplySpawnRotation(Rotation);
-    // UI
+    // ======================= Player Move ===========================
+    
+    // ======================= Player UI ===========================
     TargetController->Client_WhenMoveToLobbyUI();
     TargetController->Client_OpenResultUI();
+    // ======================= Player UI ===========================
     
     if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
     {
@@ -735,7 +770,7 @@ void ATestGameMode::InitializePlayerStats(APlayerCharacterState* InPlayerState)
     if (!IsValid(InPlayerState)) return;
     // ================================ Place
     InPlayerState->SetPlayerStagePlace(EPlayerPlace::Lobby);
-    
+    InPlayerState->SetPlayerReady(false);
     InPlayerState->InitiateStats();
     InPlayerState->ClearPlayerStageInventoryGold();
     InPlayerState->ClearPlayerStageInventory();

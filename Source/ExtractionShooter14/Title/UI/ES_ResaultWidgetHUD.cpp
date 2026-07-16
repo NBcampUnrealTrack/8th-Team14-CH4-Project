@@ -31,7 +31,9 @@ void UES_ResaultWidgetHUD::NativeDestruct()
 
 	UnbindAllFromAnimationFinished(FadeInAnimation_Com);
 	UnbindAllFromAnimationFinished(FadeInAnimation_Col);
-	
+	GetWorld()->GetTimerManager().ClearTimer(CombatRowTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(CollectRowTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(ReturnToLobbyTimerHandle);
 	Super::NativeDestruct();
 }
 
@@ -127,6 +129,7 @@ void UES_ResaultWidgetHUD::AddCollectRowByTime()
 		ReturnToLobbyTimerHandle,
 		[this]()
 		{
+			if (!IsValid(this)) return;
 			PlayAnimation(FadeInAnimation_ReL);
 			ReturnToLobbyTimeText->SetText(FText::AsNumber(FMath::Max(ReturnToLobbyTime,0)));
 			ReturnToLobbyTime--;

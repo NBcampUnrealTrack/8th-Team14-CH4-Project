@@ -16,7 +16,13 @@ APlayerCharacterState::APlayerCharacterState()
 	:bIsReady(false)
 	,bIsDead(false)
 {
-	PlayerStageInventory.Init(FInventoryItemData(), 12);
+	
+}
+
+void APlayerCharacterState::InitializeInventoryMaxSlot(int32 SlotCount)
+{
+	PlayerStageInventory.Init(FInventoryItemData(), SlotCount);
+	PlayerInfo.ItemStorage.Init(FInventoryItemData(), SlotCount);
 }
 
 void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -42,6 +48,9 @@ void APlayerCharacterState::ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData)
 	if (!HasAuthority()) return;
 	
 	PlayerInfo = ApplyPlayerData;
+	PlayerStageInventory = ApplyPlayerData.ItemStorage;
+	
+	OnPlayerStageInventoryChanged.Broadcast();
 	OnPlayerInfoChanged.Broadcast();
 }
 
@@ -80,7 +89,7 @@ void APlayerCharacterState::BuyItem_Implementation(const FInventoryItemData& InI
 
 		// yes money, have empty slot, not full
 		Info.GoldStorage -= InItemCost;
-
+		
 		PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, true, AddedSlotIndex);
 		PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, true, AddedSlotIndex);
 	}
@@ -122,8 +131,13 @@ void APlayerCharacterState::ClearPlayerStageInventory()
 {
 	if (HasAuthority())
 	{
-		PlayerStageInventory.Reset();
+		for (FInventoryItemData& Item : PlayerStageInventory)
+		{
+			Item = FInventoryItemData();  // ItemName=NAME_None, ItemCount=0
+		}
+
 		//PlayerStageGold = 0;
+		OnPlayerStageInventoryChanged.Broadcast();  // UI 갱신
 	}
 }
 
@@ -133,43 +147,53 @@ void APlayerCharacterState::ApplyPlayerStageInventoryToPlayerStorage()
 	{
 		bool bIsItemChanged = false;
 		
-		for (const FInventoryItemData& Items : PlayerStageInventory)
-		{ // FoundItem have array's iterator
-			FInventoryItemData* FoundItem =
-			PlayerInfo.ItemStorage.FindByPredicate(
-		[&Items](const FInventoryItemData& StorageItem)
+		for (const FInventoryItemData& StageItem : PlayerStageInventory)
+		{
+			if (StageItem.ItemName == NAME_None) // no item slot
+			{
+				continue;
+			}
+
+			FInventoryItemData* FoundItem1 = PlayerInfo.ItemStorage.FindByPredicate(
+				[&StageItem](const FInventoryItemData& StorageItem)
 				{
-					return StorageItem.ItemName == Items.ItemName;
+					return StorageItem.ItemName == StageItem.ItemName;
 				});
 
-			if (FoundItem)
+			if (FoundItem1)
 			{
-				// PlayerInfo.ItemStorage[].ItemCount += 10; SameMeaning
-				// FoundItem = PlayerInfo.ItemStorage[] ,  return Array's iterator
-				FoundItem->ItemCount += Items.ItemCount;
-				bIsItemChanged=true;
+				FoundItem1->ItemCount += StageItem.ItemCount;
 			}
-			else
+			else // new item?
 			{
-				// no same item
-				// add total
-				PlayerInfo.ItemStorage.Add(Items);
-				bIsItemChanged=true;
+				FInventoryItemData* FoundItem2 = PlayerInfo.ItemStorage.FindByPredicate(
+					[](const FInventoryItemData& StorageItem)
+					{
+						return StorageItem.ItemName == NAME_None;
+					});
+				if (FoundItem2)
+				{ // empty slot exist
+					*FoundItem2 = StageItem;
+				}
+				else
+				{
+					// full inventory
+					continue;
+				}
 			}
-		
+			bIsItemChanged = true;
 		}
-		
+
 		if (PlayerStageGold > 0)
 		{
 			PlayerInfo.GoldStorage += PlayerStageGold;
-			bIsItemChanged=true;
-			
+			bIsItemChanged = true;
 		}
-		
-		if (bIsItemChanged) // if no add pass broadcast
-		OnPlayerInfoChanged.Broadcast();
-		
 
+		if (bIsItemChanged)
+		{
+			OnPlayerInfoChanged.Broadcast();
+		}
 	}
 }
 

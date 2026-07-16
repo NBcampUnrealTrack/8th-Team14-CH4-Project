@@ -48,6 +48,8 @@ public:
 	
 	APlayerCharacterState();
 	
+	void InitializeInventoryMaxSlot(int32 SlotCount);
+	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	void ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData);
 	

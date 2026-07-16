@@ -695,6 +695,11 @@ FVector AWeaponBase::GetMuzzleLocation() const
 	return MeshComponent->GetSocketLocation(CurrentWeaponData.MuzzleSocketName);
 }
 
+FRotator AWeaponBase::GetMuzzleRotation() const
+{
+	return MeshComponent->GetSocketRotation(CurrentWeaponData.MuzzleSocketName);
+}
+
 bool AWeaponBase::IsHeadShot(const FHitResult& HitResult) const
 {
 	return HitResult.BoneName == TEXT("head");
