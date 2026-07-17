@@ -100,11 +100,7 @@ void UESHUDWidget::ApplyTextColorAnimationByTime(float InRemainTime)
 
 	const float Ratio = PassedTime / TimerData.PhaseDuration;
 	
-	if (GamePhase == EGameState::LobbyWaiting)
-	{
-
-	}
-	else if (GamePhase == EGameState::Playing)
+	if (GamePhase == EGameState::Playing)
 	{
 		if (Ratio < 0.2f)
 		{
@@ -112,7 +108,14 @@ void UESHUDWidget::ApplyTextColorAnimationByTime(float InRemainTime)
 		}
 		else if (Ratio >= 0.2f)
 		{
-			StageTime->SetColorAndOpacity(FColor::White);
+			if (InRemainTime <= 30.f)
+			{
+				StageTime->SetColorAndOpacity(FColor::Red);
+			}
+			else
+			{
+				StageTime->SetColorAndOpacity(FColor::White);
+			}
 		}
 	}
 }

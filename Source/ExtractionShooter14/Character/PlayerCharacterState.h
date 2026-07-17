@@ -59,6 +59,7 @@ public:
 	
 	void ClearPlayerStageInventoryGold();
 	void ClearPlayerStageInventory();
+	void ClearPlayerinfoInventory();
 	void ApplyPlayerStageInventoryToPlayerStorage();
 
 	UPROPERTY(ReplicatedUsing = OnRep_Coin)

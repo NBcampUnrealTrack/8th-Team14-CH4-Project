@@ -163,9 +163,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
             EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Canceled, this, &APlayerCharacter::StopSprint);
         }
         
-        if (OptionAction)
+        if (CloseUIAction)
         {
-            EnhancedInputComponent->BindAction(OptionAction, ETriggerEvent::Started, this, &ThisClass::OpenOptionUI);
+            EnhancedInputComponent->BindAction(CloseUIAction, ETriggerEvent::Started, this, &ThisClass::CloseUI);
         }
         
         if (AimAction)
@@ -306,19 +306,13 @@ void APlayerCharacter::StopSprint(const FInputActionValue& Value)
     }
 }
 
-void APlayerCharacter::OpenOptionUI(const FInputActionValue& Value)
+void APlayerCharacter::CloseUI(const FInputActionValue& Value)
 {
     AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
     if (!IsValid(PlayerControllerES)) return;
     
-    // if (PlayerControllerES->IsOpenOptionUI)
-    // {
-    //     PlayerControllerES->CloseOptionUI();
-    // }
-    // else
-    // {
-        PlayerControllerES->OpenOptionUI();
-    //}
+    PlayerControllerES->OnPressedEscape();
+
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
@@ -368,12 +362,12 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
     }
 
     // 복제 Actor인 무기의 실제 제거는 서버에서만
-    if (HasAuthority() && IsValid(CurrentWeapon))
-    {
-        CurrentWeapon->Destroy();
-        CurrentWeapon = nullptr;
-    }
-
+    // if (HasAuthority() && IsValid(CurrentWeapon))
+    // {
+    //     CurrentWeapon->Destroy();
+    //     CurrentWeapon = nullptr;
+    // }
+    WeaponDelete();
     
     if (IsLocallyControlled())  
     {
@@ -386,6 +380,15 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
     
 
  
+}
+
+void APlayerCharacter::WeaponDelete()
+{
+    if (HasAuthority() && IsValid(CurrentWeapon))
+    {
+        CurrentWeapon->Destroy();
+        CurrentWeapon = nullptr;
+    }
 }
 
 void APlayerCharacter::ServerStartSprint_Implementation()
@@ -720,6 +723,7 @@ void APlayerCharacter::Die()
     //PlayerControllerES->Server_HandleMoveToLobbyCaseBybIsDead();
 }
 
+// MulticastDie >> nowhere use ???
 void APlayerCharacter::MulticastDie_Implementation()
 {
     if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
@@ -1019,12 +1023,13 @@ bool APlayerCharacter::EquipWeaponActorFromRow(
         return false;
     }
 
-    if (IsValid(CurrentWeapon))
-    {
-        CurrentWeapon->Destroy();
-        CurrentWeapon = nullptr;
-    }
-
+    // if (IsValid(CurrentWeapon))
+    // {
+    //     CurrentWeapon->Destroy();
+    //     CurrentWeapon = nullptr;
+    // }
+    WeaponDelete();
+    
     CurrentWeapon = GetWorld()->SpawnActorDeferred<AWeaponBase>(
         WeaponBaseClass,
         FTransform::Identity,

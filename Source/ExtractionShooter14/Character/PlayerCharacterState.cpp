@@ -141,60 +141,91 @@ void APlayerCharacterState::ClearPlayerStageInventory()
 	}
 }
 
-void APlayerCharacterState::ApplyPlayerStageInventoryToPlayerStorage()
+void APlayerCharacterState::ClearPlayerinfoInventory()
 {
 	if (HasAuthority())
 	{
-		bool bIsItemChanged = false;
-		
-		for (const FInventoryItemData& StageItem : PlayerStageInventory)
+		for (FInventoryItemData& Item : PlayerInfo.ItemStorage)
 		{
-			if (StageItem.ItemName == NAME_None) // no item slot
-			{
-				continue;
-			}
-
-			FInventoryItemData* FoundItem1 = PlayerInfo.ItemStorage.FindByPredicate(
-				[&StageItem](const FInventoryItemData& StorageItem)
-				{
-					return StorageItem.ItemName == StageItem.ItemName;
-				});
-
-			if (FoundItem1)
-			{
-				FoundItem1->ItemCount += StageItem.ItemCount;
-			}
-			else // new item?
-			{
-				FInventoryItemData* FoundItem2 = PlayerInfo.ItemStorage.FindByPredicate(
-					[](const FInventoryItemData& StorageItem)
-					{
-						return StorageItem.ItemName == NAME_None;
-					});
-				if (FoundItem2)
-				{ // empty slot exist
-					*FoundItem2 = StageItem;
-				}
-				else
-				{
-					// full inventory
-					continue;
-				}
-			}
-			bIsItemChanged = true;
+			Item = FInventoryItemData();  // ItemName=NAME_None, ItemCount=0
 		}
 
-		if (PlayerStageGold > 0)
-		{
-			PlayerInfo.GoldStorage += PlayerStageGold;
-			bIsItemChanged = true;
-		}
-
-		if (bIsItemChanged)
-		{
-			OnPlayerInfoChanged.Broadcast();
-		}
+		//PlayerStageGold = 0;
 	}
+}
+
+void APlayerCharacterState::ApplyPlayerStageInventoryToPlayerStorage()
+{
+	// when playerstorage = add stack = chang go = container 
+#pragma region When use PlayerStorage > Container
+	// if (HasAuthority())
+	// {
+	// 	bool bIsItemChanged = false;
+	// 	
+	// 	for (const FInventoryItemData& StageItem : PlayerStageInventory)
+	// 	{
+	// 		if (StageItem.ItemName == NAME_None) // no item slot
+	// 		{
+	// 			continue;
+	// 		}
+	//
+	// 		FInventoryItemData* FoundItem1 = PlayerInfo.ItemStorage.FindByPredicate(
+	// 			[&StageItem](const FInventoryItemData& StorageItem)
+	// 			{
+	// 				return StorageItem.ItemName == StageItem.ItemName;
+	// 			});
+	//
+	// 		if (FoundItem1)
+	// 		{
+	// 			FoundItem1->ItemCount += StageItem.ItemCount;
+	// 		}
+	// 		else // new item?
+	// 		{
+	// 			FInventoryItemData* FoundItem2 = PlayerInfo.ItemStorage.FindByPredicate(
+	// 				[](const FInventoryItemData& StorageItem)
+	// 				{
+	// 					return StorageItem.ItemName == NAME_None;
+	// 				});
+	// 			if (FoundItem2)
+	// 			{ // empty slot exist
+	// 				*FoundItem2 = StageItem;
+	// 			}
+	// 			else
+	// 			{
+	// 				// full inventory
+	// 				continue;
+	// 			}
+	// 		}
+	// 		bIsItemChanged = true;
+	// 	}
+	//
+	// 	if (PlayerStageGold > 0)
+	// 	{
+	// 		PlayerInfo.GoldStorage += PlayerStageGold;
+	// 		bIsItemChanged = true;
+	// 	}
+	//
+	// 	if (bIsItemChanged)
+	// 	{
+	// 		OnPlayerInfoChanged.Broadcast();
+	// 	}
+	// }
+#pragma endregion 
+	
+	if (!HasAuthority()) return;
+
+	// stageinven = containerinven
+	PlayerInfo.ItemStorage = PlayerStageInventory;
+
+	// add gold
+	if (PlayerStageGold > 0)
+	{
+		PlayerInfo.GoldStorage += PlayerStageGold;
+		PlayerStageGold = 0;   // stage gold clear
+	}
+
+	OnPlayerInfoChanged.Broadcast();
+	
 }
 
 void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
@@ -409,7 +440,8 @@ int32 APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemD
 			PlayerStageInventory[EmptyIndex] = InItemName;
 			ChangedSlotIndex = EmptyIndex;
 		}
-
+		
+		PlayerInfo.ItemStorage = PlayerStageInventory; // when buy item. save item to save storage
 		OnPlayerStageInventoryChanged.Broadcast();
 		ForceNetUpdate();
 

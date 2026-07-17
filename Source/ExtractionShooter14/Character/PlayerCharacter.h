@@ -92,6 +92,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	
+	UFUNCTION(BlueprintCallable)
+	void WeaponDelete();
+	
 	UFUNCTION(BlueprintCallable, Category = "Death")
 	void Die();
 
@@ -186,7 +189,7 @@ protected:
 	UInputAction* SprintAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	UInputAction* OptionAction;
+	UInputAction* CloseUIAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* AimAction;
@@ -226,7 +229,7 @@ protected:
 	void StopFire();
 	void Reload();
 	
-	void OpenOptionUI(const FInputActionValue& Value);
+	void CloseUI(const FInputActionValue& Value);
 
 protected:
 

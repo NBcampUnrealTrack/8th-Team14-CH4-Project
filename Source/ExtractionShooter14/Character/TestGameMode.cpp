@@ -226,6 +226,11 @@ void ATestGameMode::Logout(AController* Exiting)
     // if (!IsValid(GameState_Test)) return;
     // GameState_Test->SetPlayerInGameCount_GS(LobbyPlayerStartPointMap.Num());
     // GameState_Test->RemoveLobbyPlayerStates(PS);
+    
+    
+    APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(Exiting->GetPawn());
+    if (IsValid(PlayerCharacter)) PlayerCharacter->WeaponDelete();
+    
     APlayerCharacterState* PS =
     Exiting
     ? Exiting->GetPlayerState<APlayerCharacterState>()
@@ -234,7 +239,7 @@ void ATestGameMode::Logout(AController* Exiting)
     if (IsValid(PS))
     {
         PS->SetPlayerStagePlace(EPlayerPlace::None);
-        PS->ApplyPlayerStageInventoryToPlayerStorage();
+        //PS->ApplyPlayerStageInventoryToPlayerStorage();
         
         if (PS->GetUniqueId().IsValid())
         {
@@ -673,6 +678,7 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     // ======================= init playerstates ========================
     PlayerStateES->ClearPlayerStageInventoryGold();
     PlayerStateES->SetPlayerStagePlace(EPlayerPlace::Lobby);
+    PlayerStateES->InitiateStats();
     PlayerStateES->SetPlayerReady(false);
     // ======================= init playerstates ========================
     
@@ -774,5 +780,6 @@ void ATestGameMode::InitializePlayerStats(APlayerCharacterState* InPlayerState)
     InPlayerState->InitiateStats();
     InPlayerState->ClearPlayerStageInventoryGold();
     InPlayerState->ClearPlayerStageInventory();
+    InPlayerState->ClearPlayerinfoInventory();
 }
 

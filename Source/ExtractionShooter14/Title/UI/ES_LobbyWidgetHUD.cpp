@@ -3,6 +3,7 @@
 #include "Character/MyPlayerController.h"
 #include "Character/PlayerCharacterState.h"
 #include "Character/TestGameState.h"
+#include "Components/Button.h"
 #include "Components/HorizontalBox.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
@@ -10,14 +11,25 @@
 void UES_LobbyWidgetHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
-	UE_LOG(
-	 LogTemp,
-	 Warning,
-	 TEXT("[Widget Construct] Widget=%s OwningPS=%s"),
-	 *GetNameSafe(this),
-	 *GetNameSafe(OwningPlayerState)
- );
-	SetIsFocusable(true);
+	
+	if (IsValid(ReadyButtonWidget))
+	{
+		UButton* ReadyButton = Cast<UButton>(ReadyButtonWidget->GetWidgetFromName(TEXT("PlayButton")));
+		if (IsValid(ReadyButton))
+		{
+			ReadyButton->OnClicked.RemoveDynamic(this, &ThisClass::OnClickedReadyButton);
+			ReadyButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedReadyButton);
+		}
+	}
+	if (IsValid(ShopButtonWidget))
+	{
+		UButton* ShopButton = Cast<UButton>(ShopButtonWidget->GetWidgetFromName(TEXT("PlayButton")));
+		if (IsValid(ShopButton))
+		{
+			ShopButton->OnClicked.RemoveDynamic(this, &ThisClass::OnClickedShopButton);
+			ShopButton->OnClicked.AddDynamic(this, &ThisClass::OnClickedShopButton);
+		}
+	}
 	
 	ATestGameState* GameStateES = Cast<ATestGameState>(UGameplayStatics::GetGameState(GetWorld()));
 	if (!IsValid(GameStateES)) return;
@@ -37,17 +49,7 @@ void UES_LobbyWidgetHUD::NativeConstruct()
 	if (!PlayerinfoChangedHandle.IsValid())
 	{
 		PlayerinfoChangedHandle = OwningPlayerState->OnPlayerInfoChanged.AddUObject(this, &ThisClass::RefreshPlayerInfo);
-		UE_LOG(
-	LogTemp,
-	Warning,
-	TEXT("[Delegate Bound] Widget=%s PlayerState=%s HandleValid=%d"),
-	*GetNameSafe(this),
-	*GetNameSafe(OwningPlayerState),
-	PlayerinfoChangedHandle.IsValid()
-);
-		RefreshPlayerInfo();
 	}
-	//AddUserIcon();
 }
 
 void UES_LobbyWidgetHUD::NativeDestruct()
@@ -80,18 +82,18 @@ void UES_LobbyWidgetHUD::NativeDestruct()
 	
 }
 
-FReply UES_LobbyWidgetHUD::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
-{
-
-	if (InKeyEvent.GetKey() == EKeys::LeftControl)
-	{
-		OwningPlayerController->OpenOptionUI();
-		// FReply를 반환하지않으면 controller에게 까지 입력이 전달됨
-		return FReply::Handled();
-	}
-	
-	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
-}
+// FReply UES_LobbyWidgetHUD::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+// {
+//
+// 	if (InKeyEvent.GetKey() == EKeys::LeftControl)
+// 	{
+// 		OwningPlayerController->OnPressedEscape();
+// 		// FReply를 반환하지않으면 controller에게 까지 입력이 전달됨
+// 		return FReply::Handled();
+// 	}
+// 	
+// 	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+// }
 
 void UES_LobbyWidgetHUD::RefreshPlayerUserIcon()
 {
@@ -129,6 +131,14 @@ void UES_LobbyWidgetHUD::OnClickedReadyButton()
 	if (!IsValid(OwningPlayerState)) return;
 	
 	OwningPlayerState->Server_SetPlayerReady(!OwningPlayerState->IsPlayerReady());
+}
+
+void UES_LobbyWidgetHUD::OnClickedShopButton()
+{
+	// controller call
+	if (!IsValid(OwningPlayerController)) return;
+	
+	OwningPlayerController->ToggleShopWidget();
 }
 
 void UES_LobbyWidgetHUD::SetLobbyCountPlayer(const int32 InNewPlayer)
