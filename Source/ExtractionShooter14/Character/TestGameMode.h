@@ -4,6 +4,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "TestGameMode.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnStageEnded);
+
 struct FPhaseTimerData;
 enum class EPlayerPlace : uint8;
 class APlayerCharacterState;
@@ -13,9 +15,11 @@ UCLASS()
 class EXTRACTIONSHOOTER14_API ATestGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+public:
+	
+	FOnStageEnded OnStageEnded;
 	
 public:
-
 	ATestGameMode();
 	virtual void BeginPlay() override;
 	

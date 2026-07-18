@@ -372,7 +372,7 @@ void APlayerCharacterState::OnRep_bIsReady()
 
 void APlayerCharacterState::OnRep_bIsDead()
 {
-	OnPlayerbIsDeadChanged.Broadcast(bIsDead);
+	OnPlayerbIsDeadChanged.Broadcast(this, bIsDead);
 }
 
 void APlayerCharacterState::OnRep_PlayerStagePlace()

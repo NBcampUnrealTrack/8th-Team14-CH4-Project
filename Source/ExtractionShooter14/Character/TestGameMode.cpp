@@ -624,7 +624,8 @@ void ATestGameMode::CheckRemainTime()
         if (RemainTime <= 0.f)
         {
             GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
-
+            OnStageEnded.Broadcast();
+            
             for (auto PlayerStates : GS->GetLobbyPlayerStates())
             {
                 if (PlayerStates->GetPlayerStagePlace() == EPlayerPlace::Stage)

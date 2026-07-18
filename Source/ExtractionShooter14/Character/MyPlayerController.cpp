@@ -11,11 +11,13 @@
 #include "Title/UI/ES_LobbyWidgetHUD.h"
 #include "Title/UI/ES_ResaultWidgetHUD.h"
 #include "Title/UI/ES_OptionWidget.h"
+#include "Title/UI/Pannel/EscapeProgressWidget.h"
 #include "Character/TestGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "ESHUDWidget.h"
 #include "Components/AudioComponent.h"
 #include "Components/Button.h"
+#include "Components/CanvasPanel.h"
 #include "Game/ES_AudioSubsystem.h"
 #include "Sound/SoundBase.h"
 
@@ -454,6 +456,40 @@ void AMyPlayerController::UpdateInputMode()
     //         bShowMouseCursor = true;
     //     }
     // }
+}
+
+void AMyPlayerController::Client_ShowEscapeProgressWidget_Implementation(float StartTime, float Duration)
+{
+    if (!IsLocalController()) return;
+    if (!IsValid(StageWidgetInstance)) return;
+    if (!IsValid(EscapeProgressWidgetClass)) return;
+    if (IsValid(EscapeProgressWidgetInstance))
+    {
+        EscapeProgressWidgetInstance->RemoveFromParent();
+        EscapeProgressWidgetInstance = nullptr;
+    }
+    
+    EscapeProgressWidgetInstance = CreateWidget<UEscapeProgressWidget>(this, EscapeProgressWidgetClass);
+    if (!IsValid(EscapeProgressWidgetInstance)) return;
+    
+    ATestGameState* GameStateES = GetWorld()->GetGameState<ATestGameState>();
+    if (!IsValid(GameStateES)) return;
+    
+    EscapeProgressWidgetInstance->InitializePrivateProperties(GameStateES, StartTime, Duration);
+    
+    StageWidgetInstance->CreateProgressWidget(EscapeProgressWidgetInstance);
+}
+
+void AMyPlayerController::Client_CloseEscapeProgressWidget_Implementation()
+{
+    if (!IsLocalController()) return;
+    if (!IsValid(StageWidgetInstance)) return;
+    if (!IsValid(EscapeProgressWidgetClass)) return;
+    if (!IsValid(EscapeProgressWidgetInstance)) return;
+    
+    UEscapeProgressWidget* ClosingWidget = EscapeProgressWidgetInstance;
+    EscapeProgressWidgetInstance = nullptr;
+    ClosingWidget->CloseEscapeProgressWidget();
 }
 
 void AMyPlayerController::MakeSettingWidget()

@@ -12,6 +12,7 @@
 #include "Engine/DataTable.h"
 #include "PlayerCharacter.generated.h"
 
+class APlayerCharacterState;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -87,7 +88,7 @@ public:
 	void BindDieFunctionWithPlayerStateDelegate();
 	
 	UFUNCTION()
-	void OnbIsDeadChanged(uint8 changedbisdead);
+	void OnbIsDeadChanged(APlayerCharacterState* CharacterState, uint8 changedbisdead);
 
 	UFUNCTION(BlueprintCallable)
 	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);

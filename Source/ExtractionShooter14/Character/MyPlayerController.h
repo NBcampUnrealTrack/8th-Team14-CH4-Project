@@ -21,6 +21,7 @@ class APlayerCharacterState;
 class UESHUDWidget;
 class USoundBase;
 class UAudioComponent;
+class UEscapeProgressWidget;
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API AMyPlayerController : public APlayerController
@@ -115,6 +116,14 @@ public:
 	TSubclassOf<UESHUDWidget> StageWidgetClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
 	TObjectPtr<UESHUDWidget> StageWidgetInstance;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Stage")
+	TSubclassOf<UEscapeProgressWidget> EscapeProgressWidgetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
+	TObjectPtr<UEscapeProgressWidget> EscapeProgressWidgetInstance;
+	UFUNCTION(Client, Reliable)
+	void Client_ShowEscapeProgressWidget(float StartTime, float Duration);
+	UFUNCTION(Client, Reliable)
+	void Client_CloseEscapeProgressWidget();
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UUserWidget> SettingWidgetClass;

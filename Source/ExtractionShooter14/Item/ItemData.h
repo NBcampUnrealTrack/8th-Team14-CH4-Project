@@ -47,4 +47,9 @@ public:
 	// 회복량
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float HealAmount = 0.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Icon")
+	TObjectPtr<UTexture2D> UIIcon_1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Icon")
+	TObjectPtr<UTexture2D> UIIcon_2;
 };

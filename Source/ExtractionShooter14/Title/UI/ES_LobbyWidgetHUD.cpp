@@ -49,6 +49,7 @@ void UES_LobbyWidgetHUD::NativeConstruct()
 	if (!PlayerinfoChangedHandle.IsValid())
 	{
 		PlayerinfoChangedHandle = OwningPlayerState->OnPlayerInfoChanged.AddUObject(this, &ThisClass::RefreshPlayerInfo);
+		RefreshPlayerInfo();
 	}
 }
 
@@ -81,19 +82,6 @@ void UES_LobbyWidgetHUD::NativeDestruct()
 	GetWorld()->GetTimerManager().ClearTimer(PhaseTimerHandle);
 	
 }
-
-// FReply UES_LobbyWidgetHUD::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
-// {
-//
-// 	if (InKeyEvent.GetKey() == EKeys::LeftControl)
-// 	{
-// 		OwningPlayerController->OnPressedEscape();
-// 		// FReply를 반환하지않으면 controller에게 까지 입력이 전달됨
-// 		return FReply::Handled();
-// 	}
-// 	
-// 	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
-// }
 
 void UES_LobbyWidgetHUD::RefreshPlayerUserIcon()
 {

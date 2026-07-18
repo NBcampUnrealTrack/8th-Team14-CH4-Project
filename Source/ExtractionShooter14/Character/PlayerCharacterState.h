@@ -16,7 +16,7 @@ DECLARE_MULTICAST_DELEGATE(FPlayerCombatInfoChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerbIsDeadChanged, uint8, bIsDead);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerbIsDeadChanged, APlayerCharacterState*, PlayerCharacterState, uint8, bIsDead);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
 	FOnHealthChanged,
 	float, CurrentHealth,

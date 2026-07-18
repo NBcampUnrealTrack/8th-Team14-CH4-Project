@@ -318,7 +318,6 @@ void APlayerCharacter::CloseUI(const FInputActionValue& Value)
 void APlayerCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
-
     
     BindDieFunctionWithPlayerStateDelegate();
 }
@@ -339,7 +338,7 @@ void APlayerCharacter::BindDieFunctionWithPlayerStateDelegate()
     PlayerCharacterStateES->OnPlayerbIsDeadChanged.AddDynamic(this, &ThisClass::OnbIsDeadChanged);
 }
 
-void APlayerCharacter::OnbIsDeadChanged(uint8 changedbisdead)
+void APlayerCharacter::OnbIsDeadChanged(APlayerCharacterState* CharacterState, uint8 changedbisdead)
 {
     if (changedbisdead)
     {

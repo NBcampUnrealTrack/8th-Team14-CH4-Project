@@ -3,7 +3,9 @@
 #include "Character/PlayerCharacterState.h"
 #include "Character/TestGameState.h"
 #include "Components/TextBlock.h"
-
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Title/UI/Pannel/EscapeProgressWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 void UESHUDWidget::NativeConstruct()
@@ -118,5 +120,19 @@ void UESHUDWidget::ApplyTextColorAnimationByTime(float InRemainTime)
 			}
 		}
 	}
+}
+
+void UESHUDWidget::CreateProgressWidget(UEscapeProgressWidget* InEPWidget)
+{
+	if (!IsValid(StageCanvasPanel)) return;
+	if (!IsValid(InEPWidget)) return;
+	
+	UCanvasPanelSlot* CanvasSlot = StageCanvasPanel->AddChildToCanvas(InEPWidget);
+	if (!IsValid(CanvasSlot)) return;
+	
+	CanvasSlot->SetAnchors(FAnchors(0.5f, 1.f));
+	CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+	CanvasSlot->SetPosition(FVector2D(0.f, -300.f));
+	CanvasSlot->SetAutoSize(true);
 }
 
