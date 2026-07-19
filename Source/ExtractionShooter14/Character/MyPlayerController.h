@@ -61,7 +61,7 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_OnClickedResultUI();
 	UFUNCTION()
-	void OnPlayerHealthChanged(float CurrentHP, float MaxHP);
+	void OnPlayerHealthChanged(float OldValue, float CurrentHP, float MaxHP);
 	
 	UFUNCTION(Client, Reliable)
 	void Client_OnReceiveBuyItemResult(const FName& BuyItemID, bool Result, int32 InventoryIndex);

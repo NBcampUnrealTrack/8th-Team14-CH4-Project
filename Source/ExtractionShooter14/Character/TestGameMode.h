@@ -58,7 +58,7 @@ private:
 	int32 MaxInGamePlayerCount = 3;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
-	int32 LobbyDuration = 180;
+	int32 LobbyDuration = 30;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
 	int32 PlayDuration = 180;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))

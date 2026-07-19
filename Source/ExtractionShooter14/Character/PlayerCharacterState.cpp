@@ -248,7 +248,7 @@ void APlayerCharacterState::TakenDamage(
 )
 {// is in server
 	if (!HasAuthority()) return;
-
+	float OldValue = CurrentHealth;
 	CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, MaxHealth);
 	
 	// ## todo::record combatinfo ##
@@ -271,7 +271,7 @@ void APlayerCharacterState::TakenDamage(
 		}
 	}
 	
-	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
 	//OnPlayerCombatInfoChanged.Broadcast();
 	ForceNetUpdate();
 }
@@ -292,14 +292,16 @@ void APlayerCharacterState::Heal(float HealAmount)
 	{
 		return;
 	}
-
+	
+	float OldValue = CurrentHealth;
+	
 	CurrentHealth = FMath::Clamp(
 		CurrentHealth + HealAmount,
 		0.f,
 		MaxHealth
 	);
 
-	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
 
 	ForceNetUpdate();
 }
@@ -355,9 +357,9 @@ void APlayerCharacterState::OnRep_PlayerLobbyIndex()
 	OnPlayerLobbyIndexChanged.Broadcast();
 }
 
-void APlayerCharacterState::OnRep_Health()
+void APlayerCharacterState::OnRep_Health(float OldValue)
 {
-	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
 	UE_LOG(LogTemp, Warning, TEXT("CLIENT :: %.1f / %.1f"),CurrentHealth,MaxHealth);
 }
 
@@ -461,13 +463,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageDealt(const float InGiveDm
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.DamageDealt += InGiveDmg;
-				
-		//CalCulateCombatScore();
-		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
+
 	}
 }
 
@@ -476,13 +472,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageTaken(const float InReceiv
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.DamageTaken += InReceiveDmg;
-				
-		//CalCulateCombatScore();
-		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
+
 	}
 }
 
@@ -491,13 +481,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_KillCount(const int32 InKillCoun
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.KillCount += InKillCount;
-				
-		//CalCulateCombatScore();
 		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
 	}
 }
 
@@ -507,12 +491,6 @@ void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCoun
 	{
 		PlayerCombatInfo.LootCount += InLootCount;
 		
-		//CalCulateCombatScore();
-		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
 	}
 }
 
@@ -520,21 +498,12 @@ void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
 {
 	if (HasAuthority())
 	{
-		//if (PlayerCombatInfo.Rank == InRank) return;
-		
+
 		PlayerCombatInfo.Rank = InRank;
-		
-		
-		//CalCulateCombatScore();
-		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
+
 		PlayerCommitCombatInfo = PlayerCombatInfo;
 		
 		OnPlayerCombatInfoChanged.Broadcast();
-		//OnPlayerRankChanged.Broadcast();
 	}
 }
 

@@ -585,13 +585,15 @@ void AMyPlayerController::SetCheatStageItem(FName ItemName, int32 ItemCount)
 
 #pragma endregion 
 
-void AMyPlayerController::OnPlayerHealthChanged(float CurrentHP, float MaxHP)
+void AMyPlayerController::OnPlayerHealthChanged(float OldValue, float CurrentHP, float MaxHP)
 {
     UE_LOG(LogTemp, Warning, TEXT("HP Changed: %.1f / %.1f"), CurrentHP, MaxHP);
 
     if (!IsValid(StageWidgetInstance.Get())) return;
 
     StageWidgetInstance.Get()->BP_UpdatePlayerHP(CurrentHP, MaxHP);
+    
+    if (OldValue > CurrentHP)
     StageWidgetInstance.Get()->BP_PlayerDamageFlash();
 }
 

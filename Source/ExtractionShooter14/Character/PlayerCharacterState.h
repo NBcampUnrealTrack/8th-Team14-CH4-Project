@@ -17,9 +17,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerbIsDeadChanged, APlayerCharacterState*, PlayerCharacterState, uint8, bIsDead);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
 	FOnHealthChanged,
-	float, CurrentHealth,
+	float, OldValue,
+	float, NewValue,
 	float, MaxHealth
 );
 
@@ -98,7 +99,7 @@ public:
 	UFUNCTION()
 	void OnRep_bIsDead();
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float OldValue);
 	UFUNCTION()
 	void OnRep_Coin();
 #pragma endregion 
@@ -138,6 +139,7 @@ public:
 	const TArray<FInventoryItemData>& GetPlayerStageInventory() const;
 	UFUNCTION(BlueprintCallable, Category = "Item")
 	bool ConsumeItemInPlayerStageInventory(FName ItemName, int32 ConsumeCount = 1);
+	
 #pragma endregion 
 	
 #pragma region CombatFunction

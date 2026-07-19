@@ -3,6 +3,7 @@
 #include "Animation/WidgetAnimation.h"
 #include "Components/Button.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/EditableText.h"
 #include "Components/HorizontalBox.h"
 #include "Components/TextBlock.h"
 #include "Game/ES_SessionSubsystem.h"
@@ -90,35 +91,37 @@ void UES_TitleWidgetHUD::NativeDestruct()
 
 void UES_TitleWidgetHUD::OnClickedPlayButton()
 {
-	if (!IsValid(SessionSubsystem))
-	{
-		UE_LOG(
-			LogTemp,
-			Error,
-			TEXT("[TitleWidget] SessionSubsystem is invalid.")
-		);
-	
-		return;
-	}
-	
-	if (SessionSubsystem->IsConnecting())
-	{
-		return;
-	}
-	
+	// if (!IsValid(SessionSubsystem))
+	// {
+	// 	UE_LOG(
+	// 		LogTemp,
+	// 		Error,
+	// 		TEXT("[TitleWidget] SessionSubsystem is invalid.")
+	// 	);
+	//
+	// 	return;
+	// }
+	//
+	// if (SessionSubsystem->IsConnecting())
+	// {
+	// 	return;
+	// }
+	//
 	if (IsValid(PlayButton))
 	{
 		PlayButton->SetIsEnabled(false);
 	}
-	
-	//SessionSubsystem->FindAndJoinDedicatedServer();
+	//
+	// SessionSubsystem->FindAndJoinDedicatedServer();
 	
 	
 // ========================== Session ===========================
 // ========================== Session ===========================
 	
-	 const FName IPString = FName(*IPTextBlock->GetText().ToString());
-	 UGameplayStatics::OpenLevel(GetWorld(), IPString);
+	const FString IPString = IPEditableText->GetText().ToString();
+	const FName IPStringFName = FName(*IPString);
+	// const FName IPString = FName(*IPTextBlock->GetText().ToString());
+	UGameplayStatics::OpenLevel(GetWorld(), IPStringFName);
 	// APlayerController* PlayerControllerES = GetOwningPlayer();
 	// if (!IsValid(PlayerControllerES))
 	// {
@@ -126,7 +129,7 @@ void UES_TitleWidgetHUD::OnClickedPlayButton()
 	// }
 	//
 	// PlayerControllerES->ClientTravel(
-	// 	TEXT("127.0.0.1:7777"),
+	// 	IPString,
 	// 	ETravelType::TRAVEL_Absolute
 	// );
 }

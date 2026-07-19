@@ -5,6 +5,8 @@
 #include "GameFramework/Actor.h"
 #include "TeleportTriggerBox_Timer.generated.h"
 
+class UNiagaraSystem;
+class UNiagaraComponent;
 class AMyPlayerController;
 class APlayerCharacterState;
 
@@ -39,6 +41,10 @@ public:
 	void CancelAllPlayerCountdowns(); // stage time ended > all player move >> list clear
 	virtual void BeginPlay() override;
 protected:
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effect")
+	TObjectPtr<UNiagaraComponent> NiagaraComponent;
+	
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teleport|MoveTo")

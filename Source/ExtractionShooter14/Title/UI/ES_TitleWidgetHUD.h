@@ -4,6 +4,8 @@
 #include "Blueprint/UserWidget.h"
 #include "ES_TitleWidgetHUD.generated.h"
 
+class UEditableText;
+class UEditableTextBox;
 class UVerticalBox;
 class UES_SessionSubsystem;
 class UHorizontalBox;
@@ -55,6 +57,8 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
 	TObjectPtr<UTextBlock> IPTextBlock;
+	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
+	TObjectPtr<UEditableText> IPEditableText;
 	UPROPERTY(BlueprintReadOnly, Category = "Title|UI", meta = (BindWidget))
 	TObjectPtr<UTextBlock> ConnectionStateText;
 	

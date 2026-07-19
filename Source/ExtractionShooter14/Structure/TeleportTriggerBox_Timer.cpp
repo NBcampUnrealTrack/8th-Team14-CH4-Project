@@ -3,6 +3,7 @@
 #include "Character/PlayerCharacterState.h"
 // #include "Components/StaticMeshComponent.h"
 // #include "Components/BoxComponent.h"
+#include "NiagaraComponent.h"
 #include "Character/TestGameMode.h"
 #include "Character/TestGameState.h"
 #include "Components/SphereComponent.h"
@@ -13,6 +14,11 @@ ATeleportTriggerBox_Timer::ATeleportTriggerBox_Timer()
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 	SphereComponent->SetSphereRadius(5000.f);
+	
+	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraComponent"));
+	NiagaraComponent->SetupAttachment(RootComponent);
+	NiagaraComponent->SetRelativeLocation(FVector(0.f,0.f,-800.f));
+	NiagaraComponent->SetAutoActivate(true);
 }
 
 void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
