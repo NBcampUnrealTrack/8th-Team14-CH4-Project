@@ -143,9 +143,9 @@ void ACoinBase::OnSphereBeginOverlap(
     UE_LOG(LogTemp, Warning,
         TEXT("Add Gold : %d"),
         CoinValue);
-
+    
     PS->AddPlayerStageGold(CoinValue);
-
+    PS->AddPlayerCombatInfo_LootCount(1);
     UE_LOG(LogTemp, Warning,
         TEXT("Coin Destroy"));
 

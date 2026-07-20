@@ -14,13 +14,14 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
 struct FInventoryItemData;
 class UES_ResaultWidgetHUD;
 class UES_LobbyWidgetHUD;
+class UES_OptionWidget;
 class UInputMappingContext;
 class UUserWidget;
 class APlayerCharacterState;
-class UUserWidget;
 class UESHUDWidget;
 class USoundBase;
 class UAudioComponent;
+class UEscapeProgressWidget;
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API AMyPlayerController : public APlayerController
@@ -60,7 +61,7 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_OnClickedResultUI();
 	UFUNCTION()
-	void OnPlayerHealthChanged(float CurrentHP, float MaxHP);
+	void OnPlayerHealthChanged(float OldValue, float CurrentHP, float MaxHP);
 	
 	UFUNCTION(Client, Reliable)
 	void Client_OnReceiveBuyItemResult(const FName& BuyItemID, bool Result, int32 InventoryIndex);
@@ -88,16 +89,23 @@ public:
 	void Client_OpenResultUI();
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Option")
-	TSubclassOf<UUserWidget> OptionWidgetClass;
+	TSubclassOf<UES_OptionWidget> OptionWidgetClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Option")
-	TObjectPtr<UUserWidget> OptionWidgetInstance;
-	
-	// UPROPERTY()
-	// uint8 IsOpenOptionUI : 1;
+	TObjectPtr<UES_OptionWidget> OptionWidgetInstance;
+
+	//UES_OptionWidget
+	UPROPERTY()
+	TArray<TObjectPtr<UUserWidget>> WidgetStack;
 	UFUNCTION(BlueprintCallable)
+	void PushWidget(UUserWidget* NewWidget);
+	UFUNCTION()
 	void OpenOptionUI();
-	// UFUNCTION()
-	// void CloseOptionUI();
+	UFUNCTION()
+	void CloseOptionUI();
+	UFUNCTION(BlueprintCallable)
+	void OnPressedEscape();
+	void FocusWidget(UUserWidget* Widget);
+	void UpdateInputMode();
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Lobby")
 	TSubclassOf<UES_LobbyWidgetHUD> LobbyWidgetClass;
@@ -106,11 +114,32 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Stage")
 	TSubclassOf<UESHUDWidget> StageWidgetClass;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
 	TObjectPtr<UESHUDWidget> StageWidgetInstance;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Stage")
+	TSubclassOf<UEscapeProgressWidget> EscapeProgressWidgetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
+	TObjectPtr<UEscapeProgressWidget> EscapeProgressWidgetInstance;
+	UFUNCTION(Client, Reliable)
+	void Client_ShowEscapeProgressWidget(float StartTime, float Duration);
+	UFUNCTION(Client, Reliable)
+	void Client_CloseEscapeProgressWidget();
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UUserWidget> SettingWidgetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<UUserWidget> SettingWidgetInstance;
+	void MakeSettingWidget();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UUserWidget> ShopWidgetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<UUserWidget> ShopWidgetInstance;
+	void ToggleShopWidget();
+	void CloseShopWidget();
 	
+	void ClearWidgetStack();
+	int32 BaseUIZOrder = 1;
 #pragma region Cheat
 	UFUNCTION(Exec)
 	void SetCheatCoin(int32 InCheatCoin);

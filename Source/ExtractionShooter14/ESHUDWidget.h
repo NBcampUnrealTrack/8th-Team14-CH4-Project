@@ -4,6 +4,8 @@
 #include "Blueprint/UserWidget.h"
 #include "ESHUDWidget.generated.h"
 
+class UEscapeProgressWidget;
+class UCanvasPanel;
 class APlayerCharacterState;
 class ATestGameState;
 class UTextBlock;
@@ -23,7 +25,12 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
 	void BP_PlayerDamageFlash();
+	
+	void CreateProgressWidget(UEscapeProgressWidget* InEPWidget);
+	
 public:
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UCanvasPanel> StageCanvasPanel;
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> CurrentRank;
 	UPROPERTY(meta = (BindWidget))

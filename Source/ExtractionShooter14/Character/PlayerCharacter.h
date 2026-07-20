@@ -12,6 +12,7 @@
 #include "Engine/DataTable.h"
 #include "PlayerCharacter.generated.h"
 
+class APlayerCharacterState;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -87,10 +88,13 @@ public:
 	void BindDieFunctionWithPlayerStateDelegate();
 	
 	UFUNCTION()
-	void OnbIsDeadChanged(uint8 changedbisdead);
+	void OnbIsDeadChanged(APlayerCharacterState* CharacterState, uint8 changedbisdead);
 
 	UFUNCTION(BlueprintCallable)
 	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	
+	UFUNCTION(BlueprintCallable)
+	void WeaponDelete();
 	
 	UFUNCTION(BlueprintCallable, Category = "Death")
 	void Die();
@@ -186,7 +190,7 @@ protected:
 	UInputAction* SprintAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	UInputAction* OptionAction;
+	UInputAction* CloseUIAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* AimAction;
@@ -226,7 +230,7 @@ protected:
 	void StopFire();
 	void Reload();
 	
-	void OpenOptionUI(const FInputActionValue& Value);
+	void CloseUI(const FInputActionValue& Value);
 
 protected:
 

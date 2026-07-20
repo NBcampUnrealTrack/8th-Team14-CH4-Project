@@ -1,8 +1,11 @@
 ﻿#include "TeleportTriggerBox_Timer.h"
 #include "Character/MyPlayerController.h"
+#include "Character/PlayerCharacterState.h"
 // #include "Components/StaticMeshComponent.h"
 // #include "Components/BoxComponent.h"
+#include "NiagaraComponent.h"
 #include "Character/TestGameMode.h"
+#include "Character/TestGameState.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -10,19 +13,12 @@ ATeleportTriggerBox_Timer::ATeleportTriggerBox_Timer()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
-	
-	// SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
-	// SetRootComponent(SceneComponent);
-	//
-	// StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
-	// StaticMeshComponent->SetupAttachment(GetRootComponent());
-	//
-	// BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
-	// BoxComponent->SetupAttachment(StaticMeshComponent);
-	//
-	// BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::MoveToLocationBeginOverlap);
-	// BoxComponent->OnComponentEndOverlap.AddDynamic(this, &ThisClass::MoveToLocationEndOverlap);
 	SphereComponent->SetSphereRadius(5000.f);
+	
+	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraComponent"));
+	NiagaraComponent->SetupAttachment(RootComponent);
+	NiagaraComponent->SetRelativeLocation(FVector(0.f,0.f,-800.f));
+	NiagaraComponent->SetAutoActivate(true);
 }
 
 void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -33,20 +29,30 @@ void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* 
 	
 	APawn* PlayerPawn = Cast<APawn>(OtherActor);
 	if (!IsValid(PlayerPawn)) return;
-	
 	AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(PlayerPawn->GetController());
 	if (!IsValid(PlayerControllerES)) return;
+	APlayerCharacterState* PlayerCharacterStateES = PlayerControllerES->GetPlayerState<APlayerCharacterState>();
+	if (!IsValid(PlayerCharacterStateES)) return;
+	ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>();
+	if (!IsValid(GS)) return;
 	
 	// map에 등록되있으면 새로 타이머등록안함
 	if (CountdownPlayerListMap.Contains(PlayerControllerES)) return;
+	// player is dead > return
+	if (PlayerCharacterStateES->GetbIsDead()) return;
 	
 	FCountdownInfo Info;
 	Info.RemainingTime = MaxTakesTime;
-	CountdownPlayerListMap.Add(PlayerControllerES, Info);
+	Info.PlayerState = PlayerCharacterStateES;
+	FCountdownInfo& CountRefInfo = CountdownPlayerListMap.Add(PlayerControllerES, Info);
 	
-	FCountdownInfo& CountRefInfo = CountdownPlayerListMap[PlayerControllerES];
+	PlayerCharacterStateES->OnPlayerbIsDeadChanged.AddUniqueDynamic(this,	&ThisClass::OnPlayerDeadChanged);
+	
 	// ingame ui > PlayerControllerES->ClinetRPC_ShowCountWidget(TakesTime);
-	UE_LOG(LogTemp, Warning, TEXT("Player is going to Move In 3s."))
+	UE_LOG(LogTemp, Warning, TEXT("Player is going to Move In %.fs."), MaxTakesTime);
+	
+	const float StartServerTime = GS->GetServerWorldTimeSeconds();
+	PlayerControllerES->Client_ShowEscapeProgressWidget(StartServerTime, MaxTakesTime);
 	
 	GetWorldTimerManager().SetTimer(
 		CountRefInfo.TimerHandle,
@@ -70,53 +76,105 @@ void ATeleportTriggerBox_Timer::MoveToLocationEndOverlap(UPrimitiveComponent* Ov
 	
 	APawn* PlayerPawn = Cast<APawn>(OtherActor);
 	if (!IsValid(PlayerPawn)) return;
-	
 	AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(PlayerPawn->GetController());
 	if (!IsValid(PlayerControllerES)) return;
 	
-	FCountdownInfo* Info =
-	CountdownPlayerListMap.Find(PlayerControllerES);
+	CancelPlayerCountdown(PlayerControllerES);
+}
 
-	if (!Info)	return;
+void ATeleportTriggerBox_Timer::CancelAllPlayerCountdowns()
+{
+	if (!HasAuthority()) return;
+
+	TArray<TObjectPtr<AMyPlayerController>> Controllers;
+	CountdownPlayerListMap.GetKeys(Controllers);
+
+	for (AMyPlayerController* Controller : Controllers)
+	{
+		CancelPlayerCountdown(Controller);
+	}
+}
+
+void ATeleportTriggerBox_Timer::BeginPlay()
+{
+	Super::BeginPlay();
 	
-	GetWorldTimerManager().ClearTimer(Info->TimerHandle);
-	// ingame ui > PlayerControllerES->ClinetRPC_CloseCountWidget(TakesTime);
+	if (!HasAuthority()) return;
+
+	ATestGameMode* GameModeES =	Cast<ATestGameMode>(GetWorld()->GetAuthGameMode());
+	if (!IsValid(GameModeES)) return;
+
+	GameModeES->OnStageEnded.AddUObject(this, &ThisClass::CancelAllPlayerCountdowns);
 	
-	CountdownPlayerListMap.Remove(PlayerControllerES);
 }
 
 void ATeleportTriggerBox_Timer::UpdatePlayerCountdown(AMyPlayerController* InPlayer)
 {
+	if (!HasAuthority()) return;
 	if (!IsValid(InPlayer)) return;
-	
-	FCountdownInfo* Info =
-		CountdownPlayerListMap.Find(InPlayer);
 
+	FCountdownInfo* Info = CountdownPlayerListMap.Find(InPlayer);
 	if (!Info)	return;
-	Info->RemainingTime--;
-	
-	UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s >> Move In %.fs"),*InPlayer->GetName(), Info->RemainingTime);
-	
-	if (InPlayer)
-	{
-		//ClientRPC for update UI timeseconds;
-		//InPlayer->Client_ShowCountdown(Info->RemainingTime);
-	}
-	
 
-	//FTransform SetPlayerTransform = GameModeES->GetPlayerLobbyStartPoint(InPlayer);
+	Info->RemainingTime--;
+	// player die = cleartimer
+	UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s >> Move In %.fs"),*InPlayer->GetName(), Info->RemainingTime);
+
 	if (Info->RemainingTime <= 0)
 	{
 		ATestGameMode* GameModeES = Cast<ATestGameMode>(InPlayer->GetWorld()->GetAuthGameMode());
-		if (!IsValid(GameModeES)) return;
-		GetWorldTimerManager().ClearTimer(Info->TimerHandle);
-		// if (APawn* Pawn = InPlayer->GetPawn())
-		// {
+		if (!IsValid(GameModeES))
+		{ // server is none ???
+			CancelPlayerCountdown(InPlayer);
+			return;
+		}
+
+		CancelPlayerCountdown(InPlayer); // cleartimer, unbinddelegate, remove map
 		GameModeES->SetPlayerLobbyStartPoint(InPlayer);
-			//Pawn->TeleportTo(SetPlayerTransform.GetLocation(), SetPlayerTransform.Rotator()+FRotator(0.f,180.f, 0.f));
-		//InPlayer->Client_OpenResultUI();
-		// }
-		
-		CountdownPlayerListMap.Remove(InPlayer);
 	}
+}
+
+void ATeleportTriggerBox_Timer::OnPlayerDeadChanged(APlayerCharacterState* InPlayerState, uint8 bIsDead)
+{
+	if (!HasAuthority()) return;
+	if (!bIsDead) return; // true == pass
+	if (!IsValid(InPlayerState)) return;
+	
+	AMyPlayerController* PlayerController =	Cast<AMyPlayerController>(InPlayerState->GetPlayerController());
+	if (!IsValid(PlayerController)) return;
+	
+	CancelPlayerCountdown(PlayerController);
+}
+
+void ATeleportTriggerBox_Timer::CancelPlayerCountdown(AMyPlayerController* InPlayer)
+{
+	if (!IsValid(InPlayer)) return;
+	FCountdownInfo* CountInfo =	CountdownPlayerListMap.Find(InPlayer);
+	if (!CountInfo)	return;
+	
+	InPlayer->Client_CloseEscapeProgressWidget();
+	GetWorldTimerManager().ClearTimer(CountInfo->TimerHandle); // clear timer
+	
+	APlayerCharacterState* PlayerState =
+		CountInfo->PlayerState.Get();
+	
+	if (IsValid(PlayerState))
+	{
+		PlayerState->OnPlayerbIsDeadChanged.RemoveDynamic(this, &ThisClass::OnPlayerDeadChanged); // clear bindfunction
+	}
+	CountdownPlayerListMap.Remove(InPlayer); // clear maplist
+}
+
+void ATeleportTriggerBox_Timer::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (HasAuthority())
+	{
+		if (ATestGameMode* GameModeES =	Cast<ATestGameMode>(GetWorld()->GetAuthGameMode()))
+		{
+			GameModeES->OnStageEnded.RemoveAll(this);
+		}
+
+		CancelAllPlayerCountdowns();
+	}
+	Super::EndPlay(EndPlayReason);
 }

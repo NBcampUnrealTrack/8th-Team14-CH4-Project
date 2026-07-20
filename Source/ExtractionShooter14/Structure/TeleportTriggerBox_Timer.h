@@ -5,17 +5,20 @@
 #include "GameFramework/Actor.h"
 #include "TeleportTriggerBox_Timer.generated.h"
 
+class UNiagaraSystem;
+class UNiagaraComponent;
 class AMyPlayerController;
+class APlayerCharacterState;
 
 USTRUCT()
 struct FCountdownInfo
 {
 	GENERATED_BODY()
 	
-	UPROPERTY()
 	FTimerHandle TimerHandle;
-	UPROPERTY()
 	float RemainingTime = 0.f;
+	UPROPERTY()
+	TObjectPtr<APlayerCharacterState> PlayerState = nullptr;
 };
 
 UCLASS()
@@ -35,25 +38,26 @@ public:
 	(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) override;
 	
+	void CancelAllPlayerCountdowns(); // stage time ended > all player move >> list clear
+	virtual void BeginPlay() override;
 protected:
 	
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teleport|MoveTo")
-	// FVector MoveToLocation;
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teleport|MoveTo")
-	// FRotator MoveToRotation = FRotator::ZeroRotator;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effect")
+	TObjectPtr<UNiagaraComponent> NiagaraComponent;
+	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teleport|MoveTo")
-	float MaxTakesTime = 3.f;
+	float MaxTakesTime = 5.f;
 	UFUNCTION()
 	void UpdatePlayerCountdown(AMyPlayerController* InPlayer);
 	
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	// TObjectPtr<USceneComponent> SceneComponent;
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	// TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	// TObjectPtr<UBoxComponent> BoxComponent;
-	
+	UFUNCTION() // when player dead > clear timer
+	void OnPlayerDeadChanged(APlayerCharacterState* InPlayerState,	uint8 bIsDead);
+
+	void CancelPlayerCountdown(AMyPlayerController* InPlayer);
+	//void BindPlayerDeathDelegate(APlayerCharacterState* InPlayerState);
+	//void UnbindPlayerDeathDelegate(APlayerCharacterState* InPlayerState);
 private:
 	UPROPERTY()
 	TMap<TObjectPtr<AMyPlayerController>, FCountdownInfo> CountdownPlayerListMap;

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "WidgetBase/ClosableWidgetBase.h"
 #include "ES_LobbyWidgetHUD.generated.h"
 
 class AMyPlayerController;
@@ -12,17 +13,19 @@ class UES_LobbyUserIconWidget;
 class UHorizontalBox;
 
 UCLASS()
-class EXTRACTIONSHOOTER14_API UES_LobbyWidgetHUD : public UUserWidget
+class EXTRACTIONSHOOTER14_API UES_LobbyWidgetHUD : public UClosableWidgetBase
 {
 	GENERATED_BODY()
 public:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	
-	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+	//virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 	
 	UFUNCTION(BlueprintCallable)
 	void OnClickedReadyButton();
+	UFUNCTION(BlueprintCallable)
+	void OnClickedShopButton();
 	
 	UFUNCTION()
 	void SetLobbyCountPlayer(const int32 InNewPlayer);
@@ -54,8 +57,10 @@ public:
 	TObjectPtr<UHorizontalBox> PlayerIconHorizontal;
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UUserWidget> LobbyTotalGold;
-	
-	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UUserWidget> ShopButtonWidget;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UUserWidget> ReadyButtonWidget;
 	
 	UPROPERTY(EditDefaultsOnly, blueprintReadOnly, Category = "Lobby|Icon")
 	TSubclassOf<UES_LobbyUserIconWidget> UserIconClass;

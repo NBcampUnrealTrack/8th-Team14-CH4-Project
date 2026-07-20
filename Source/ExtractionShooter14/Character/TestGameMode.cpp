@@ -168,7 +168,6 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
     APlayerStart::StaticClass(),
     LobbyPlayerStartPoints
     );
-
     
     const int32 Index = GetAvailableStartIndex();
     if (Index != INDEX_NONE)
@@ -204,28 +203,9 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
 
 void ATestGameMode::Logout(AController* Exiting)
 {
-    // APlayerCharacterState* PS = Exiting->GetPlayerState<APlayerCharacterState>();
-    // if (!IsValid(PS)) return;
-    // PS->SetPlayerStagePlace(EPlayerPlace::None);
-    //
-    // const FString PlayerKey = PS->GetUniqueId()->ToString();
-    //
-    // if (UES_GameInstanceSubsystem* SaveSubsystem =
-    //     GetGameInstance()->GetSubsystem<UES_GameInstanceSubsystem>())
-    // {
-    //     SaveSubsystem->SavePlayerData(PlayerKey, PS->GetPlayerInfo());
-    // }
-    //
-    //
-    // APlayerController* PlayerControllerES = Cast<APlayerController>(Exiting);
-    // if (!IsValid(PlayerControllerES)) return;
-    //
-    // LobbyPlayerStartPointMap.Remove(PlayerControllerES);
-    // ATestGameState* GameState_Test = GetGameState<ATestGameState>();
-    //
-    // if (!IsValid(GameState_Test)) return;
-    // GameState_Test->SetPlayerInGameCount_GS(LobbyPlayerStartPointMap.Num());
-    // GameState_Test->RemoveLobbyPlayerStates(PS);
+    APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(Exiting->GetPawn());
+    if (IsValid(PlayerCharacter)) PlayerCharacter->WeaponDelete();
+    
     APlayerCharacterState* PS =
     Exiting
     ? Exiting->GetPlayerState<APlayerCharacterState>()
@@ -234,7 +214,7 @@ void ATestGameMode::Logout(AController* Exiting)
     if (IsValid(PS))
     {
         PS->SetPlayerStagePlace(EPlayerPlace::None);
-        PS->ApplyPlayerStageInventoryToPlayerStorage();
+        //PS->ApplyPlayerStageInventoryToPlayerStorage();
         
         if (PS->GetUniqueId().IsValid())
         {
@@ -619,7 +599,8 @@ void ATestGameMode::CheckRemainTime()
         if (RemainTime <= 0.f)
         {
             GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
-
+            OnStageEnded.Broadcast();
+            
             for (auto PlayerStates : GS->GetLobbyPlayerStates())
             {
                 if (PlayerStates->GetPlayerStagePlace() == EPlayerPlace::Stage)
@@ -673,6 +654,7 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     // ======================= init playerstates ========================
     PlayerStateES->ClearPlayerStageInventoryGold();
     PlayerStateES->SetPlayerStagePlace(EPlayerPlace::Lobby);
+    PlayerStateES->InitiateStats();
     PlayerStateES->SetPlayerReady(false);
     // ======================= init playerstates ========================
     
@@ -703,6 +685,9 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     {
         GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
         // StartPhaseTimer();
+        GetWorldTimerManager().SetTimerForNextTick(
+        this, &ThisClass::ClearObjects);
+        
         StartLobby();
     }
 }
@@ -732,6 +717,8 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
 
         GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
         // StartPhaseTimer();
+        GetWorldTimerManager().SetTimerForNextTick(
+      this, &ThisClass::ClearObjects);
         StartLobby();
     }
 }
@@ -761,6 +748,9 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
 
         GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
         // StartPhaseTimer();
+        GetWorldTimerManager().SetTimerForNextTick(
+        this, &ThisClass::ClearObjects);
+        
         StartLobby();
     }
 }
@@ -774,5 +764,26 @@ void ATestGameMode::InitializePlayerStats(APlayerCharacterState* InPlayerState)
     InPlayerState->InitiateStats();
     InPlayerState->ClearPlayerStageInventoryGold();
     InPlayerState->ClearPlayerStageInventory();
+    InPlayerState->ClearPlayerinfoInventory();
 }
 
+void ATestGameMode::ClearObjects()
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    TArray<AActor*> FoundCoins;
+    UGameplayStatics::GetAllActorsWithTag(this, TEXT("StageCoin"), FoundCoins);
+
+    for (AActor* Coin : FoundCoins)
+    {
+        if (IsValid(Coin))
+        {
+            Coin->Destroy();
+        }
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[Stage] Removed %d coins."), FoundCoins.Num());
+}

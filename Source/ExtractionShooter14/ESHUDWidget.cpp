@@ -3,7 +3,9 @@
 #include "Character/PlayerCharacterState.h"
 #include "Character/TestGameState.h"
 #include "Components/TextBlock.h"
-
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Title/UI/Pannel/EscapeProgressWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 void UESHUDWidget::NativeConstruct()
@@ -100,11 +102,7 @@ void UESHUDWidget::ApplyTextColorAnimationByTime(float InRemainTime)
 
 	const float Ratio = PassedTime / TimerData.PhaseDuration;
 	
-	if (GamePhase == EGameState::LobbyWaiting)
-	{
-
-	}
-	else if (GamePhase == EGameState::Playing)
+	if (GamePhase == EGameState::Playing)
 	{
 		if (Ratio < 0.2f)
 		{
@@ -112,8 +110,29 @@ void UESHUDWidget::ApplyTextColorAnimationByTime(float InRemainTime)
 		}
 		else if (Ratio >= 0.2f)
 		{
-			StageTime->SetColorAndOpacity(FColor::White);
+			if (InRemainTime <= 30.f)
+			{
+				StageTime->SetColorAndOpacity(FColor::Red);
+			}
+			else
+			{
+				StageTime->SetColorAndOpacity(FColor::White);
+			}
 		}
 	}
+}
+
+void UESHUDWidget::CreateProgressWidget(UEscapeProgressWidget* InEPWidget)
+{
+	if (!IsValid(StageCanvasPanel)) return;
+	if (!IsValid(InEPWidget)) return;
+	
+	UCanvasPanelSlot* CanvasSlot = StageCanvasPanel->AddChildToCanvas(InEPWidget);
+	if (!IsValid(CanvasSlot)) return;
+	
+	CanvasSlot->SetAnchors(FAnchors(0.5f, 1.f));
+	CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+	CanvasSlot->SetPosition(FVector2D(0.f, -300.f));
+	CanvasSlot->SetAutoSize(true);
 }
 

@@ -141,60 +141,91 @@ void APlayerCharacterState::ClearPlayerStageInventory()
 	}
 }
 
-void APlayerCharacterState::ApplyPlayerStageInventoryToPlayerStorage()
+void APlayerCharacterState::ClearPlayerinfoInventory()
 {
 	if (HasAuthority())
 	{
-		bool bIsItemChanged = false;
-		
-		for (const FInventoryItemData& StageItem : PlayerStageInventory)
+		for (FInventoryItemData& Item : PlayerInfo.ItemStorage)
 		{
-			if (StageItem.ItemName == NAME_None) // no item slot
-			{
-				continue;
-			}
-
-			FInventoryItemData* FoundItem1 = PlayerInfo.ItemStorage.FindByPredicate(
-				[&StageItem](const FInventoryItemData& StorageItem)
-				{
-					return StorageItem.ItemName == StageItem.ItemName;
-				});
-
-			if (FoundItem1)
-			{
-				FoundItem1->ItemCount += StageItem.ItemCount;
-			}
-			else // new item?
-			{
-				FInventoryItemData* FoundItem2 = PlayerInfo.ItemStorage.FindByPredicate(
-					[](const FInventoryItemData& StorageItem)
-					{
-						return StorageItem.ItemName == NAME_None;
-					});
-				if (FoundItem2)
-				{ // empty slot exist
-					*FoundItem2 = StageItem;
-				}
-				else
-				{
-					// full inventory
-					continue;
-				}
-			}
-			bIsItemChanged = true;
+			Item = FInventoryItemData();  // ItemName=NAME_None, ItemCount=0
 		}
 
-		if (PlayerStageGold > 0)
-		{
-			PlayerInfo.GoldStorage += PlayerStageGold;
-			bIsItemChanged = true;
-		}
-
-		if (bIsItemChanged)
-		{
-			OnPlayerInfoChanged.Broadcast();
-		}
+		//PlayerStageGold = 0;
 	}
+}
+
+void APlayerCharacterState::ApplyPlayerStageInventoryToPlayerStorage()
+{
+	// when playerstorage = add stack = chang go = container 
+#pragma region When use PlayerStorage > Container
+	// if (HasAuthority())
+	// {
+	// 	bool bIsItemChanged = false;
+	// 	
+	// 	for (const FInventoryItemData& StageItem : PlayerStageInventory)
+	// 	{
+	// 		if (StageItem.ItemName == NAME_None) // no item slot
+	// 		{
+	// 			continue;
+	// 		}
+	//
+	// 		FInventoryItemData* FoundItem1 = PlayerInfo.ItemStorage.FindByPredicate(
+	// 			[&StageItem](const FInventoryItemData& StorageItem)
+	// 			{
+	// 				return StorageItem.ItemName == StageItem.ItemName;
+	// 			});
+	//
+	// 		if (FoundItem1)
+	// 		{
+	// 			FoundItem1->ItemCount += StageItem.ItemCount;
+	// 		}
+	// 		else // new item?
+	// 		{
+	// 			FInventoryItemData* FoundItem2 = PlayerInfo.ItemStorage.FindByPredicate(
+	// 				[](const FInventoryItemData& StorageItem)
+	// 				{
+	// 					return StorageItem.ItemName == NAME_None;
+	// 				});
+	// 			if (FoundItem2)
+	// 			{ // empty slot exist
+	// 				*FoundItem2 = StageItem;
+	// 			}
+	// 			else
+	// 			{
+	// 				// full inventory
+	// 				continue;
+	// 			}
+	// 		}
+	// 		bIsItemChanged = true;
+	// 	}
+	//
+	// 	if (PlayerStageGold > 0)
+	// 	{
+	// 		PlayerInfo.GoldStorage += PlayerStageGold;
+	// 		bIsItemChanged = true;
+	// 	}
+	//
+	// 	if (bIsItemChanged)
+	// 	{
+	// 		OnPlayerInfoChanged.Broadcast();
+	// 	}
+	// }
+#pragma endregion 
+	
+	if (!HasAuthority()) return;
+
+	// stageinven = containerinven
+	PlayerInfo.ItemStorage = PlayerStageInventory;
+
+	// add gold
+	if (PlayerStageGold > 0)
+	{
+		PlayerInfo.GoldStorage += PlayerStageGold;
+		PlayerStageGold = 0;   // stage gold clear
+	}
+
+	OnPlayerInfoChanged.Broadcast();
+	
 }
 
 void APlayerCharacterState::Server_SetPlayerReady_Implementation(bool bReady)
@@ -217,7 +248,7 @@ void APlayerCharacterState::TakenDamage(
 )
 {// is in server
 	if (!HasAuthority()) return;
-
+	float OldValue = CurrentHealth;
 	CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, MaxHealth);
 	
 	// ## todo::record combatinfo ##
@@ -240,7 +271,7 @@ void APlayerCharacterState::TakenDamage(
 		}
 	}
 	
-	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
 	//OnPlayerCombatInfoChanged.Broadcast();
 	ForceNetUpdate();
 }
@@ -261,14 +292,16 @@ void APlayerCharacterState::Heal(float HealAmount)
 	{
 		return;
 	}
-
+	
+	float OldValue = CurrentHealth;
+	
 	CurrentHealth = FMath::Clamp(
 		CurrentHealth + HealAmount,
 		0.f,
 		MaxHealth
 	);
 
-	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
 
 	ForceNetUpdate();
 }
@@ -324,9 +357,9 @@ void APlayerCharacterState::OnRep_PlayerLobbyIndex()
 	OnPlayerLobbyIndexChanged.Broadcast();
 }
 
-void APlayerCharacterState::OnRep_Health()
+void APlayerCharacterState::OnRep_Health(float OldValue)
 {
-	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
 	UE_LOG(LogTemp, Warning, TEXT("CLIENT :: %.1f / %.1f"),CurrentHealth,MaxHealth);
 }
 
@@ -341,7 +374,7 @@ void APlayerCharacterState::OnRep_bIsReady()
 
 void APlayerCharacterState::OnRep_bIsDead()
 {
-	OnPlayerbIsDeadChanged.Broadcast(bIsDead);
+	OnPlayerbIsDeadChanged.Broadcast(this, bIsDead);
 }
 
 void APlayerCharacterState::OnRep_PlayerStagePlace()
@@ -409,7 +442,8 @@ int32 APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemD
 			PlayerStageInventory[EmptyIndex] = InItemName;
 			ChangedSlotIndex = EmptyIndex;
 		}
-
+		
+		PlayerInfo.ItemStorage = PlayerStageInventory; // when buy item. save item to save storage
 		OnPlayerStageInventoryChanged.Broadcast();
 		ForceNetUpdate();
 
@@ -429,13 +463,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageDealt(const float InGiveDm
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.DamageDealt += InGiveDmg;
-				
-		//CalCulateCombatScore();
-		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
+
 	}
 }
 
@@ -444,13 +472,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_DamageTaken(const float InReceiv
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.DamageTaken += InReceiveDmg;
-				
-		//CalCulateCombatScore();
-		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
+
 	}
 }
 
@@ -459,13 +481,7 @@ void APlayerCharacterState::AddPlayerCombatInfo_KillCount(const int32 InKillCoun
 	if (HasAuthority())
 	{
 		PlayerCombatInfo.KillCount += InKillCount;
-				
-		//CalCulateCombatScore();
 		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
 	}
 }
 
@@ -475,12 +491,6 @@ void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCoun
 	{
 		PlayerCombatInfo.LootCount += InLootCount;
 		
-		//CalCulateCombatScore();
-		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
 	}
 }
 
@@ -488,21 +498,12 @@ void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
 {
 	if (HasAuthority())
 	{
-		//if (PlayerCombatInfo.Rank == InRank) return;
-		
+
 		PlayerCombatInfo.Rank = InRank;
-		
-		
-		//CalCulateCombatScore();
-		
-		// if (ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>())
-		// {
-		// 	GS->MarkRank();
-		// }
+
 		PlayerCommitCombatInfo = PlayerCombatInfo;
 		
 		OnPlayerCombatInfoChanged.Broadcast();
-		//OnPlayerRankChanged.Broadcast();
 	}
 }
 

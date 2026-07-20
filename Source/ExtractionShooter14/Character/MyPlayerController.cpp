@@ -7,13 +7,17 @@
 #include "TestGameMode.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
-#include "Title/UI/ES_LobbyWidgetHUD.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Title/UI/ES_LobbyWidgetHUD.h"
 #include "Title/UI/ES_ResaultWidgetHUD.h"
+#include "Title/UI/ES_OptionWidget.h"
+#include "Title/UI/Pannel/EscapeProgressWidget.h"
 #include "Character/TestGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "ESHUDWidget.h"
 #include "Components/AudioComponent.h"
+#include "Components/Button.h"
+#include "Components/CanvasPanel.h"
 #include "Game/ES_AudioSubsystem.h"
 #include "Sound/SoundBase.h"
 
@@ -111,7 +115,7 @@ void AMyPlayerController::Find_ApplyLobbyCamera()
 void AMyPlayerController::InitLobbyWidgetandCachedPlayerState()
 {
     UWidgetLayoutLibrary::RemoveAllWidgets(this);
-
+    
     APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
     ATestGameState* GameStateES = Cast<ATestGameState>(UGameplayStatics::GetGameState(this));
     
@@ -201,6 +205,7 @@ void AMyPlayerController::Client_WhenMoveToLobbyUI_Implementation()
     StopPlayerMovement();
     InitLobbyWidgetandCachedPlayerState();
     Find_ApplyLobbyCamera();
+    ClearWidgetStack();
     
     UES_AudioSubsystem* Audio = GetGameInstance()->GetSubsystem<UES_AudioSubsystem>();
     if (Audio)
@@ -249,6 +254,7 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
         StartPlayerMovement();
         
         UWidgetLayoutLibrary::RemoveAllWidgets(this);
+        ClearWidgetStack();
         
         FInputModeGameOnly GameMode;
         SetInputMode(GameMode);
@@ -264,7 +270,7 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
         StageWidgetInstance->SetOwningPlayerState(PS);
         
         if (!IsValid(StageWidgetInstance)) return;
-        StageWidgetInstance->AddToViewport(10);
+        StageWidgetInstance->AddToViewport(0);
 
         PS->OnHealthChanged.RemoveDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
         PS->OnHealthChanged.AddDynamic(this, &AMyPlayerController::OnPlayerHealthChanged);
@@ -293,7 +299,7 @@ void AMyPlayerController::Client_OpenResultUI_Implementation()
     ResultWidgetInstance->SetPlayerCombatInfo(PS->GetPlayerCombatInfo());
     ResultWidgetInstance->SetPlayerNickName(FText::FromString(PS->GetPlayerInfo().PlayerNickName));
     
-    ResultWidgetInstance->AddToViewport(100);
+    ResultWidgetInstance->AddToViewport(BaseUIZOrder + WidgetStack.Num());
     //ResultWidgetInstance->SetFocus();
     // ACharacter* PlayerCharcterES= Cast<ACharacter>(GetPawn());
     // if (!IsValid(PlayerCharcterES)) return;
@@ -305,20 +311,241 @@ void AMyPlayerController::Client_OpenResultUI_Implementation()
     //Find_ApplyLobbyCamera();
 }
 
+void AMyPlayerController::PushWidget(UUserWidget* NewWidget)
+{
+    if (!IsValid(NewWidget)) return;
+
+    const int32 ZOrder = BaseUIZOrder + WidgetStack.Num();
+
+    NewWidget->AddToViewport(ZOrder);
+    WidgetStack.Add(NewWidget);
+
+    UpdateInputMode();
+}
+
 void AMyPlayerController::OpenOptionUI()
 {
-
     if (!IsValid(OptionWidgetClass)) return;
-    if (!IsValid(OptionWidgetInstance))
+    if (IsValid(OptionWidgetInstance)) return;
+
+    OptionWidgetInstance =
+        CreateWidget<UES_OptionWidget>(this, OptionWidgetClass);
+
+    if (!IsValid(OptionWidgetInstance)) return;
+
+    PushWidget(OptionWidgetInstance);
+}
+
+void AMyPlayerController::CloseOptionUI()
+{
+    if (!IsValid(OptionWidgetInstance)) return;
+
+    WidgetStack.Remove(OptionWidgetInstance);
+
+    OptionWidgetInstance->RemoveFromParent();
+    OptionWidgetInstance = nullptr;
+
+    UpdateInputMode();
+}
+
+void AMyPlayerController::OnPressedEscape()
+{
+    WidgetStack.RemoveAll(
+        [](const TObjectPtr<UUserWidget>& Widget)
+        {
+            return !IsValid(Widget);
+        });
+
+    if (WidgetStack.Num() > 0)
     {
-        OptionWidgetInstance = CreateWidget<UUserWidget>(this, OptionWidgetClass);
-        OptionWidgetInstance->AddToViewport(3);
+        UUserWidget* TopWidget = WidgetStack.Pop();
+
+        if (TopWidget == OptionWidgetInstance)
+        {
+            OptionWidgetInstance = nullptr;
+        }
+
+        if (IsValid(TopWidget))
+        {
+            TopWidget->RemoveFromParent();
+        }
+
+        UpdateInputMode();
+        return;
     }
-    else
+
+    OpenOptionUI();
+}
+
+void AMyPlayerController::FocusWidget(UUserWidget* Widget)
+{
+    if (!IsValid(Widget)) return;
+
+    FInputModeUIOnly InputMode;
+    InputMode.SetWidgetToFocus(Widget->TakeWidget());   // 이 위젯에 포커스
+    SetInputMode(InputMode);
+    bShowMouseCursor = true;
+}
+
+void AMyPlayerController::UpdateInputMode()
+{
+    APlayerCharacterState* PS =
+        GetPlayerState<APlayerCharacterState>();
+
+    if (!IsValid(PS)) return;
+
+    // 스택에 UI가 있으면 가장 위 UI에 포커스
+    if (WidgetStack.Num() > 0)
     {
-        OptionWidgetInstance->RemoveFromParent();
-        OptionWidgetInstance=nullptr;
+        FocusWidget(WidgetStack.Last());
+        return;
     }
+
+    // 스택이 비었을 때 장소별 기본 입력 모드
+    switch (PS->GetPlayerStagePlace())
+    {
+    case EPlayerPlace::Stage:
+        {
+            FInputModeGameOnly InputMode;
+            SetInputMode(InputMode);
+            bShowMouseCursor = false;
+            break;
+        }
+
+    case EPlayerPlace::Lobby:
+        {
+            FocusWidget(LobbyWidgetInstance);
+            break;
+        }
+
+    default:
+        break;
+    }
+    
+    // APlayerCharacterState* PlayerStateES = GetPlayerState<APlayerCharacterState>();
+    // if (!IsValid(PlayerStateES)) return;
+    //
+    // bool bAnyUIOpen = (WidgetStack.Num() > 0) || IsValid(OptionWidgetInstance);
+    // EPlayerPlace Place = PlayerStateES->GetPlayerStagePlace();
+    //
+    // // GameOnly가 되는 유일한 경우: Stage + UI 전부 닫힘
+    // if (Place == EPlayerPlace::Stage && !bAnyUIOpen)
+    // {
+    //     FInputModeGameOnly GameMode;
+    //     SetInputMode(GameMode);
+    //     bShowMouseCursor = false;
+    // }
+    // else if (Place == EPlayerPlace::Lobby && !bAnyUIOpen)
+    // {
+    //     // 그 외 = UIOnly. 포커스 줄 위젯이 있으면 그것에 포커스
+    //     UUserWidget* FocusTarget = nullptr;
+    //     if (WidgetStack.Num() > 0)
+    //         FocusTarget = WidgetStack.Last();
+    //     else if (IsValid(LobbyWidgetInstance))
+    //         FocusTarget = LobbyWidgetInstance;
+    //
+    //     if (FocusTarget)
+    //     {
+    //         FocusWidget(FocusTarget);   // UIOnly + 포커스
+    //     }
+    //     else
+    //     {
+    //         // UI가 없는데 UIOnly인 경우 (Lobby에서 UI 다 닫힘) << ? 소용없는 로직
+    //         FInputModeUIOnly UIMode;
+    //         SetInputMode(UIMode);
+    //         bShowMouseCursor = true;
+    //     }
+    // }
+}
+
+void AMyPlayerController::Client_ShowEscapeProgressWidget_Implementation(float StartTime, float Duration)
+{
+    if (!IsLocalController()) return;
+    if (!IsValid(StageWidgetInstance)) return;
+    if (!IsValid(EscapeProgressWidgetClass)) return;
+    if (IsValid(EscapeProgressWidgetInstance))
+    {
+        EscapeProgressWidgetInstance->RemoveFromParent();
+        EscapeProgressWidgetInstance = nullptr;
+    }
+    
+    EscapeProgressWidgetInstance = CreateWidget<UEscapeProgressWidget>(this, EscapeProgressWidgetClass);
+    if (!IsValid(EscapeProgressWidgetInstance)) return;
+    
+    ATestGameState* GameStateES = GetWorld()->GetGameState<ATestGameState>();
+    if (!IsValid(GameStateES)) return;
+    
+    EscapeProgressWidgetInstance->InitializePrivateProperties(GameStateES, StartTime, Duration);
+    
+    StageWidgetInstance->CreateProgressWidget(EscapeProgressWidgetInstance);
+}
+
+void AMyPlayerController::Client_CloseEscapeProgressWidget_Implementation()
+{
+    if (!IsLocalController()) return;
+    if (!IsValid(StageWidgetInstance)) return;
+    if (!IsValid(EscapeProgressWidgetClass)) return;
+    if (!IsValid(EscapeProgressWidgetInstance)) return;
+    
+    UEscapeProgressWidget* ClosingWidget = EscapeProgressWidgetInstance;
+    EscapeProgressWidgetInstance = nullptr;
+    ClosingWidget->CloseEscapeProgressWidget();
+}
+
+void AMyPlayerController::MakeSettingWidget()
+{
+    if (!IsValid(SettingWidgetClass)) return;
+    SettingWidgetInstance = CreateWidget<UUserWidget>(this, SettingWidgetClass);
+    if (!IsValid(SettingWidgetInstance)) return;
+    
+    UUserWidget* CloseButtonWidget = 
+            Cast<UUserWidget>(SettingWidgetInstance->GetWidgetFromName(TEXT("ReturnButtonWidget")));
+    
+    UButton* CloseButton =
+        Cast<UButton>(CloseButtonWidget->GetWidgetFromName(TEXT("PlayButton")));
+    
+    CloseButton->OnClicked.AddDynamic(this, &ThisClass::OnPressedEscape);
+    
+    PushWidget(SettingWidgetInstance);
+}
+
+void AMyPlayerController::ToggleShopWidget()
+{
+    if (IsValid(ShopWidgetInstance) &&
+        ShopWidgetInstance->IsInViewport())
+    {
+        CloseShopWidget();
+        return;
+    }
+
+    if (!IsValid(ShopWidgetClass)) return;
+
+    if (!IsValid(ShopWidgetInstance))
+    {
+        ShopWidgetInstance =
+            CreateWidget<UUserWidget>(this, ShopWidgetClass);
+    }
+
+    if (!IsValid(ShopWidgetInstance)) return;
+
+    PushWidget(ShopWidgetInstance);
+}
+
+void AMyPlayerController::CloseShopWidget()
+{
+    if (!IsValid(ShopWidgetInstance)) return;
+
+    WidgetStack.Remove(ShopWidgetInstance);
+
+    ShopWidgetInstance->RemoveFromParent();
+    ShopWidgetInstance = nullptr;
+
+    UpdateInputMode();
+}
+
+void AMyPlayerController::ClearWidgetStack()
+{
+    WidgetStack.Reset();
 }
 
 #pragma region Cheat 
@@ -358,13 +585,15 @@ void AMyPlayerController::SetCheatStageItem(FName ItemName, int32 ItemCount)
 
 #pragma endregion 
 
-void AMyPlayerController::OnPlayerHealthChanged(float CurrentHP, float MaxHP)
+void AMyPlayerController::OnPlayerHealthChanged(float OldValue, float CurrentHP, float MaxHP)
 {
     UE_LOG(LogTemp, Warning, TEXT("HP Changed: %.1f / %.1f"), CurrentHP, MaxHP);
 
     if (!IsValid(StageWidgetInstance.Get())) return;
 
     StageWidgetInstance.Get()->BP_UpdatePlayerHP(CurrentHP, MaxHP);
+    
+    if (OldValue > CurrentHP)
     StageWidgetInstance.Get()->BP_PlayerDamageFlash();
 }
 

@@ -4,6 +4,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "TestGameMode.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnStageEnded);
+
 struct FPhaseTimerData;
 enum class EPlayerPlace : uint8;
 class APlayerCharacterState;
@@ -13,9 +15,11 @@ UCLASS()
 class EXTRACTIONSHOOTER14_API ATestGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+public:
+	
+	FOnStageEnded OnStageEnded;
 	
 public:
-
 	ATestGameMode();
 	virtual void BeginPlay() override;
 	
@@ -47,6 +51,9 @@ public:
 	void StartPhaseTimer();
 	
 	bool CheckAllPlayerStatePlace(EPlayerPlace InPlayerPlace);
+	
+	void ClearObjects();
+	
 private:
 	UPROPERTY()
 	int32 InGamePlayerCount = 0;
@@ -54,7 +61,7 @@ private:
 	int32 MaxInGamePlayerCount = 3;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
-	int32 LobbyDuration = 180;
+	int32 LobbyDuration = 30;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
 	int32 PlayDuration = 180;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
