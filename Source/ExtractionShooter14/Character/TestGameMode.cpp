@@ -474,6 +474,11 @@ void ATestGameMode::MoveToStage()
                     PlayerCharacterStateES->SetIsParticipatedInThisRound(true);
                     PlayerCharacterStateES->SetPlayerStagePlace(EPlayerPlace::Stage);
                     PlayerCharacterStateES->StartSurviveTime();
+                    APlayerCharacter* PC = Cast<APlayerCharacter>(PlayerPawn);
+                    if (IsValid(PC))
+                    {
+                        PC->EquipDefaultWeapon();
+                    }
                     PlayerPawn->TeleportTo
                     (
                         StageSpawnLocationPoints[StartIndex]->GetActorLocation(),
@@ -496,6 +501,7 @@ void ATestGameMode::MoveToStage()
     
         // timer and switch enumgamestate
    // }
+
 }
 
 void ATestGameMode::ForceReadyPlayers(bool bIsready)
