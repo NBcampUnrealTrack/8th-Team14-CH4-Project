@@ -355,18 +355,36 @@ void AWeaponBase::Fire()
 	}
 
 	CurrentMagazineAmmo--;
-	//성윤 호출용
 
 	NotifyAmmoChanged();
 
 	LastFireTime = GetWorld()->GetTimeSeconds();
 
 	FireTrace();
-
-
 	ClientApplyRecoil();
 
-	UE_LOG(LogTemp, Warning, TEXT("Fire! Ammo : %d"), CurrentMagazineAmmo);
+	if (CurrentMagazineAmmo <= 0 &&
+		CurrentReserveAmmo <= 0)
+	{
+		StopFire();
+
+		if (HasAuthority() && IsValid(OwnerCharacter))
+		{
+			OwnerCharacter->HandleWeaponDepleted(
+				WeaponDataRow.RowName
+			);
+		}
+
+		return;
+	}
+
+	UE_LOG(
+		LogTemp,
+		Warning,
+		TEXT("Fire! Ammo : %d / %d"),
+		CurrentMagazineAmmo,
+		CurrentReserveAmmo
+	);
 }
 
 void AWeaponBase::FinishReload()
