@@ -51,6 +51,9 @@ public:
 	void StartPhaseTimer();
 	
 	bool CheckAllPlayerStatePlace(EPlayerPlace InPlayerPlace);
+	
+	void ClearObjects();
+	
 private:
 	UPROPERTY()
 	int32 InGamePlayerCount = 0;
