@@ -1246,3 +1246,31 @@ void APlayerCharacter::ServerHandleChangeWeaponNotify_Implementation()
     CommitPendingWeaponChange();
 }
 
+void APlayerCharacter::ClientWeaponDepleted_Implementation(
+    FName DepletedWeaponRowName)
+{
+    BP_OnWeaponDepleted(DepletedWeaponRowName);
+}
+
+void APlayerCharacter::HandleWeaponDepleted(
+    FName DepletedWeaponRowName)
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    if (CurrentWeaponRowName != DepletedWeaponRowName)
+    {
+        return;
+    }
+
+    ClientWeaponDepleted(DepletedWeaponRowName);
+
+    PendingWeaponRowName = NAME_None;
+    CurrentWeaponRowName = NAME_None;
+
+    WeaponDelete();
+
+    ForceNetUpdate();
+}

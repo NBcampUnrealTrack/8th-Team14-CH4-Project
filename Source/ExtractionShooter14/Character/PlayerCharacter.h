@@ -146,6 +146,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	AWeaponBase* GetCurrentWeaponActor() const;
 
+	UFUNCTION(Client, Reliable)
+	void ClientWeaponDepleted(FName DepletedWeaponRowName);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Weapon")
+	void BP_OnWeaponDepleted(FName DepletedWeaponRowName);
+
+	void HandleWeaponDepleted(FName DepletedWeaponRowName);
 	virtual float TakeDamage(
 		float DamageAmount,
 		struct FDamageEvent const& DamageEvent,
