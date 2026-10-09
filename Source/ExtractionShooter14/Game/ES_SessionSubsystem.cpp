@@ -93,6 +93,21 @@ UES_SessionSubsystem::GetSessionInterface() const
 	return SessionInterface;
 }
 
+bool UES_SessionSubsystem::HasExistingSession() const
+{
+	const IOnlineSessionPtr SessionInterface =
+		GetSessionInterface();
+
+	if (!SessionInterface.IsValid())
+	{
+		return false;
+	}
+
+	return SessionInterface->GetNamedSession(
+		NAME_GameSession
+	) != nullptr;
+}
+
 void UES_SessionSubsystem::CreateDedicatedSession(
 	int32 MaxPlayers,
 	const FString& ServerName
@@ -362,6 +377,11 @@ void UES_SessionSubsystem::FindDedicatedServer()
 	/*
 	 * Dedicated Server Session만 검색한다.
 	 */
+	//SessionSearch->QuerySettings.Set(
+	//	SEARCH_DEDICATED_ONLY,
+	//	true,
+	//	EOnlineComparisonOp::Equals
+	//);
 
 	FindSessionsDelegateHandle =
 		SessionInterface

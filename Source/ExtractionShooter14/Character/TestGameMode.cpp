@@ -35,6 +35,32 @@ void ATestGameMode::BeginPlay()
         static_cast<int32>(GetNetMode()),
         *GetWorld()->GetMapName()
     );
+//====================== session =============================
+//====================== session =============================
+#pragma region Session  
+    // if (IsRunningDedicatedServer())
+    // {
+    //     if (UGameInstance* GameInstance = GetGameInstance())
+    //     {
+    //         if (UES_SessionSubsystem* SessionSubsystem =
+    //             GameInstance->GetSubsystem<UES_SessionSubsystem>())
+    //         {
+    //             SessionSubsystem->CreateDedicatedSession(
+    //                 3,
+    //                 TEXT("Extraction Shooter Server")
+    //             );
+    //         }
+    //         else
+    //         {
+    //             UE_LOG(
+    //                 LogTemp,
+    //                 Error,
+    //                 TEXT("[TestGameMode] SessionSubsystem is invalid.")
+    //             );
+    //         }
+    //     }
+    // }
+#pragma endregion 
     
     UGameplayStatics::GetAllActorsOfClass(
         GetWorld(),
@@ -575,7 +601,7 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     
     // final result for escape ResultUI
     PlayerStateES->UpdateSurviveTime();
-    PlayerStateES->CommitCombatInfo();
+    PlayerStateES->SendFinalCombatInfoToOwner();
 
     PlayerStateES->ApplyPlayerStageInventoryToPlayerStorage();
 
@@ -656,7 +682,7 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     {
         PlayerStateES->UpdateSurviveTime();
     }
-    PlayerStateES->CommitCombatInfo();
+    PlayerStateES->SendFinalCombatInfoToOwner();
     
     APlayerCharacter* OldPawn = Cast<APlayerCharacter>(TargetController->GetPawn());
     if (!IsValid(OldPawn)) return;
@@ -753,19 +779,19 @@ void ATestGameMode::CalculatePlayerRank()
         RankedPlayers.Add(State);
     }
 
-    // 2. sort by latest(working) score, not last replicated score
+    // 2. sort by latest score (server only struct)
     RankedPlayers.Sort(
         [](const APlayerCharacterState& A, const APlayerCharacterState& B)
         {
-            return A.GetPlayerWorkingCombatInfo().Score > B.GetPlayerWorkingCombatInfo().Score;
+            return A.GetPlayerCombatInfo().Score > B.GetPlayerCombatInfo().Score;
         });
 
     // 3. same score = same rank (1, 1, 3), only changed rank is replicated
     int32 CurrentRank = 1;
     for (int32 i = 0; i < RankedPlayers.Num(); ++i)
     {
-        const int32 Score = RankedPlayers[i]->GetPlayerWorkingCombatInfo().Score;
-        if (i > 0 && Score < RankedPlayers[i - 1]->GetPlayerWorkingCombatInfo().Score)
+        const int32 Score = RankedPlayers[i]->GetPlayerCombatInfo().Score;
+        if (i > 0 && Score < RankedPlayers[i - 1]->GetPlayerCombatInfo().Score)
         {
             CurrentRank = i + 1;
         }

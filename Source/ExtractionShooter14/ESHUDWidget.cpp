@@ -17,7 +17,7 @@ void UESHUDWidget::NativeConstruct()
 	if (!PlayerRankDelegateHandle.IsValid())
 	{
 		PlayerRankDelegateHandle = 
-			OwningPlayerState->OnPlayerCombatInfoChanged.AddUObject
+			OwningPlayerState->OnPlayerRankChanged.AddUObject
 				(this, &ThisClass::HandlePlayerRank);
 		HandlePlayerRank();
 	}
@@ -35,7 +35,7 @@ void UESHUDWidget::NativeDestruct()
 	
 	 if (PlayerRankDelegateHandle.IsValid())
 	 {
-	 	OwningPlayerState->OnPlayerCombatInfoChanged.Remove(PlayerRankDelegateHandle);
+	 	OwningPlayerState->OnPlayerRankChanged.Remove(PlayerRankDelegateHandle);
 	 	PlayerRankDelegateHandle.Reset();
 	 }
 }
@@ -57,9 +57,7 @@ void UESHUDWidget::HandlePlayerRank()
 {
 	if (!OwningPlayerState) return;
 	
-	const FCollectCombatInfo& CombatInfo = OwningPlayerState->GetPlayerCombatInfo();
-	
-	CurrentRank->SetText(FText::AsNumber(CombatInfo.Rank));
+	CurrentRank->SetText(FText::AsNumber(OwningPlayerState->GetMyRank()));
 }
 
 void UESHUDWidget::UpdateStageTimerText()

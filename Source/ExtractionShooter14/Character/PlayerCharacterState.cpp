@@ -9,7 +9,6 @@
 
 void APlayerCharacterState::Server_SetStageItem_Implementation(const FInventoryItemData InItemName)
 {
-	SetNetUpdateFrequency(100.f);
 	AddItemInPlayerStageInventory(InItemName);
 }
 
@@ -17,6 +16,8 @@ APlayerCharacterState::APlayerCharacterState()
 	:bIsReady(false)
 	,bIsDead(false)
 {
+	// rank changes are batched by update frequency instead of ForceNetUpdate
+	SetNetUpdateFrequency(4.f);
 	
 }
 
@@ -31,7 +32,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
-	DOREPLIFETIME(ThisClass, PlayerCommitCombatInfo);
+	DOREPLIFETIME_CONDITION(ThisClass, MyRank, COND_OwnerOnly);
 	DOREPLIFETIME(ThisClass, bIsParticipatedInThisRound);
 	DOREPLIFETIME(ThisClass, PlayerPlace);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerLobbyIndex, COND_OwnerOnly);
@@ -218,7 +219,7 @@ void APlayerCharacterState::TakenDamage(
 
 		// final result for death ResultUI (survive time stops here)
 		UpdateSurviveTime();
-		CommitCombatInfo();
+		SendFinalCombatInfoToOwner();
 	}
 	
 	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
@@ -279,10 +280,9 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 	OnPlayerInfoChanged.Broadcast();
 }
 
-void APlayerCharacterState::OnRep_PlayerCommitCombatInfo(const FCollectCombatInfo& OldCombatInfo)
+void APlayerCharacterState::OnRep_MyRank()
 {
-
-	OnPlayerCombatInfoChanged.Broadcast();
+	OnPlayerRankChanged.Broadcast();
 }
 
 void APlayerCharacterState::OnRep_PlayerStageInventory()
@@ -443,34 +443,31 @@ void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCoun
 	}
 }
 
-bool APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
-{
-	if (!HasAuthority()) return false;
-
-	PlayerCombatInfo.Rank = InRank;
-
-	// same rank = no commit = no replicate
-	if (PlayerCommitCombatInfo.Rank == InRank) return false;
-
-	CommitCombatInfo();
-	return true;
-}
-
-void APlayerCharacterState::CommitCombatInfo()
+void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
 {
 	if (!HasAuthority()) return;
 
-	PlayerCommitCombatInfo = PlayerCombatInfo; // rep-struct = nonrep-struct
-	OnPlayerCombatInfoChanged.Broadcast();
-	ForceNetUpdate();
+	PlayerCombatInfo.Rank = InRank;
+
+	// same value = engine does not replicate it, check only to skip host HUD broadcast
+	const uint8 NewRank = static_cast<uint8>(FMath::Clamp(InRank, 0, MAX_uint8));
+	if (MyRank == NewRank) return;
+
+	MyRank = NewRank;
+	OnPlayerRankChanged.Broadcast(); // listen server host HUD (no OnRep on server)
+}
+
+void APlayerCharacterState::SendFinalCombatInfoToOwner()
+{
+	if (!HasAuthority()) return;
+
+	AMyPlayerController* OwnerController = Cast<AMyPlayerController>(GetOwner());
+	if (!IsValid(OwnerController)) return;
+
+	OwnerController->Client_SetResultCombatInfo(PlayerCombatInfo);
 }
 
 const FCollectCombatInfo& APlayerCharacterState::GetPlayerCombatInfo() const
-{
-	return PlayerCommitCombatInfo;
-}
-
-const FCollectCombatInfo& APlayerCharacterState::GetPlayerWorkingCombatInfo() const
 {
 	return PlayerCombatInfo;
 }
@@ -517,7 +514,6 @@ void APlayerCharacterState::CalCulateCombatScore()
 void APlayerCharacterState::InitializeCombatScore()
 {
 	PlayerCombatInfo = FCollectCombatInfo();
-	PlayerCommitCombatInfo = PlayerCombatInfo; // clear last round result
 }
 
 void APlayerCharacterState::SetbIsDead(bool bIsDeadd)

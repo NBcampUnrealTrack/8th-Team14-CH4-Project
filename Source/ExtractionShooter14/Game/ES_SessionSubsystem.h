@@ -87,6 +87,11 @@ public:
 		return bIsConnecting;
 	}
 
+	/**
+	 * 현재 Steam Session이 존재하는지 확인한다.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Online|Session")
+	bool HasExistingSession() const;
 
 	/**
 	 * 서버 종료 또는 수동 정리 시 사용한다.

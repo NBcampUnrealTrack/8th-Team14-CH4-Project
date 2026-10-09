@@ -11,7 +11,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FPlayerInfoChanged);
 DECLARE_MULTICAST_DELEGATE(FPlayerLobbyIndexChanged);
-DECLARE_MULTICAST_DELEGATE(FPlayerCombatInfoChanged);
+DECLARE_MULTICAST_DELEGATE(FPlayerRankChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
@@ -68,7 +68,7 @@ public:
 #pragma region Delegate
 	FPlayerInfoChanged OnPlayerInfoChanged;
 	FPlayerLobbyIndexChanged OnPlayerLobbyIndexChanged;
-	FPlayerCombatInfoChanged OnPlayerCombatInfoChanged;
+	FPlayerRankChanged OnPlayerRankChanged; // owner client only (MyRank)
 	UPROPERTY(BlueprintAssignable)
 	FPlayerStageInventoryChanged OnPlayerStageInventoryChanged;
 	UPROPERTY(BlueprintAssignable)
@@ -83,7 +83,7 @@ public:
 	UFUNCTION()
 	void OnRep_PlayerInfo();
 	UFUNCTION()
-	void OnRep_PlayerCommitCombatInfo(const FCollectCombatInfo& OldCombatInfo);
+	void OnRep_MyRank();
 	UFUNCTION()
 	void OnRep_PlayerStageInventory();
 	UFUNCTION()
@@ -152,14 +152,14 @@ public:
 	UFUNCTION()
 	void AddPlayerCombatInfo_LootCount(const int32 InLootCount);
 	UFUNCTION()
-	bool SetPlayerCombatInfo_Rank(const int32 InRank); // return true = rank changed > committed(replicate)
-	void CommitCombatInfo(); // working struct > replicated struct
+	void SetPlayerCombatInfo_Rank(const int32 InRank);
+	void SendFinalCombatInfoToOwner(); // server > owner client, for ResultUI
 
 	UFUNCTION(BlueprintCallable, Category = "Player|StageGold")
 	int32 GetPlayerStageGold() const { return PlayerStageGold; }
 	
-	const FCollectCombatInfo& GetPlayerCombatInfo() const;
-	const FCollectCombatInfo& GetPlayerWorkingCombatInfo() const; // server only, latest score
+	const FCollectCombatInfo& GetPlayerCombatInfo() const; // server only (not replicated)
+	uint8 GetMyRank() const { return MyRank; }
 	void UpdateSurviveTime();
 	void StartSurviveTime();
 #pragma endregion 
@@ -171,8 +171,9 @@ protected:
 	
 	UPROPERTY()
 	FCollectCombatInfo PlayerCombatInfo;
-	UPROPERTY(ReplicatedUsing=OnRep_PlayerCommitCombatInfo)
-	FCollectCombatInfo PlayerCommitCombatInfo;
+	// only owner needs own rank (HUD) : COND_OwnerOnly, 1 byte
+	UPROPERTY(ReplicatedUsing=OnRep_MyRank)
+	uint8 MyRank = 1;
 	
 	UPROPERTY(Replicated)
 	bool bIsParticipatedInThisRound = false;

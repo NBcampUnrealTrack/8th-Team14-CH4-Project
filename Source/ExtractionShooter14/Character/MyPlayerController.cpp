@@ -236,14 +236,34 @@ void AMyPlayerController::Client_WhenMoveToStagePopUpUI_Implementation()
     }
 }
 
+void AMyPlayerController::Client_SetResultCombatInfo_Implementation(const FCollectCombatInfo& InCombatInfo)
+{
+    ResultCombatInfo = InCombatInfo;
+    bHasResultCombatInfo = true;
+
+    if (bPendingOpenResultUI)
+    {
+        bPendingOpenResultUI = false;
+        Client_OpenResultUI_Implementation();
+    }
+}
+
 void AMyPlayerController::Client_OpenResultUI_Implementation()
 {
     APlayerCharacterState* PS = GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PS)) return;
     if (!IsValid(ResultWidgetClass)) return;
+
+    // death: client opens after montage, data RPC may not have arrived yet
+    if (!bHasResultCombatInfo)
+    {
+        bPendingOpenResultUI = true;
+        return;
+    }
+    bHasResultCombatInfo = false; // consume this round result
     
     UES_ResaultWidgetHUD* ResultWidgetInstance = CreateWidget<UES_ResaultWidgetHUD>(this, ResultWidgetClass);
-    ResultWidgetInstance->SetPlayerCombatInfo(PS->GetPlayerCombatInfo());
+    ResultWidgetInstance->SetPlayerCombatInfo(ResultCombatInfo);
     ResultWidgetInstance->SetPlayerNickName(FText::FromString(PS->GetPlayerInfo().PlayerNickName));
     
     ResultWidgetInstance->AddToViewport(BaseUIZOrder + WidgetStack.Num());

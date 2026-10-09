@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Game/Struct/CollectCombatInfo.h"
 #include "MyPlayerController.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
@@ -76,6 +77,12 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_OpenResultUI();
+	// final result is sent once by RPC (not replicated every rank change)
+	UFUNCTION(Client, Reliable)
+	void Client_SetResultCombatInfo(const FCollectCombatInfo& InCombatInfo);
+	FCollectCombatInfo ResultCombatInfo;
+	bool bHasResultCombatInfo = false;
+	bool bPendingOpenResultUI = false; // OpenResultUI came before result data
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Option")
 	TSubclassOf<UES_OptionWidget> OptionWidgetClass;
