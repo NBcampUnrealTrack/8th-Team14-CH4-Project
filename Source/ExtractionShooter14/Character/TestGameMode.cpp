@@ -389,7 +389,7 @@ void ATestGameMode::StartNone()
     bForced = false;
 
     // end rank timer
-    GS->StopRankUpdateTimer();
+    StopRankUpdateTimer();
 
     // gs state convert
     GS->SetGameStatePhaseTimerData(
@@ -420,7 +420,7 @@ void ATestGameMode::StartLobby()
     }
     GS->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
     StartPhaseTimer();
-    GS->StopRankUpdateTimer();
+    StopRankUpdateTimer();
 }
 
 void ATestGameMode::StartStage()
@@ -432,10 +432,10 @@ void ATestGameMode::StartStage()
     GS->SetGameStatePhaseTimerData(EGameState::Playing, PlayDuration);
     
     //GS->MarkRank();
-    GS->CalculatePlayerRank();
+    CalculatePlayerRank();
     
     StartPhaseTimer();
-    GS->StartRankUpdateTimer();
+    StartRankUpdateTimer();
 }
 
 void ATestGameMode::MoveToStage()
@@ -804,3 +804,72 @@ void ATestGameMode::ClearObjects()
 
     UE_LOG(LogTemp, Log, TEXT("[Stage] Removed %d coins."), FoundCoins.Num());
 }
+
+#pragma region Rank
+void ATestGameMode::StartRankUpdateTimer()
+{
+    GetWorldTimerManager().ClearTimer(RankUpdateTimerHandle);
+    GetWorldTimerManager().SetTimer(
+        RankUpdateTimerHandle,
+        this,
+        &ThisClass::CalculatePlayerRank,
+        RankUpdateInterval,
+        true
+    );
+}
+
+void ATestGameMode::StopRankUpdateTimer()
+{
+    GetWorldTimerManager().ClearTimer(RankUpdateTimerHandle);
+}
+
+// score changes every tick (survive time), rank changes only sometimes
+// > calculate every tick, replicate only players whose rank changed
+void ATestGameMode::CalculatePlayerRank()
+{
+    ATestGameState* GS = GetGameState<ATestGameState>();
+    if (!IsValid(GS)) return;
+    if (GS->GetGameStatePhaseTimerData().GameStateEnum != EGameState::Playing) return;
+
+    // 1. collect this round's players + refresh score
+    TArray<APlayerCharacterState*> RankedPlayers;
+    for (APlayerCharacterState* State : GS->GetLobbyPlayerStates())
+    {
+        if (!IsValid(State) || !State->GetIsParticipatedInThisRound()) continue;
+
+        // alive in stage = survive time keeps going (dead / escaped = frozen)
+        if (State->GetPlayerStagePlace() == EPlayerPlace::Stage && !State->GetbIsDead())
+        {
+            State->UpdateSurviveTime();
+        }
+        RankedPlayers.Add(State);
+    }
+
+    // 2. sort by latest(working) score, not last replicated score
+    RankedPlayers.Sort(
+        [](const APlayerCharacterState& A, const APlayerCharacterState& B)
+        {
+            return A.GetPlayerWorkingCombatInfo().Score > B.GetPlayerWorkingCombatInfo().Score;
+        });
+
+    // 3. same score = same rank (1, 1, 3) + commit only changed players
+    bool bAnyRankChanged = false;
+    int32 CurrentRank = 1;
+    for (int32 i = 0; i < RankedPlayers.Num(); ++i)
+    {
+        const int32 Score = RankedPlayers[i]->GetPlayerWorkingCombatInfo().Score;
+        if (i > 0 && Score < RankedPlayers[i - 1]->GetPlayerWorkingCombatInfo().Score)
+        {
+            CurrentRank = i + 1;
+        }
+
+        // |= (not ||) : every player must get SetRank call
+        bAnyRankChanged |= RankedPlayers[i]->SetPlayerCombatInfo_Rank(CurrentRank);
+    }
+
+    if (bAnyRankChanged)
+    {
+        GS->OnChangedPlayerStates.Broadcast();
+    }
+}
+#pragma endregion

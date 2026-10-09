@@ -53,6 +53,20 @@ public:
 	bool CheckAllPlayerStatePlace(EPlayerPlace InPlayerPlace);
 	
 	void ClearObjects();
+
+#pragma region Rank
+public:
+	void StartRankUpdateTimer();
+	void StopRankUpdateTimer();
+
+	UFUNCTION()
+	void CalculatePlayerRank();
+
+private:
+	FTimerHandle RankUpdateTimerHandle;
+	UPROPERTY(EditDefaultsOnly, Category = "Rank")
+	float RankUpdateInterval = 0.1f;
+#pragma endregion
 	
 private:
 	UPROPERTY()

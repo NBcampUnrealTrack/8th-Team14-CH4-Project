@@ -65,18 +65,6 @@ public:
 	
 	float GetRemainTime() const;
 	
-#pragma region Rank
-
-private:
-	FTimerHandle RankUpdateTimerHandle;
-public:
-
-	void StartRankUpdateTimer();
-	void StopRankUpdateTimer();
-
-	void UpdateRankIfDirty();
-	void CalculatePlayerRank();
-#pragma endregion 
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInGameCount_GS)
 	int32 PlayerInGameCount_GS;
