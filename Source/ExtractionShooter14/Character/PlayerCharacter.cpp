@@ -657,14 +657,6 @@ void APlayerCharacter::Die()
         MovementComp->DisableMovement();
         MovementComp->StopMovementImmediately();
     }
-    //
-    // if (IsLocallyControlled())
-    // {
-    //     if (AController* MyController = GetController())
-    //     {
-    //         DisableInput(Cast<APlayerController>(MyController));
-    //     }
-    // }
     
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -705,7 +697,7 @@ void APlayerCharacter::Die()
             Gold
         );
 
-        PS->SetPlayerStageGold(0);
+        //PS->SetPlayerStageGold(0);
     }
     
     //if (!HasAuthority()) return;

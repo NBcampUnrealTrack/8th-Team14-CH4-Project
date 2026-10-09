@@ -655,13 +655,16 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     ATestGameState* GameStateES = GetGameState<ATestGameState>();
     if (!IsValid(GameStateES)) return;
     
+    // final result for escape ResultUI
+    PlayerStateES->UpdateSurviveTime();
+    PlayerStateES->CommitCombatInfo();
+
     PlayerStateES->ApplyPlayerStageInventoryToPlayerStorage();
 
     // ======================= init playerstates ========================
     PlayerStateES->ClearPlayerStageInventoryGold();
     PlayerStateES->SetPlayerStagePlace(EPlayerPlace::Lobby);
     PlayerStateES->InitiateStats();
-    PlayerStateES->SetPlayerReady(false);
     // ======================= init playerstates ========================
     
     // ======================= Player Move ===========================
@@ -706,10 +709,11 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PlayerStateES)) return;
     
-    APawn* OldPawn = TargetController->GetPawn();
+    APlayerCharacter* OldPawn = Cast<APlayerCharacter>(TargetController->GetPawn());
     if (!IsValid(OldPawn)) return;
     OldPawn->Destroy();
-
+    OldPawn->WeaponDelete();
+    
     InitializePlayerStats(PlayerStateES);
     TargetController->StopPlayerMovement();
     
@@ -737,9 +741,17 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PlayerStateES)) return;
     
-    APawn* OldPawn = TargetController->GetPawn();
+    // final result for timeout ResultUI
+    if (!PlayerStateES->GetbIsDead())
+    {
+        PlayerStateES->UpdateSurviveTime();
+    }
+    PlayerStateES->CommitCombatInfo();
+    
+    APlayerCharacter* OldPawn = Cast<APlayerCharacter>(TargetController->GetPawn());
     if (!IsValid(OldPawn)) return;
     OldPawn->Destroy();
+    OldPawn->WeaponDelete();
     
     InitializePlayerStats(PlayerStateES);
     TargetController->StopPlayerMovement();
@@ -766,7 +778,6 @@ void ATestGameMode::InitializePlayerStats(APlayerCharacterState* InPlayerState)
     if (!IsValid(InPlayerState)) return;
     // ================================ Place
     InPlayerState->SetPlayerStagePlace(EPlayerPlace::Lobby);
-    InPlayerState->SetPlayerReady(false);
     InPlayerState->InitiateStats();
     InPlayerState->ClearPlayerStageInventoryGold();
     InPlayerState->ClearPlayerStageInventory();

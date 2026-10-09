@@ -120,53 +120,64 @@ void ATestGameState::CalculatePlayerRank()
 	{
 		if (GameStatePhaseTimerData.GameStateEnum == EGameState::Playing)
 		{
+			// score changes every tick (survive time), rank changes only sometimes
+			// > replicate only when rank changed
+			bool bRankChanged = false;
+
 			TArray<APlayerCharacterState*> CopyPlayerStates;
-			
+
 			for (auto State : LobbyPlayerStates)
 			{
+				if (!IsValid(State)) continue;
 				if (State->GetIsParticipatedInThisRound())
 				{
-					if (State->GetPlayerStagePlace() == EPlayerPlace::Stage)
+					// dead player survive time stops
+					if (State->GetPlayerStagePlace() == EPlayerPlace::Stage && !State->GetbIsDead())
 					{
 						State->UpdateSurviveTime();
 					}
 
 					CopyPlayerStates.Add(State);
-				} 
+				}
 			}
-			
+
+			// sort by latest(working) score, not last committed score
 			CopyPlayerStates.Sort(
 				[](const APlayerCharacterState& A, const APlayerCharacterState& B)
 				{
-					return A.GetPlayerCombatInfo().Score > B.GetPlayerCombatInfo().Score;
+					return A.GetPlayerWorkingCombatInfo().Score > B.GetPlayerWorkingCombatInfo().Score;
 				});
-			// todo:: removeall
-			
-			
+
 			int32 CurrentRank = 1;
-		
+
 			for (int32 i = 0; i < CopyPlayerStates.Num(); ++i) // same score = 1, 1rank 
 			{
 				APlayerCharacterState* CurrentPS = CopyPlayerStates[i];
 				if (!IsValid(CurrentPS)) continue;
-		
+
 				if (i > 0)
 				{
 					APlayerCharacterState* PrevPS = CopyPlayerStates[i - 1];
-		
+
 					if (IsValid(PrevPS) &&
-						CurrentPS->GetPlayerCombatInfo().Score < PrevPS->GetPlayerCombatInfo().Score)
+						CurrentPS->GetPlayerWorkingCombatInfo().Score < PrevPS->GetPlayerWorkingCombatInfo().Score)
 					{
 						CurrentRank = i + 1;
 					}
 				}
-		
-				CurrentPS->SetPlayerCombatInfo_Rank(CurrentRank); // rep-struct = nonrep-struct
-				
+
+				// true only when this player's rank changed (commit > replicate)
+				if (CurrentPS->SetPlayerCombatInfo_Rank(CurrentRank))
+				{
+					bRankChanged = true;
+				}
 			}
-			
+
+			if (bRankChanged)
+			{
+				OnChangedPlayerStates.Broadcast();
+			}
 		}
-		OnChangedPlayerStates.Broadcast();
 	}
 }
 

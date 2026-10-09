@@ -119,19 +119,19 @@ void UES_TitleWidgetHUD::OnClickedPlayButton()
 // ========================== Session ===========================
 	
 	const FString IPString = IPEditableText->GetText().ToString();
-	const FName IPStringFName = FName(*IPString);
+	// const FName IPStringFName = FName(*IPString);
 	// const FName IPString = FName(*IPTextBlock->GetText().ToString());
-	UGameplayStatics::OpenLevel(GetWorld(), IPStringFName);
-	// APlayerController* PlayerControllerES = GetOwningPlayer();
-	// if (!IsValid(PlayerControllerES))
-	// {
-	// 	return;
-	// }
+	// UGameplayStatics::OpenLevel(GetWorld(), IPStringFName);
+	APlayerController* PlayerControllerES = GetOwningPlayer();
+	if (!IsValid(PlayerControllerES))
+	{
+		return;
+	}
 	//
-	// PlayerControllerES->ClientTravel(
-	// 	IPString,
-	// 	ETravelType::TRAVEL_Absolute
-	// );
+	PlayerControllerES->ClientTravel(
+		IPString,
+		ETravelType::TRAVEL_Absolute
+	);
 }
 
 void UES_TitleWidgetHUD::OnClickedSetutton()

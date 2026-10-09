@@ -264,11 +264,19 @@ void APlayerCharacterState::TakenDamage(
 	
 	if (CurrentHealth <= 0.0f && bIsDead == false)
 	{
+		UE_LOG(LogTemp, Error, TEXT("[DEAD] %s bIsDead=%d Role=%d Frame=%llu"),
+			*GetPlayerName(), bIsDead ? 1 : 0,
+			(int32)GetLocalRole(), (uint64)GFrameCounter);
+
 		SetbIsDead(true);
 		if (IsValid(AttackerPlayerState))
 		{
 			AttackerPlayerState->AddPlayerCombatInfo_KillCount(1);
 		}
+
+		// final result for death ResultUI (survive time stops here)
+		UpdateSurviveTime();
+		CommitCombatInfo();
 	}
 	
 	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
@@ -374,6 +382,9 @@ void APlayerCharacterState::OnRep_bIsReady()
 
 void APlayerCharacterState::OnRep_bIsDead()
 {
+	UE_LOG(LogTemp, Error, TEXT("[DEAD] %s bIsDead=%d Role=%d Frame=%llu"),
+		*GetPlayerName(), bIsDead ? 1 : 0,
+		(int32)GetLocalRole(), (uint64)GFrameCounter);
 	OnPlayerbIsDeadChanged.Broadcast(this, bIsDead);
 }
 
@@ -494,22 +505,36 @@ void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCoun
 	}
 }
 
-void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
+bool APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
 {
-	if (HasAuthority())
-	{
+	if (!HasAuthority()) return false;
 
-		PlayerCombatInfo.Rank = InRank;
+	PlayerCombatInfo.Rank = InRank;
 
-		PlayerCommitCombatInfo = PlayerCombatInfo;
-		
-		OnPlayerCombatInfoChanged.Broadcast();
-	}
+	// same rank = no commit = no replicate
+	if (PlayerCommitCombatInfo.Rank == InRank) return false;
+
+	CommitCombatInfo();
+	return true;
+}
+
+void APlayerCharacterState::CommitCombatInfo()
+{
+	if (!HasAuthority()) return;
+
+	PlayerCommitCombatInfo = PlayerCombatInfo; // rep-struct = nonrep-struct
+	OnPlayerCombatInfoChanged.Broadcast();
+	ForceNetUpdate();
 }
 
 const FCollectCombatInfo& APlayerCharacterState::GetPlayerCombatInfo() const
 {
 	return PlayerCommitCombatInfo;
+}
+
+const FCollectCombatInfo& APlayerCharacterState::GetPlayerWorkingCombatInfo() const
+{
+	return PlayerCombatInfo;
 }
 
 void APlayerCharacterState::UpdateSurviveTime()
@@ -554,6 +579,7 @@ void APlayerCharacterState::CalCulateCombatScore()
 void APlayerCharacterState::InitializeCombatScore()
 {
 	PlayerCombatInfo = FCollectCombatInfo();
+	PlayerCommitCombatInfo = PlayerCombatInfo; // clear last round result
 }
 
 void APlayerCharacterState::SetbIsDead(bool bIsDeadd)

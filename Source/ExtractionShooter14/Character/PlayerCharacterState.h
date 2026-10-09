@@ -155,12 +155,14 @@ public:
 	UFUNCTION()
 	void AddPlayerCombatInfo_LootCount(const int32 InLootCount);
 	UFUNCTION()
-	void SetPlayerCombatInfo_Rank(const int32 InRank);
+	bool SetPlayerCombatInfo_Rank(const int32 InRank); // return true = rank changed > committed(replicate)
+	void CommitCombatInfo(); // working struct > replicated struct
 
 	UFUNCTION(BlueprintCallable, Category = "Player|StageGold")
 	int32 GetPlayerStageGold() const { return PlayerStageGold; }
 	
 	const FCollectCombatInfo& GetPlayerCombatInfo() const;
+	const FCollectCombatInfo& GetPlayerWorkingCombatInfo() const; // server only, latest score
 	void UpdateSurviveTime();
 	void StartSurviveTime();
 #pragma endregion 
