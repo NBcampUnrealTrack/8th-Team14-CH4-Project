@@ -33,6 +33,7 @@ void APlayerCharacterState::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	
 	DOREPLIFETIME(ThisClass, PlayerInfo);
 	DOREPLIFETIME_CONDITION(ThisClass, MyRank, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ThisClass, PlayerCombatInfo, COND_OwnerOnly);
 	DOREPLIFETIME(ThisClass, bIsParticipatedInThisRound);
 	DOREPLIFETIME(ThisClass, PlayerPlace);
 	DOREPLIFETIME_CONDITION(ThisClass, PlayerLobbyIndex, COND_OwnerOnly);
@@ -218,8 +219,8 @@ void APlayerCharacterState::TakenDamage(
 		}
 
 		// final result for death ResultUI (survive time stops here)
+		// replicated with bIsDead in the same PlayerState update (ForceNetUpdate below)
 		UpdateSurviveTime();
-		SendFinalCombatInfoToOwner();
 	}
 	
 	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
@@ -283,6 +284,11 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 void APlayerCharacterState::OnRep_MyRank()
 {
 	OnPlayerRankChanged.Broadcast();
+}
+
+void APlayerCharacterState::OnRep_PlayerCombatInfo()
+{
+	OnPlayerCombatInfoChanged.Broadcast();
 }
 
 void APlayerCharacterState::OnRep_PlayerStageInventory()
@@ -443,11 +449,9 @@ void APlayerCharacterState::AddPlayerCombatInfo_LootCount(const int32 InLootCoun
 	}
 }
 
-void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
+void APlayerCharacterState::SetMyRank(const int32 InRank)
 {
 	if (!HasAuthority()) return;
-
-	PlayerCombatInfo.Rank = InRank;
 
 	// same value = engine does not replicate it, check only to skip host HUD broadcast
 	const uint8 NewRank = static_cast<uint8>(FMath::Clamp(InRank, 0, MAX_uint8));
@@ -455,16 +459,6 @@ void APlayerCharacterState::SetPlayerCombatInfo_Rank(const int32 InRank)
 
 	MyRank = NewRank;
 	OnPlayerRankChanged.Broadcast(); // listen server host HUD (no OnRep on server)
-}
-
-void APlayerCharacterState::SendFinalCombatInfoToOwner()
-{
-	if (!HasAuthority()) return;
-
-	AMyPlayerController* OwnerController = Cast<AMyPlayerController>(GetOwner());
-	if (!IsValid(OwnerController)) return;
-
-	OwnerController->Client_SetResultCombatInfo(PlayerCombatInfo);
 }
 
 const FCollectCombatInfo& APlayerCharacterState::GetPlayerCombatInfo() const
@@ -503,12 +497,19 @@ void APlayerCharacterState::StartSurviveTime()
 
 void APlayerCharacterState::CalCulateCombatScore()
 {
+	const int32 OldScore = PlayerCombatInfo.Score;
+
 	PlayerCombatInfo.Score =
 	FMath::RoundToInt(PlayerCombatInfo.DamageDealt * 2.f) -
 	FMath::RoundToInt(PlayerCombatInfo.DamageTaken * 1.f) +
 	(PlayerCombatInfo.KillCount * 5) +
 	(PlayerCombatInfo.LootCount * 30) +
 	FMath::RoundToInt(PlayerCombatInfo.SurviveTime * 1.5f);
+
+	if (OldScore != PlayerCombatInfo.Score)
+	{
+		OnPlayerCombatInfoChanged.Broadcast(); // listen server host HUD (no OnRep on server)
+	}
 }
 
 void APlayerCharacterState::InitializeCombatScore()

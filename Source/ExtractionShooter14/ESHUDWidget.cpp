@@ -11,9 +11,23 @@
 void UESHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
+
+	if (OwningGameState && !TopPlayerDelegateHandle.IsValid())
+	{
+		TopPlayerDelegateHandle =
+			OwningGameState->OnChangedTopPlayer.AddUObject(this, &ThisClass::HandleTopPlayer);
+		HandleTopPlayer();
+	}
+
 	if (!OwningPlayerState) return;
-	
+
+	if (!PlayerScoreDelegateHandle.IsValid())
+	{
+		PlayerScoreDelegateHandle =
+			OwningPlayerState->OnPlayerCombatInfoChanged.AddUObject(this, &ThisClass::HandlePlayerScore);
+		HandlePlayerScore();
+	}
+
 	if (!PlayerRankDelegateHandle.IsValid())
 	{
 		PlayerRankDelegateHandle = 
@@ -30,9 +44,21 @@ void UESHUDWidget::NativeDestruct()
 	Super::NativeDestruct();
 	
 	GetWorld()->GetTimerManager().ClearTimer(StageTimerHandle);
-	
+
+	if (OwningGameState && TopPlayerDelegateHandle.IsValid())
+	{
+		OwningGameState->OnChangedTopPlayer.Remove(TopPlayerDelegateHandle);
+		TopPlayerDelegateHandle.Reset();
+	}
+
 	if (!OwningPlayerState) return;
-	
+
+	if (PlayerScoreDelegateHandle.IsValid())
+	{
+		OwningPlayerState->OnPlayerCombatInfoChanged.Remove(PlayerScoreDelegateHandle);
+		PlayerScoreDelegateHandle.Reset();
+	}
+
 	 if (PlayerRankDelegateHandle.IsValid())
 	 {
 	 	OwningPlayerState->OnPlayerRankChanged.Remove(PlayerRankDelegateHandle);
@@ -58,6 +84,28 @@ void UESHUDWidget::HandlePlayerRank()
 	if (!OwningPlayerState) return;
 	
 	CurrentRank->SetText(FText::AsNumber(OwningPlayerState->GetMyRank()));
+}
+
+void UESHUDWidget::HandlePlayerScore()
+{
+	if (!OwningPlayerState || !CurrentScore) return;
+
+	CurrentScore->SetText(FText::AsNumber(OwningPlayerState->GetPlayerCombatInfo().Score));
+}
+
+void UESHUDWidget::HandleTopPlayer()
+{
+	if (!OwningGameState || !TopPlayerText) return;
+
+	const FTopPlayerInfo& Top = OwningGameState->GetTopPlayer();
+	if (Top.PlayerId == INDEX_NONE)
+	{
+		TopPlayerText->SetText(FText::GetEmpty());
+		return;
+	}
+
+	TopPlayerText->SetText(FText::FromString(
+		FString::Printf(TEXT("1st  %s  %d"), *OwningGameState->GetTopPlayerNickName(), Top.Score)));
 }
 
 void UESHUDWidget::UpdateStageTimerText()

@@ -9,8 +9,22 @@ class APlayerCharacterState;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FChanedPlayerInGameCount, int32, InNewPlayerCount);
 DECLARE_MULTICAST_DELEGATE(FChangedLobbyPlayerStates);
 DECLARE_MULTICAST_DELEGATE(FChangedGameStatePhaseTimerData);
+DECLARE_MULTICAST_DELEGATE(FChangedTopPlayer);
 
 #pragma region Struct&Enum
+// current 1st place, replicated to every client (one struct, not per player)
+USTRUCT(BlueprintType)
+struct FTopPlayerInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	int32 PlayerId = INDEX_NONE;
+
+	UPROPERTY()
+	int32 Score = 0;
+};
+
 UENUM()
 enum class EGameState : uint8
 {
@@ -46,6 +60,7 @@ public:
 	FChanedPlayerInGameCount OnChangedPlayerInGameCount;
 	FChangedLobbyPlayerStates OnChangedPlayerStates;
 	FChangedGameStatePhaseTimerData OnChangedGameStatePhaseTimerData;
+	FChangedTopPlayer OnChangedTopPlayer;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -63,6 +78,12 @@ public:
 	FPhaseTimerData GetGameStatePhaseTimerData() const;
 	
 	float GetRemainTime() const;
+
+	void SetTopPlayer(int32 InPlayerId, int32 InScore); // server
+	const FTopPlayerInfo& GetTopPlayer() const { return TopPlayer; }
+	FString GetTopPlayerNickName() const;
+	UFUNCTION()
+	void OnRep_TopPlayer();
 	
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInGameCount_GS)
@@ -77,5 +98,8 @@ private:
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_GameStatePhaseTimerData)
 	FPhaseTimerData GameStatePhaseTimerData;
+
+	UPROPERTY(ReplicatedUsing=OnRep_TopPlayer)
+	FTopPlayerInfo TopPlayer;
 };
 

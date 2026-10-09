@@ -12,6 +12,7 @@
 DECLARE_MULTICAST_DELEGATE(FPlayerInfoChanged);
 DECLARE_MULTICAST_DELEGATE(FPlayerLobbyIndexChanged);
 DECLARE_MULTICAST_DELEGATE(FPlayerRankChanged);
+DECLARE_MULTICAST_DELEGATE(FPlayerCombatInfoChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
@@ -69,6 +70,7 @@ public:
 	FPlayerInfoChanged OnPlayerInfoChanged;
 	FPlayerLobbyIndexChanged OnPlayerLobbyIndexChanged;
 	FPlayerRankChanged OnPlayerRankChanged; // owner client only (MyRank)
+	FPlayerCombatInfoChanged OnPlayerCombatInfoChanged; // owner client only (score)
 	UPROPERTY(BlueprintAssignable)
 	FPlayerStageInventoryChanged OnPlayerStageInventoryChanged;
 	UPROPERTY(BlueprintAssignable)
@@ -84,6 +86,8 @@ public:
 	void OnRep_PlayerInfo();
 	UFUNCTION()
 	void OnRep_MyRank();
+	UFUNCTION()
+	void OnRep_PlayerCombatInfo();
 	UFUNCTION()
 	void OnRep_PlayerStageInventory();
 	UFUNCTION()
@@ -152,13 +156,12 @@ public:
 	UFUNCTION()
 	void AddPlayerCombatInfo_LootCount(const int32 InLootCount);
 	UFUNCTION()
-	void SetPlayerCombatInfo_Rank(const int32 InRank);
-	void SendFinalCombatInfoToOwner(); // server > owner client, for ResultUI
+	void SetMyRank(const int32 InRank);
 
 	UFUNCTION(BlueprintCallable, Category = "Player|StageGold")
 	int32 GetPlayerStageGold() const { return PlayerStageGold; }
 	
-	const FCollectCombatInfo& GetPlayerCombatInfo() const; // server only (not replicated)
+	const FCollectCombatInfo& GetPlayerCombatInfo() const; // server + owner client
 	uint8 GetMyRank() const { return MyRank; }
 	void UpdateSurviveTime();
 	void StartSurviveTime();
@@ -169,7 +172,8 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerInfo)
 	FPlayerDatas PlayerInfo;
 	
-	UPROPERTY()
+	// only owner needs own score / result : COND_OwnerOnly, changed members only
+	UPROPERTY(ReplicatedUsing=OnRep_PlayerCombatInfo)
 	FCollectCombatInfo PlayerCombatInfo;
 	// only owner needs own rank (HUD) : COND_OwnerOnly, 1 byte
 	UPROPERTY(ReplicatedUsing=OnRep_MyRank)

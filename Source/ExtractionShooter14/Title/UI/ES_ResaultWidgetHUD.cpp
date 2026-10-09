@@ -12,7 +12,9 @@ void UES_ResaultWidgetHUD::NativeConstruct()
 	
 	CombatSectionWidget->SetSectionTitle(FText::FromString(TEXT("Combat")));
 	CollectSectionWidget->SetSectionTitle(FText::FromString(TEXT("Collection")));
-	RankTextBlock->SetText(FText::FromString(FString::Printf(TEXT("# %d"),PlayerCombatInfo.Rank)));
+	const APlayerCharacterState* PlayerStateES = GetOwningPlayerState<APlayerCharacterState>();
+	const int32 FinalRank = IsValid(PlayerStateES) ? PlayerStateES->GetMyRank() : 0;
+	RankTextBlock->SetText(FText::FromString(FString::Printf(TEXT("# %d"), FinalRank)));
 	
 	PlayAnimation(FadeInAnimation_Com);
 	FWidgetAnimationDynamicEvent Event;

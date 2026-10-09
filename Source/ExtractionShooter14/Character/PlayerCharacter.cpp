@@ -372,7 +372,9 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
     {
         AMyPlayerController* PlayerControllerES = Cast<AMyPlayerController>(GetController());
         if (!IsValid(PlayerControllerES)) return;
-        PlayerControllerES->Client_OpenResultUI();
+        APlayerCharacterState* DeadPlayerState = GetPlayerState<APlayerCharacterState>();
+        if (!IsValid(DeadPlayerState)) return;
+        PlayerControllerES->OpenResultUI(DeadPlayerState->GetPlayerCombatInfo());
         
         //Destroy();
     }

@@ -599,9 +599,8 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     ATestGameState* GameStateES = GetGameState<ATestGameState>();
     if (!IsValid(GameStateES)) return;
     
-    // final result for escape ResultUI
+    // final result for escape ResultUI (sent inside Client_OpenResultUI)
     PlayerStateES->UpdateSurviveTime();
-    PlayerStateES->SendFinalCombatInfoToOwner();
 
     PlayerStateES->ApplyPlayerStageInventoryToPlayerStorage();
 
@@ -627,7 +626,7 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     
     // ======================= Player UI ===========================
     TargetController->Client_WhenMoveToLobbyUI();
-    TargetController->Client_OpenResultUI();
+    TargetController->Client_OpenResultUI(PlayerStateES->GetPlayerCombatInfo());
     // ======================= Player UI ===========================
     
     if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
@@ -677,12 +676,11 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     APlayerCharacterState* PlayerStateES = TargetController->GetPlayerState<APlayerCharacterState>();
     if (!IsValid(PlayerStateES)) return;
     
-    // final result for timeout ResultUI
+    // final result for timeout ResultUI (sent inside Client_OpenResultUI)
     if (!PlayerStateES->GetbIsDead())
     {
         PlayerStateES->UpdateSurviveTime();
     }
-    PlayerStateES->SendFinalCombatInfoToOwner();
     
     APlayerCharacter* OldPawn = Cast<APlayerCharacter>(TargetController->GetPawn());
     if (!IsValid(OldPawn)) return;
@@ -695,7 +693,7 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     RestartPlayerAtTransform(TargetController, MovePoint);
     TargetController->Client_WhenMoveToLobbyUI();
-    TargetController->Client_OpenResultUI();
+    TargetController->Client_OpenResultUI(PlayerStateES->GetPlayerCombatInfo());
     if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
     {
 
@@ -796,7 +794,13 @@ void ATestGameMode::CalculatePlayerRank()
             CurrentRank = i + 1;
         }
 
-        RankedPlayers[i]->SetPlayerCombatInfo_Rank(CurrentRank);
+        RankedPlayers[i]->SetMyRank(CurrentRank);
+    }
+
+    // 4. 1st place for every client HUD
+    if (RankedPlayers.Num() > 0)
+    {
+        GS->SetTopPlayer(RankedPlayers[0]->GetPlayerId(), RankedPlayers[0]->GetPlayerCombatInfo().Score);
     }
 }
 #pragma endregion

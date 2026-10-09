@@ -9,6 +9,7 @@ void ATestGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ThisClass, PlayerInGameCount_GS);
 	DOREPLIFETIME(ThisClass, LobbyPlayerStates);
 	DOREPLIFETIME(ThisClass, GameStatePhaseTimerData);
+	DOREPLIFETIME(ThisClass, TopPlayer);
 }
 
 void ATestGameState::SetPlayerInGameCount_GS(int32 InNewPlayerInGameCount)
@@ -88,4 +89,33 @@ void ATestGameState::OnRep_LobbyPlayerStates()
 {
 	// uobject
 	OnChangedPlayerStates.Broadcast();
+}
+
+void ATestGameState::SetTopPlayer(int32 InPlayerId, int32 InScore)
+{
+	if (!HasAuthority()) return;
+	if (TopPlayer.PlayerId == InPlayerId && TopPlayer.Score == InScore) return;
+
+	TopPlayer.PlayerId = InPlayerId;
+	TopPlayer.Score = InScore;
+	OnChangedTopPlayer.Broadcast(); // listen server host HUD (no OnRep on server)
+}
+
+FString ATestGameState::GetTopPlayerNickName() const
+{
+	for (APlayerState* EachPlayerState : PlayerArray)
+	{
+		if (!IsValid(EachPlayerState) || EachPlayerState->GetPlayerId() != TopPlayer.PlayerId) continue;
+
+		if (APlayerCharacterState* PlayerStateES = Cast<APlayerCharacterState>(EachPlayerState))
+		{
+			return PlayerStateES->GetPlayerInfo().PlayerNickName;
+		}
+	}
+	return FString();
+}
+
+void ATestGameState::OnRep_TopPlayer()
+{
+	OnChangedTopPlayer.Broadcast();
 }

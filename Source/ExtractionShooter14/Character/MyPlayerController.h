@@ -75,14 +75,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Result")
 	TSubclassOf<UES_ResaultWidgetHUD> ResultWidgetClass;
 	
+	// data travels with the command : no arrival-order issue between actors
 	UFUNCTION(Client, Reliable)
-	void Client_OpenResultUI();
-	// final result is sent once by RPC (not replicated every rank change)
-	UFUNCTION(Client, Reliable)
-	void Client_SetResultCombatInfo(const FCollectCombatInfo& InCombatInfo);
-	FCollectCombatInfo ResultCombatInfo;
-	bool bHasResultCombatInfo = false;
-	bool bPendingOpenResultUI = false; // OpenResultUI came before result data
+	void Client_OpenResultUI(const FCollectCombatInfo& FinalCombatInfo);
+	void OpenResultUI(const FCollectCombatInfo& FinalCombatInfo);
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI|Option")
 	TSubclassOf<UES_OptionWidget> OptionWidgetClass;

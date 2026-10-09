@@ -35,6 +35,11 @@ public:
 	TObjectPtr<UTextBlock> CurrentRank;
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> StageTime;
+	// add in WBP_HUD designer (optional bind, HUD still works without them)
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> CurrentScore;
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> TopPlayerText;
 	
 	FTimerHandle StageTimerHandle;
 	void HandleStageTime();
@@ -43,6 +48,10 @@ public:
 	
 	FDelegateHandle PlayerRankDelegateHandle;
 	void HandlePlayerRank();
+	FDelegateHandle PlayerScoreDelegateHandle;
+	void HandlePlayerScore();
+	FDelegateHandle TopPlayerDelegateHandle;
+	void HandleTopPlayer();
 	
 	UPROPERTY()
 	TObjectPtr<ATestGameState> OwningGameState;
