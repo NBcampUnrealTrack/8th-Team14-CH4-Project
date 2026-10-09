@@ -1,8 +1,6 @@
 ﻿#include "TeleportTriggerBox_Timer.h"
 #include "Character/MyPlayerController.h"
 #include "Character/PlayerCharacterState.h"
-// #include "Components/StaticMeshComponent.h"
-// #include "Components/BoxComponent.h"
 #include "NiagaraComponent.h"
 #include "Character/TestGameMode.h"
 #include "Character/TestGameState.h"
@@ -48,7 +46,6 @@ void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* 
 	
 	PlayerCharacterStateES->OnPlayerbIsDeadChanged.AddUniqueDynamic(this,	&ThisClass::OnPlayerDeadChanged);
 	
-	// ingame ui > PlayerControllerES->ClinetRPC_ShowCountWidget(TakesTime);
 	UE_LOG(LogTemp, Warning, TEXT("Player is going to Move In %.fs."), MaxTakesTime);
 	
 	const float StartServerTime = GS->GetServerWorldTimeSeconds();

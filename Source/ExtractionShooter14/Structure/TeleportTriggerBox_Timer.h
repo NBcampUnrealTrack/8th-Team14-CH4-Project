@@ -56,8 +56,6 @@ protected:
 	void OnPlayerDeadChanged(APlayerCharacterState* InPlayerState,	uint8 bIsDead);
 
 	void CancelPlayerCountdown(AMyPlayerController* InPlayer);
-	//void BindPlayerDeathDelegate(APlayerCharacterState* InPlayerState);
-	//void UnbindPlayerDeathDelegate(APlayerCharacterState* InPlayerState);
 private:
 	UPROPERTY()
 	TMap<TObjectPtr<AMyPlayerController>, FCountdownInfo> CountdownPlayerListMap;

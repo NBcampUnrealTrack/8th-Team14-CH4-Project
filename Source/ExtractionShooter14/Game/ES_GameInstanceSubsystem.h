@@ -16,7 +16,6 @@ public:
 
 	bool FindPlayerData(const FString& PlayerGuid, FPlayerDatas& OutData) const;
 	void SavePlayerData(const FString& PlayerGuid, const FPlayerDatas& Data);
-	FPlayerDatas& FindOrAddPlayerData(const FString& PlayerGuid);
 
 private:
 	UPROPERTY()

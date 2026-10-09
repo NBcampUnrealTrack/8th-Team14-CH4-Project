@@ -17,7 +17,6 @@ void UES_EndWidgetSection::AddRowSetRowTitle(const FText& InTitle, const FText& 
 	if (!IsValid(RowWidget)) return;
 	
 	RowWidget->SetTitle(InTitle, InValue);
-	//RowWidget->SetPadding(FMargin(10.f,0.f));
 	UVerticalBoxSlot* CustomSlot = RowVerticalBox->AddChildToVerticalBox(RowWidget);
 	CustomSlot->SetPadding(FMargin(5.f,0.f));
 	CustomSlot->SetVerticalAlignment(VAlign_Center);

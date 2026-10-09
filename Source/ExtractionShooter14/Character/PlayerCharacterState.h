@@ -12,7 +12,6 @@
 DECLARE_MULTICAST_DELEGATE(FPlayerInfoChanged);
 DECLARE_MULTICAST_DELEGATE(FPlayerLobbyIndexChanged);
 DECLARE_MULTICAST_DELEGATE(FPlayerCombatInfoChanged);
-//DECLARE_MULTICAST_DELEGATE(FPlayerRankChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerStageInventoryChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPlayerStageGoldChanged, int32, OldGold, int32, NewGold);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPlayerReadyChanged, uint8, bIsReady);
@@ -70,7 +69,6 @@ public:
 	FPlayerInfoChanged OnPlayerInfoChanged;
 	FPlayerLobbyIndexChanged OnPlayerLobbyIndexChanged;
 	FPlayerCombatInfoChanged OnPlayerCombatInfoChanged;
-	//FPlayerRankChanged OnPlayerRankChanged;
 	UPROPERTY(BlueprintAssignable)
 	FPlayerStageInventoryChanged OnPlayerStageInventoryChanged;
 	UPROPERTY(BlueprintAssignable)
@@ -112,7 +110,6 @@ public:
 	EPlayerPlace GetPlayerStagePlace();
 	void SetPlayerStagePlace(EPlayerPlace InPlayerStagePlace);
 
-	void SetPlayerStageGold(int32 NewGold);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerReady(bool bReady);

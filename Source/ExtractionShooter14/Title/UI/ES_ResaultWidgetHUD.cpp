@@ -10,12 +10,6 @@ void UES_ResaultWidgetHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	// if (!PlayerCommitInfoDelegateHandle.IsValid())
-	// {
-	// 	APlayerCharacterState* PlayerStateES = GetOwningPlayer()->GetPlayerState<APlayerCharacterState>();
-	// 	if (!IsValid(PlayerStateES)) return;
-	// 	PlayerStateES->OnPlayerCombatInfoChanged.AddUObject(this, &ThisClass::)
-	// }
 	CombatSectionWidget->SetSectionTitle(FText::FromString(TEXT("Combat")));
 	CollectSectionWidget->SetSectionTitle(FText::FromString(TEXT("Collection")));
 	RankTextBlock->SetText(FText::FromString(FString::Printf(TEXT("# %d"),PlayerCombatInfo.Rank)));
@@ -65,9 +59,6 @@ void UES_ResaultWidgetHUD::AddRowInComBatSection()
 {
 	CombatInfoArray =
 	{
-		// CombatSectionWidget->AddRowSetRowTitle(FText::FromString(TEXT("DamageDealt")), FText::AsNumber(PlayerCombatInfo.DamageDealt));
-		// CombatSectionWidget->AddRowSetRowTitle(FText::FromString(TEXT("DamageTaken")), FText::AsNumber(PlayerCombatInfo.DamageTaken));
-		// CombatSectionWidget->AddRowSetRowTitle(FText::FromString(TEXT("KillCount")), FText::AsNumber(PlayerCombatInfo.KillCount));
 		{ FText::FromString(TEXT("DamageDealt")), FText::AsNumber(PlayerCombatInfo.DamageDealt) },
 		{ FText::FromString(TEXT("DamageTaken")), FText::AsNumber(PlayerCombatInfo.DamageTaken) },
 		{ FText::FromString(TEXT("KillCount")), FText::AsNumber(PlayerCombatInfo.KillCount) }
@@ -88,9 +79,6 @@ void UES_ResaultWidgetHUD::AddRowInCollectSection()
 {
 	CollectInfoArray =
 	{
-		// CollectSectionWidget->AddRowSetRowTitle(FText::FromString(TEXT("LootCount")), FText::AsNumber(PlayerCombatInfo.LootCount));
-		// CollectSectionWidget->AddRowSetRowTitle(FText::FromString(TEXT("SurviveTime")), FText::AsNumber(PlayerCombatInfo.SurviveTime));
-		// CollectSectionWidget->AddRowSetRowTitle(FText::FromString(TEXT("Score")), FText::AsNumber(PlayerCombatInfo.Score));
 		{ FText::FromString(TEXT("LootCount")), FText::AsNumber(PlayerCombatInfo.LootCount) },
 		{ FText::FromString(TEXT("SurviveTime")), FText::FromString(FString::Printf(TEXT("%.1f"),PlayerCombatInfo.SurviveTime)) },
 		{ FText::FromString(TEXT("Score")), FText::AsNumber(PlayerCombatInfo.Score) }

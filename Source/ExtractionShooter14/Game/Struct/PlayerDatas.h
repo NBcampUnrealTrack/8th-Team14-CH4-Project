@@ -16,13 +16,3 @@ public:
 	UPROPERTY()
 	TArray<FInventoryItemData> ItemStorage;
 };
-//			================================
-//			  PREVIEW FINVENTORYITEMDATA.H
-//			================================
-//				USTRUCT(BlueprintType)
-//				struct FInventoryItemData
-//				{
-//					GENERATED_BODY()
-//					FName ItemName = FName(TEXT(""));
-//					int32 ItemCount = 0;
-//				 };

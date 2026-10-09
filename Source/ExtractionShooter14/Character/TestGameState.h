@@ -54,7 +54,6 @@ public:
 	
 	void AddLobbyPlayerStates(APlayerCharacterState* InNewPlayerState);
 	void RemoveLobbyPlayerStates(APlayerCharacterState* InOutPlayerState);
-	void ForceAllPlayersReady();
 	
 	const TArray<APlayerCharacterState*>& GetLobbyPlayerStates() const;
 	

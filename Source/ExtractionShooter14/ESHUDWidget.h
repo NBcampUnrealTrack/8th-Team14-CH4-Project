@@ -36,7 +36,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> StageTime;
 	
-	//FDelegateHandle StageTimerHandle;
 	FTimerHandle StageTimerHandle;
 	void HandleStageTime();
 	UFUNCTION()

@@ -5,7 +5,6 @@
 #include "ES_TitleWidgetHUD.generated.h"
 
 class UEditableText;
-class UEditableTextBox;
 class UVerticalBox;
 class UES_SessionSubsystem;
 class UHorizontalBox;
@@ -67,7 +66,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Title|UI")
 	FString TitleName2 = "Lost";
 	
-	FTimerHandle StartDelayTimer;
 	FTimerHandle TitleUpperLetterTimerHandle;
 	FTimerHandle TitleDownLetterTimerHandle;
 	int32 TimerCount = 0;

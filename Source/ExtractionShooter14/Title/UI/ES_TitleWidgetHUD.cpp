@@ -91,37 +91,16 @@ void UES_TitleWidgetHUD::NativeDestruct()
 
 void UES_TitleWidgetHUD::OnClickedPlayButton()
 {
-	// if (!IsValid(SessionSubsystem))
-	// {
-	// 	UE_LOG(
-	// 		LogTemp,
-	// 		Error,
-	// 		TEXT("[TitleWidget] SessionSubsystem is invalid.")
-	// 	);
-	//
-	// 	return;
-	// }
-	//
-	// if (SessionSubsystem->IsConnecting())
-	// {
-	// 	return;
-	// }
-	//
 	if (IsValid(PlayButton))
 	{
 		PlayButton->SetIsEnabled(false);
 	}
-	//
-	// SessionSubsystem->FindAndJoinDedicatedServer();
 	
 	
 // ========================== Session ===========================
 // ========================== Session ===========================
 	
 	const FString IPString = IPEditableText->GetText().ToString();
-	// const FName IPStringFName = FName(*IPString);
-	// const FName IPString = FName(*IPTextBlock->GetText().ToString());
-	// UGameplayStatics::OpenLevel(GetWorld(), IPStringFName);
 	APlayerController* PlayerControllerES = GetOwningPlayer();
 	if (!IsValid(PlayerControllerES))
 	{
@@ -173,7 +152,6 @@ void UES_TitleWidgetHUD::CreateLetterWidget()
 		
 		Text->SetText(FText::FromString(FString::Chr(TitleName1[TimerCount])));
 		UHorizontalBoxSlot* HorizontalSlot = TitleHorizontal->AddChildToHorizontalBox(LetterWidgetInstance);
-		//LetterWidgetInstance->SetRenderTranslation(FVector2D(TimerCount, 0.f));
 		TimerCount++;
 	}
 	else
@@ -201,7 +179,6 @@ void UES_TitleWidgetHUD::CreateDownLetterWidget()
 		
 		Text->SetText(FText::FromString(FString::Chr(TitleName2[TimerCount])));
 		UHorizontalBoxSlot* HorizontalSlot = TitleHorizontal_1->AddChildToHorizontalBox(LetterWidgetInstance);
-		//LetterWidgetInstance->SetRenderTranslation(FVector2D(TimerCount, 0.f));
 		TimerCount++;
 	}
 	else

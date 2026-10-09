@@ -27,7 +27,6 @@ void ATestGameState::AddLobbyPlayerStates(APlayerCharacterState* InNewPlayerStat
 {
 	// in server
 	LobbyPlayerStates.AddUnique(InNewPlayerState);
-	//SetPlayerInGameCount_GS(LobbyPlayerStates.Num());
 
 	OnChangedPlayerStates.Broadcast();
 }

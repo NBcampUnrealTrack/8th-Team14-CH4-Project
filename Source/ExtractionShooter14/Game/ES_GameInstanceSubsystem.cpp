@@ -68,10 +68,3 @@ void UES_GameInstanceSubsystem::SavePlayerData(const FString& PlayerGuid, const 
 	UGameplayStatics::SaveGameToSlot(CachedSaveGame, SaveSlotName, SaveUserIndex);
 }
 
-FPlayerDatas& UES_GameInstanceSubsystem::FindOrAddPlayerData(const FString& PlayerGuid)
-{
-	check(CachedSaveGame);
-	//check(PlayerGuid.IsValid());
-
-	return CachedSaveGame->PlayerDataMap.FindOrAdd(PlayerGuid);
-}

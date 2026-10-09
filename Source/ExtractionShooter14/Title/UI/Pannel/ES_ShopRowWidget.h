@@ -51,6 +51,4 @@ private:
 	FName ItemName;
 	UPROPERTY()
 	TObjectPtr<APlayerCharacterState> OwningPlayerState;
-	UPROPERTY()
-	FInventoryItemData InventoryItemData;
 };

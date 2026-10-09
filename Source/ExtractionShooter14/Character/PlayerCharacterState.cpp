@@ -9,6 +9,7 @@
 
 void APlayerCharacterState::Server_SetStageItem_Implementation(const FInventoryItemData InItemName)
 {
+	SetNetUpdateFrequency(100.f);
 	AddItemInPlayerStageInventory(InItemName);
 }
 
@@ -122,7 +123,6 @@ void APlayerCharacterState::ClearPlayerStageInventoryGold()
 {
 	if (HasAuthority())
 	{
-		//PlayerStageInventory.Reset();
 		PlayerStageGold = 0;
 	}
 }
@@ -136,7 +136,6 @@ void APlayerCharacterState::ClearPlayerStageInventory()
 			Item = FInventoryItemData();  // ItemName=NAME_None, ItemCount=0
 		}
 
-		//PlayerStageGold = 0;
 		OnPlayerStageInventoryChanged.Broadcast();  // UI 갱신
 	}
 }
@@ -150,68 +149,11 @@ void APlayerCharacterState::ClearPlayerinfoInventory()
 			Item = FInventoryItemData();  // ItemName=NAME_None, ItemCount=0
 		}
 
-		//PlayerStageGold = 0;
 	}
 }
 
 void APlayerCharacterState::ApplyPlayerStageInventoryToPlayerStorage()
 {
-	// when playerstorage = add stack = chang go = container 
-#pragma region When use PlayerStorage > Container
-	// if (HasAuthority())
-	// {
-	// 	bool bIsItemChanged = false;
-	// 	
-	// 	for (const FInventoryItemData& StageItem : PlayerStageInventory)
-	// 	{
-	// 		if (StageItem.ItemName == NAME_None) // no item slot
-	// 		{
-	// 			continue;
-	// 		}
-	//
-	// 		FInventoryItemData* FoundItem1 = PlayerInfo.ItemStorage.FindByPredicate(
-	// 			[&StageItem](const FInventoryItemData& StorageItem)
-	// 			{
-	// 				return StorageItem.ItemName == StageItem.ItemName;
-	// 			});
-	//
-	// 		if (FoundItem1)
-	// 		{
-	// 			FoundItem1->ItemCount += StageItem.ItemCount;
-	// 		}
-	// 		else // new item?
-	// 		{
-	// 			FInventoryItemData* FoundItem2 = PlayerInfo.ItemStorage.FindByPredicate(
-	// 				[](const FInventoryItemData& StorageItem)
-	// 				{
-	// 					return StorageItem.ItemName == NAME_None;
-	// 				});
-	// 			if (FoundItem2)
-	// 			{ // empty slot exist
-	// 				*FoundItem2 = StageItem;
-	// 			}
-	// 			else
-	// 			{
-	// 				// full inventory
-	// 				continue;
-	// 			}
-	// 		}
-	// 		bIsItemChanged = true;
-	// 	}
-	//
-	// 	if (PlayerStageGold > 0)
-	// 	{
-	// 		PlayerInfo.GoldStorage += PlayerStageGold;
-	// 		bIsItemChanged = true;
-	// 	}
-	//
-	// 	if (bIsItemChanged)
-	// 	{
-	// 		OnPlayerInfoChanged.Broadcast();
-	// 	}
-	// }
-#pragma endregion 
-	
 	if (!HasAuthority()) return;
 
 	// stageinven = containerinven
@@ -280,7 +222,6 @@ void APlayerCharacterState::TakenDamage(
 	}
 	
 	OnHealthChanged.Broadcast(OldValue, CurrentHealth, MaxHealth);
-	//OnPlayerCombatInfoChanged.Broadcast();
 	ForceNetUpdate();
 }
 void APlayerCharacterState::InitiateStats()
@@ -340,11 +281,8 @@ void APlayerCharacterState::OnRep_PlayerInfo()
 
 void APlayerCharacterState::OnRep_PlayerCommitCombatInfo(const FCollectCombatInfo& OldCombatInfo)
 {
-	//OnPlayerCombatInfoChanged.Broadcast();
-	//if (OldCombatInfo.Rank == PlayerCombatInfo.Rank) return;
 
 	OnPlayerCombatInfoChanged.Broadcast();
-	// 	OnPlayerRankChanged.Broadcast();
 }
 
 void APlayerCharacterState::OnRep_PlayerStageInventory()
@@ -604,22 +542,6 @@ void APlayerCharacterState::SetPlayerStagePlace(EPlayerPlace InPlayerStagePlace)
 	
 	PlayerPlace = InPlayerStagePlace;
 	OnRep_PlayerStagePlace();
-	ForceNetUpdate();
-}
-
-void APlayerCharacterState::SetPlayerStageGold(int32 NewGold)
-{
-	if (!HasAuthority())
-	{
-		return;
-	}
-
-	const int32 OldGold = PlayerStageGold;
-
-	PlayerStageGold = FMath::Max(0, NewGold);
-
-	OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
-
 	ForceNetUpdate();
 }
 

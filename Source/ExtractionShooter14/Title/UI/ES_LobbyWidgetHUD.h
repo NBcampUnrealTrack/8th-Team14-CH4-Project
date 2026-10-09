@@ -20,8 +20,6 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	
-	//virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
-	
 	UFUNCTION(BlueprintCallable)
 	void OnClickedReadyButton();
 	UFUNCTION(BlueprintCallable)
@@ -35,13 +33,8 @@ public:
 	
 	UFUNCTION()
 	void RefreshPlayerUserIcon();
-	UFUNCTION()
-	void AddUserIcon();
 	
 	void ApplyTextColorAnimation(float LeftTime);
-	
-	// UFUNCTION(BlueprintImplementableEvent)
-	// void ItemRowWidgetPlayAnim(const FName& RowWidgetItemName);
 	
 	void CachedPlayerState(APlayerCharacterState* InPlayerState);
 	void CachedGameState(ATestGameState* InTestGameState);

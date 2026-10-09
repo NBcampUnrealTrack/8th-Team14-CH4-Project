@@ -85,7 +85,6 @@ void UES_LobbyWidgetHUD::NativeDestruct()
 
 void UES_LobbyWidgetHUD::RefreshPlayerUserIcon()
 {
-	//if (!IsValid(OwningPlayerState)) return;
 	
 	if (!IsValid(OwningPlayerState))
 	{
@@ -100,9 +99,6 @@ void UES_LobbyWidgetHUD::RefreshPlayerUserIcon()
 	for ( auto EachPlayerState : OwningGameState->GetLobbyPlayerStates())
 	{
 		if (!IsValid(EachPlayerState)) continue;
-		
-		// APlayerCharacterState* EachPlayerStateES = Cast<APlayerCharacterState>(EachPlayerState);
-		// if (!IsValid(EachPlayerStateES)) continue;
 		
 		UES_LobbyUserIconWidget* UserIconInstance =
 			CreateWidget<UES_LobbyUserIconWidget>(GetOwningPlayer(), UserIconClass);
@@ -165,16 +161,6 @@ void UES_LobbyWidgetHUD::RefreshPlayerInfo()
 	
 	GoldText->SetText(FText::AsNumber(NewPlayerData.GoldStorage));
 	PlayerNickName->SetText(FText::FromString(NewPlayerData.PlayerNickName));
-}
-
-void UES_LobbyWidgetHUD::AddUserIcon()
-{
-	// if (!IsValid(UserIconClass)) return;
-	// UserIconInstance = CreateWidget<UES_LobbyUserIconWidget>(this, UserIconClass);
-	// if (!IsValid(UserIconInstance)) return;
-	//
-	// PlayerIconHorizontal->AddChild(UserIconInstance);
-	// UserIconInstance->CachedPlayerCharacterState(OwningPlayerState);
 }
 
 void UES_LobbyWidgetHUD::CachedPlayerState(APlayerCharacterState* InPlayerState)

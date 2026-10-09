@@ -35,32 +35,6 @@ void ATestGameMode::BeginPlay()
         static_cast<int32>(GetNetMode()),
         *GetWorld()->GetMapName()
     );
-//====================== session =============================
-//====================== session =============================
-#pragma region Session  
-    // if (IsRunningDedicatedServer())
-    // {
-    //     if (UGameInstance* GameInstance = GetGameInstance())
-    //     {
-    //         if (UES_SessionSubsystem* SessionSubsystem =
-    //             GameInstance->GetSubsystem<UES_SessionSubsystem>())
-    //         {
-    //             SessionSubsystem->CreateDedicatedSession(
-    //                 3,
-    //                 TEXT("Extraction Shooter Server")
-    //             );
-    //         }
-    //         else
-    //         {
-    //             UE_LOG(
-    //                 LogTemp,
-    //                 Error,
-    //                 TEXT("[TestGameMode] SessionSubsystem is invalid.")
-    //             );
-    //         }
-    //     }
-    // }
-#pragma endregion 
     
     UGameplayStatics::GetAllActorsOfClass(
         GetWorld(),
@@ -122,8 +96,6 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
     }
     
     UE_LOG(LogTemp, Warning, TEXT("GameMode PID = %d"), FPlatformProcess::GetCurrentProcessId());
-    // const FString PlayerKey =
-    //     PS->GetUniqueId().ToString();
     const FString PlayerKey = PS->GetUniqueId()->ToString();;
     
     UES_GameInstanceSubsystem* SaveSubsystem =
@@ -214,7 +186,6 @@ void ATestGameMode::Logout(AController* Exiting)
     if (IsValid(PS))
     {
         PS->SetPlayerStagePlace(EPlayerPlace::None);
-        //PS->ApplyPlayerStageInventoryToPlayerStorage();
         
         if (PS->GetUniqueId().IsValid())
         {
@@ -276,31 +247,6 @@ void ATestGameMode::Logout(AController* Exiting)
 
     Super::Logout(Exiting);
 }
-//
-// AActor* ATestGameMode::ChoosePlayerStart_Implementation(AController* Player)
-// {
-//     return LobbyPlayerStartPoints[InGamePlayerCount++];
-// }
-
-// int32 ATestGameMode::GetInGamePlayerCount() const
-// {
-//     return InGamePlayerCount;
-// }
-//
-// void ATestGameMode::SetInGamePlayerCount(int32 InNewPlayerCount)
-// {
-//     InGamePlayerCount = InNewPlayerCount;
-// }
-
-int32 ATestGameMode::GetMaxInGamePlayerCount() const
-{
-    return MaxInGamePlayerCount;
-}
-
-void ATestGameMode::SetMaxInGamePlayerCount(int32 InNewMaxPlayerCount)
-{
-    MaxInGamePlayerCount = InNewMaxPlayerCount;
-}
 
 void ATestGameMode::HandleAllPlayerisReady()
 {
@@ -312,20 +258,13 @@ void ATestGameMode::HandleAllPlayerisReady()
     
     if (Data.GameStateEnum == EGameState::LobbyWaiting)
     {
-        // if (PlayerCount >= MaxInGamePlayerCount)
-        // {
             if (IsAllPlayersReady())
             {
-                // FPhaseTimerData PhaseTimerData;
-                // PhaseTimerData.GameStateEnum = EGameState::LobbyWaiting;
-                // PhaseTimerData.PhaseStartServerTime = GS->GetServerWorldTimeSeconds();
-                // PhaseTimerData.PhaseDuration = 0.f; // 5.f
                 GS->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, 0.f); // > SetGamestatePhaaseTimerData ?
             
                 // 5초뒤 move
             
             }
-        //}
     }
     
     if (Data.GameStateEnum == EGameState::Playing)
@@ -335,10 +274,7 @@ void ATestGameMode::HandleAllPlayerisReady()
         // 난입허가 Playing시작후 0.3비율까지 ex 100sec in 33sec can join
         if (Ratio < 0.2f)
         { // inplaying free to restart in 0.2f
-            // if (IsAllPlayersReady())
-            // {
                 MoveToStage();
-            //}
         }
     }
 }
@@ -366,11 +302,6 @@ bool ATestGameMode::IsAllPlayersReady()
         }
     }
     
-    // all ready =================================
-    // for (APlayerCharacterState* PS : LobbyPlayers)
-    // {
-    //     PS->SetPlayerReady(false);
-    // }
     return true;
 }
 
@@ -428,10 +359,8 @@ void ATestGameMode::StartStage()
     ATestGameState* GS = GetGameState<ATestGameState>();
     if (!IsValid(GS)) return;
     
-    //GS->CalculatePlayerRank();
     GS->SetGameStatePhaseTimerData(EGameState::Playing, PlayDuration);
     
-    //GS->MarkRank();
     CalculatePlayerRank();
     
     StartPhaseTimer();
@@ -440,9 +369,6 @@ void ATestGameMode::StartStage()
 
 void ATestGameMode::MoveToStage()
 {
-    // if (IsAllPlayersReady())
-    // {
-            //gs >> gamestate::playing
         
         Algo::RandomShuffle(StageSpawnLocationPoints);
 
@@ -459,8 +385,6 @@ void ATestGameMode::MoveToStage()
             
             const int32 StartIndex = Pair.Value;
         
-        
-            //PlayerControllerES->SetAutoManageCamera(true);
             if (PlayerCharacterStateES->GetPlayerStagePlace() == EPlayerPlace::Lobby)
             {
                 if (PlayerCharacterStateES->IsPlayerReady() == true)
@@ -484,7 +408,6 @@ void ATestGameMode::MoveToStage()
                         StageSpawnLocationPoints[StartIndex]->GetActorLocation(),
                         StageSpawnLocationPoints[StartIndex]->GetActorRotation()
                         );
-                    //GameStateES->CalculatePlayerRank(); //rank
                     FRotator PlayerRotation = StageSpawnLocationPoints[StartIndex]->GetActorRotation();
                     PlayerRotation.Pitch = 0.0f;
                     PlayerRotation.Roll = 0.0f;
@@ -494,13 +417,11 @@ void ATestGameMode::MoveToStage()
                     PlayerControllerES->Client_ApplySpawnRotation(PlayerRotation);
                     PlayerControllerES->StartPlayerMovement();
                     PlayerControllerES->Client_WhenMoveToStagePopUpUI();
-                    //PlayerControllerES->Client_StopBGM();
                 }
             }
         }
     
         // timer and switch enumgamestate
-   // }
 
 }
 
@@ -584,11 +505,8 @@ void ATestGameMode::CheckRemainTime()
         if (RemainTime <= 0.f)
         {
             GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
-            //bIsForced = false;
-            //ForceReadyPlayers(false);
             bForced = false;
             MoveToStage();
-            //GS->CalculatePlayerRank();
             
             if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby)) // all player non ready
             {
@@ -671,13 +589,9 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     TargetController->StopPlayerMovement();
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     ACharacter* CharacterES = Cast<ACharacter>(TargetController->GetPawn());
-    //CharacterES->GetCharacterMovement()->Velocity = FVector::ZeroVector;
-    // CharacterES->GetCharacterMovement()->DisableMovement();
     FRotator Rotation = MovePoint.Rotator();
     Rotation.Pitch = 0.f;
     Rotation.Roll = 0.f;
-    // TargetController->SetControlRotation(Rotation);
-    // CharacterES->SetActorRotation(Rotation);
     TargetController->GetPawn()->TeleportTo(MovePoint.GetLocation(), Rotation);
     // rotation
     TargetController->SetControlRotation(Rotation);
@@ -693,7 +607,6 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
     {
         GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
-        // StartPhaseTimer();
         GetWorldTimerManager().SetTimerForNextTick(
         this, &ThisClass::ClearObjects);
         
@@ -717,16 +630,13 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     InitializePlayerStats(PlayerStateES);
     TargetController->StopPlayerMovement();
     
-    //InitiatePlayerStats(TargetController);
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     RestartPlayerAtTransform(TargetController, MovePoint);
     TargetController->Client_WhenMoveToLobbyUI();
-    //TargetController->Client_OpenResultUI();
     if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
     {
 
         GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
-        // StartPhaseTimer();
         GetWorldTimerManager().SetTimerForNextTick(
       this, &ThisClass::ClearObjects);
         StartLobby();
@@ -756,7 +666,6 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     InitializePlayerStats(PlayerStateES);
     TargetController->StopPlayerMovement();
 
-    //InitiatePlayerStats(TargetController);
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     RestartPlayerAtTransform(TargetController, MovePoint);
     TargetController->Client_WhenMoveToLobbyUI();
@@ -765,7 +674,6 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     {
 
         GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
-        // StartPhaseTimer();
         GetWorldTimerManager().SetTimerForNextTick(
         this, &ThisClass::ClearObjects);
         
@@ -852,8 +760,7 @@ void ATestGameMode::CalculatePlayerRank()
             return A.GetPlayerWorkingCombatInfo().Score > B.GetPlayerWorkingCombatInfo().Score;
         });
 
-    // 3. same score = same rank (1, 1, 3) + commit only changed players
-    bool bAnyRankChanged = false;
+    // 3. same score = same rank (1, 1, 3), only changed rank is replicated
     int32 CurrentRank = 1;
     for (int32 i = 0; i < RankedPlayers.Num(); ++i)
     {
@@ -863,13 +770,7 @@ void ATestGameMode::CalculatePlayerRank()
             CurrentRank = i + 1;
         }
 
-        // |= (not ||) : every player must get SetRank call
-        bAnyRankChanged |= RankedPlayers[i]->SetPlayerCombatInfo_Rank(CurrentRank);
-    }
-
-    if (bAnyRankChanged)
-    {
-        GS->OnChangedPlayerStates.Broadcast();
+        RankedPlayers[i]->SetPlayerCombatInfo_Rank(CurrentRank);
     }
 }
 #pragma endregion
