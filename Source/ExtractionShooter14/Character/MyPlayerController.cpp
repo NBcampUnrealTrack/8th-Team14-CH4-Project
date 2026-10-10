@@ -359,7 +359,7 @@ void AMyPlayerController::UpdateInputMode()
     
 }
 
-void AMyPlayerController::Client_ShowEscapeProgressWidget_Implementation(float StartTime, float Duration)
+void AMyPlayerController::Client_ShowEscapeProgressWidget_Implementation(double StartTime, float Duration)
 {
     if (!IsLocalController()) return;
     if (!IsValid(StageWidgetInstance)) return;

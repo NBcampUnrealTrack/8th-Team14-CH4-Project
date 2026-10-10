@@ -2,6 +2,8 @@
 
 #include "PlayerCharacterState.h"
 #include "Net/UnrealNetwork.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 void ATestGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -53,7 +55,7 @@ void ATestGameState::SetGameStatePhaseTimerData(EGameState NewState, float Durat
 {
 	if (HasAuthority())
 	{
-		const float ServerNow = GetServerWorldTimeSeconds();
+		const double ServerNow = GetServerWorldTimeSeconds();
 		
 		GameStatePhaseTimerData.GameStateEnum = NewState;
 		GameStatePhaseTimerData.PhaseStartServerTime = ServerNow;
@@ -70,13 +72,31 @@ FPhaseTimerData ATestGameState::GetGameStatePhaseTimerData() const
 
 float ATestGameState::GetRemainTime() const
 {
-	if (GameStatePhaseTimerData.PhaseEndServerTime <= 0.f) return 0.f;
-	
-	const float ServerNow = GetServerWorldTimeSeconds();
-	
-	return FMath::Max(
-		0.f,
-		GameStatePhaseTimerData.PhaseEndServerTime - ServerNow);
+	if (GameStatePhaseTimerData.PhaseEndServerTime <= 0.0) return 0.f;
+
+	const double ServerNow = GetSyncedServerTimeSeconds();
+
+	return static_cast<float>(FMath::Max(
+		0.0,
+		GameStatePhaseTimerData.PhaseEndServerTime - ServerNow));
+}
+
+double ATestGameState::GetSyncedServerTimeSeconds() const
+{
+	const double ServerNow = GetServerWorldTimeSeconds();
+	if (HasAuthority()) return ServerNow;
+
+	// delta = (server time when sent) - (client time when received) : behind by one-way latency
+	const UWorld* World = GetWorld();
+	const APlayerController* LocalController = World ? World->GetFirstPlayerController() : nullptr;
+	const APlayerState* LocalPlayerState = LocalController ? LocalController->PlayerState : nullptr;
+	if (!IsValid(LocalPlayerState)) return ServerNow;
+
+	// ping = round trip (ms, measured by engine) > one-way latency = half of it
+	const double RoundTripSeconds = LocalPlayerState->GetPingInMilliseconds() / 1000.0;
+	const double OneWayLatencySeconds = RoundTripSeconds * 0.5;
+
+	return ServerNow + OneWayLatencySeconds;
 }
 
 

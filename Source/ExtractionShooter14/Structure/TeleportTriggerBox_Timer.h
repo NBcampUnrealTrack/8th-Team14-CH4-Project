@@ -16,7 +16,6 @@ struct FCountdownInfo
 	GENERATED_BODY()
 	
 	FTimerHandle TimerHandle;
-	float RemainingTime = 0.f;
 	UPROPERTY()
 	TObjectPtr<APlayerCharacterState> PlayerState = nullptr;
 };
@@ -49,8 +48,8 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Teleport|MoveTo")
 	float MaxTakesTime = 5.f;
-	UFUNCTION()
-	void UpdatePlayerCountdown(AMyPlayerController* InPlayer);
+	UFUNCTION() // one-shot at MaxTakesTime (same clock as client progress bar)
+	void FinishPlayerCountdown(AMyPlayerController* InPlayer);
 	
 	UFUNCTION() // when player dead > clear timer
 	void OnPlayerDeadChanged(APlayerCharacterState* InPlayerState,	uint8 bIsDead);

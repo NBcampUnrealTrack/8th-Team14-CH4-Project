@@ -286,18 +286,17 @@ void ATestGameMode::HandleAllPlayerisReady()
     {
             if (IsAllPlayersReady())
             {
-                GS->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, 0.f); // > SetGamestatePhaaseTimerData ?
-            
-                // 5초뒤 move
-            
+                // all ready = lobby ends now
+                GS->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, 0.f);
+                StartPhaseTimer();
             }
     }
     
     if (Data.GameStateEnum == EGameState::Playing)
     {
-        float PassedTime = GS->GetServerWorldTimeSeconds() - Data.PhaseStartServerTime;
-        float Ratio = PassedTime / Data.PhaseDuration;
-        // 난입허가 Playing시작후 0.3비율까지 ex 100sec in 33sec can join
+        const float PassedTime = static_cast<float>(GS->GetServerWorldTimeSeconds() - Data.PhaseStartServerTime);
+        const float Ratio = PassedTime / Data.PhaseDuration;
+        // late join allowed until 20% of play time (ex 180sec -> first 36sec)
         if (Ratio < 0.2f)
         { // inplaying free to restart in 0.2f
                 MoveToStage();
@@ -340,7 +339,7 @@ void ATestGameMode::StartNone()
     }
 
     // gamemode timer clear
-    GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
+    GetWorldTimerManager().ClearTimer(PhaseCheckTimerHandle);
 
     // initialize force ready
     bForced = false;
@@ -462,17 +461,32 @@ void ATestGameMode::ForceReadyPlayers(bool bIsready)
     }
 }
 
+// schedule the next phase decision at the exact server time (no polling)
 void ATestGameMode::StartPhaseTimer()
 {
+    GetWorldTimerManager().ClearTimer(PhaseCheckTimerHandle);
 
-    GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
+    ATestGameState* GS = GetGameState<ATestGameState>();
+    if (!IsValid(GS)) return;
+
+    const EGameState Phase = GS->GetGameStatePhaseTimerData().GameStateEnum;
+    if (Phase == EGameState::None) return;
+
+    const float RemainTime = GS->GetRemainTime();
+    float NextCheckTime = RemainTime;
+
+    // lobby : wake up first at force-ready moment, then at phase end
+    if (Phase == EGameState::LobbyWaiting && !bForced && RemainTime > ForceReadyRemainTime)
+    {
+        NextCheckTime = RemainTime - ForceReadyRemainTime;
+    }
 
     GetWorldTimerManager().SetTimer(
-        CheckRemainLobbyTimeHandle,
+        PhaseCheckTimerHandle,
         this,
         &ThisClass::CheckRemainTime,
-        0.5f,
-        true
+        FMath::Max(NextCheckTime, KINDA_SMALL_NUMBER),
+        false
     );
 }
 
@@ -513,24 +527,30 @@ void ATestGameMode::CheckRemainTime()
     
     const EGameState Phase = GS->GetGameStatePhaseTimerData().GameStateEnum;
     const float RemainTime = GS->GetRemainTime();
-    
+    const float Tolerance = 0.01f; // timer float error
+        
     if (Phase == EGameState::None)
     {
-        GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
+        GetWorldTimerManager().ClearTimer(PhaseCheckTimerHandle);
         bForced = false;
     }
     else if (Phase == EGameState::LobbyWaiting)
     {
-        if (!IsAllPlayersReady() && RemainTime <= 5.f && !bForced)
+        if (!IsAllPlayersReady() && RemainTime <= ForceReadyRemainTime + Tolerance && !bForced)
         {
             bForced = true;
             ForceReadyPlayers(true);
             // todo:: readybutton inactivate
         }
 
-        if (RemainTime <= 0.f)
+        if (RemainTime > Tolerance)
         {
-            GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
+            StartPhaseTimer(); // not yet, wait for phase end
+            return;
+        }
+
+        {
+            GetWorldTimerManager().ClearTimer(PhaseCheckTimerHandle);
             bForced = false;
             MoveToStage();
             
@@ -546,9 +566,14 @@ void ATestGameMode::CheckRemainTime()
     }
     else if (Phase == EGameState::Playing)
     {
-        if (RemainTime <= 0.f)
+        if (RemainTime > Tolerance)
         {
-            GetWorldTimerManager().ClearTimer(CheckRemainLobbyTimeHandle);
+            StartPhaseTimer(); // phase end moved (ex: re-entered), reschedule
+            return;
+        }
+
+        {
+            GetWorldTimerManager().ClearTimer(PhaseCheckTimerHandle);
             OnStageEnded.Broadcast();
             
             for (auto PlayerStates : GS->GetLobbyPlayerStates())

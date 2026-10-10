@@ -71,8 +71,10 @@ private:
 	int32 LobbyDuration = 30;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
 	int32 PlayDuration = 180;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Timer", meta = (AllowPrivateAccess))
+	float ForceReadyRemainTime = 5.f;
 	UPROPERTY()
-	FTimerHandle CheckRemainLobbyTimeHandle;
+	FTimerHandle PhaseCheckTimerHandle;
 	UFUNCTION()
 	void CheckRemainTime();
 	uint8 bForced : 1;

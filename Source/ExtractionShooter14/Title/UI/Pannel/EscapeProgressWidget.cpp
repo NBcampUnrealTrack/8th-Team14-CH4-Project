@@ -29,7 +29,7 @@ void UEscapeProgressWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void UEscapeProgressWidget::InitializePrivateProperties(ATestGameState* GS, float InStartServerTime, float InDurationTime)
+void UEscapeProgressWidget::InitializePrivateProperties(ATestGameState* GS, double InStartServerTime, float InDurationTime)
 {
 	if (!IsValid(GS)) return;
 	
@@ -58,8 +58,8 @@ void UEscapeProgressWidget::UpdateEscapeProgressBar_Text()
 {
 	if (!IsValid(OwningGameState)) return;
 	
-	const float CurrentServerTime = OwningGameState->GetServerWorldTimeSeconds();
-	const float PassedTime = FMath::Clamp(CurrentServerTime - OverLappedTime, 0.f, DurationTime);
+	const double CurrentServerTime = OwningGameState->GetSyncedServerTimeSeconds();
+	const float PassedTime = FMath::Clamp(static_cast<float>(CurrentServerTime - OverLappedTime), 0.f, DurationTime);
 	const float Ratio =	PassedTime / DurationTime;
 	
 	EscapeProgressBar->SetPercent(Ratio);

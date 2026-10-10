@@ -42,13 +42,13 @@ struct FPhaseTimerData
 	EGameState GameStateEnum = EGameState::None;
 
 	UPROPERTY()
-	float PhaseStartServerTime = 0.f;
+	double PhaseStartServerTime = 0.0;
 
 	UPROPERTY()
 	float PhaseDuration = 0.f;
 	
 	UPROPERTY()
-	float PhaseEndServerTime = 0.f;
+	double PhaseEndServerTime = 0.0;
 };
 #pragma endregion 
 
@@ -78,6 +78,8 @@ public:
 	FPhaseTimerData GetGameStatePhaseTimerData() const;
 	
 	float GetRemainTime() const;
+	// engine client server time lags by one-way latency : add half RTT (server returns as is)
+	double GetSyncedServerTimeSeconds() const;
 
 	void SetTopPlayer(int32 InPlayerId, int32 InScore); // server
 	const FTopPlayerInfo& GetTopPlayer() const { return TopPlayer; }

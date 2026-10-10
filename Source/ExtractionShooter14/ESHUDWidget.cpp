@@ -105,7 +105,7 @@ void UESHUDWidget::HandleTopPlayer()
 	}
 
 	TopPlayerText->SetText(FText::FromString(
-		FString::Printf(TEXT("1st  %s  %d"), *OwningGameState->GetTopPlayerNickName(), Top.Score)));
+		FString::Printf(TEXT("AHead: %s [ %d ]"), *OwningGameState->GetTopPlayerNickName(), Top.Score)));
 }
 
 void UESHUDWidget::UpdateStageTimerText()
@@ -142,9 +142,9 @@ void UESHUDWidget::ApplyTextColorAnimationByTime(float InRemainTime)
 
 	const EGameState GamePhase = TimerData.GameStateEnum;
 
-	const float PassedTime =
-		OwningGameState->GetServerWorldTimeSeconds()
-		- TimerData.PhaseStartServerTime;
+	const float PassedTime = static_cast<float>(
+		OwningGameState->GetSyncedServerTimeSeconds()
+		- TimerData.PhaseStartServerTime);
 
 	const float Ratio = PassedTime / TimerData.PhaseDuration;
 	

@@ -228,9 +228,9 @@ void UES_LobbyWidgetHUD::ApplyTextColorAnimation(float LeftTime)
 
 	const EGameState GamePhase = TimerData.GameStateEnum;
 
-	const float PassedTime =
-		OwningGameState->GetServerWorldTimeSeconds()
-		- TimerData.PhaseStartServerTime;
+	const float PassedTime = static_cast<float>(
+		OwningGameState->GetSyncedServerTimeSeconds()
+		- TimerData.PhaseStartServerTime);
 
 	const float Ratio = PassedTime / TimerData.PhaseDuration;
 	

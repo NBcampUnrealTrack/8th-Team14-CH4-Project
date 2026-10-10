@@ -473,10 +473,10 @@ void APlayerCharacterState::UpdateSurviveTime()
 		ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>();
 		if (!IsValid(GS)) return;
 
-		if (PlayerCombatInfo.StageStartServerTime <= 0.f) return;
-		
-		PlayerCombatInfo.SurviveTime =
-			GS->GetServerWorldTimeSeconds() - PlayerCombatInfo.StageStartServerTime;
+		if (PlayerCombatInfo.StageStartServerTime <= 0.0) return;
+
+		PlayerCombatInfo.SurviveTime = static_cast<float>(
+			GS->GetServerWorldTimeSeconds() - PlayerCombatInfo.StageStartServerTime);
 
 		CalCulateCombatScore();
 	}

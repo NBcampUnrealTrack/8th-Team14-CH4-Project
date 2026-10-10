@@ -40,7 +40,6 @@ void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* 
 	if (PlayerCharacterStateES->GetbIsDead()) return;
 	
 	FCountdownInfo Info;
-	Info.RemainingTime = MaxTakesTime;
 	Info.PlayerState = PlayerCharacterStateES;
 	FCountdownInfo& CountRefInfo = CountdownPlayerListMap.Add(PlayerControllerES, Info);
 	
@@ -48,7 +47,7 @@ void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* 
 	
 	UE_LOG(LogTemp, Warning, TEXT("Player is going to Move In %.fs."), MaxTakesTime);
 	
-	const float StartServerTime = GS->GetServerWorldTimeSeconds();
+	const double StartServerTime = GS->GetServerWorldTimeSeconds();
 	PlayerControllerES->Client_ShowEscapeProgressWidget(StartServerTime, MaxTakesTime);
 	
 	GetWorldTimerManager().SetTimer(
@@ -58,10 +57,10 @@ void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* 
 			(this),
 			[this, PlayerControllerES]
 			{
-				UpdatePlayerCountdown(PlayerControllerES);
+				FinishPlayerCountdown(PlayerControllerES);
 			}),
-		1.0f,
-		true
+		MaxTakesTime,
+		false
 	);
 }
 
@@ -105,30 +104,18 @@ void ATeleportTriggerBox_Timer::BeginPlay()
 	
 }
 
-void ATeleportTriggerBox_Timer::UpdatePlayerCountdown(AMyPlayerController* InPlayer)
+void ATeleportTriggerBox_Timer::FinishPlayerCountdown(AMyPlayerController* InPlayer)
 {
 	if (!HasAuthority()) return;
 	if (!IsValid(InPlayer)) return;
+	if (!CountdownPlayerListMap.Contains(InPlayer)) return;
 
-	FCountdownInfo* Info = CountdownPlayerListMap.Find(InPlayer);
-	if (!Info)	return;
+	ATestGameMode* GameModeES = Cast<ATestGameMode>(InPlayer->GetWorld()->GetAuthGameMode());
 
-	Info->RemainingTime--;
-	// player die = cleartimer
-	UE_LOG(LogTemp, Warning, TEXT("PlayerName: %s >> Move In %.fs"),*InPlayer->GetName(), Info->RemainingTime);
+	CancelPlayerCountdown(InPlayer); // cleartimer, unbinddelegate, remove map
+	if (!IsValid(GameModeES)) return;
 
-	if (Info->RemainingTime <= 0)
-	{
-		ATestGameMode* GameModeES = Cast<ATestGameMode>(InPlayer->GetWorld()->GetAuthGameMode());
-		if (!IsValid(GameModeES))
-		{ // server is none ???
-			CancelPlayerCountdown(InPlayer);
-			return;
-		}
-
-		CancelPlayerCountdown(InPlayer); // cleartimer, unbinddelegate, remove map
-		GameModeES->SetPlayerLobbyStartPoint(InPlayer);
-	}
+	GameModeES->SetPlayerLobbyStartPoint(InPlayer);
 }
 
 void ATeleportTriggerBox_Timer::OnPlayerDeadChanged(APlayerCharacterState* InPlayerState, uint8 bIsDead)

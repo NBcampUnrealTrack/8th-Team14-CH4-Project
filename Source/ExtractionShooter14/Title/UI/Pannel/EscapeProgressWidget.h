@@ -16,7 +16,7 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	
-	void InitializePrivateProperties(ATestGameState* GS, float InStartServerTime, float InDurationTime);
+	void InitializePrivateProperties(ATestGameState* GS, double InStartServerTime, float InDurationTime);
 	
 	void CloseEscapeProgressWidget();
 	UFUNCTION()
@@ -39,8 +39,8 @@ protected:
 	void UpdateEscapeProgressBar_Text();
 private:
 	TObjectPtr<ATestGameState> OwningGameState;
-	float OverLappedTime;
-	float DurationTime;
+	double OverLappedTime = 0.0;
+	float DurationTime = 0.f;
 	
 	FTimerHandle EscapeTimerHandle;
 };
