@@ -2,6 +2,7 @@
 #include "ItemData.h"
 
 #include "Components/StaticMeshComponent.h"
+#include "Game/DataManagerSubsystem.h"
 
 AItemBase::AItemBase()
 {
@@ -42,8 +43,9 @@ void AItemBase::ApplyItemData()
 
 	CurrentItemData = *ItemData;
 
-	if (ItemData->Mesh)
+	// look comes from the linked performance table (DT_Weapon / DT_UseItem)
+	if (UStaticMesh* WorldMesh = UDataManagerSubsystem::FindWorldMesh(this, *ItemData))
 	{
-		MeshComponent->SetStaticMesh(ItemData->Mesh);
+		MeshComponent->SetStaticMesh(WorldMesh);
 	}
 }

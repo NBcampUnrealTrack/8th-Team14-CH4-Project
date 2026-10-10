@@ -6,9 +6,14 @@
 #include "Net/UnrealNetwork.h"
 #include "PlayerCharacter.h"
 #include "TestGameState.h"
+#include "Game/DataManagerSubsystem.h"
 
+// cheat
 void APlayerCharacterState::Server_SetStageItem_Implementation(const FInventoryItemData InItemName)
 {
+#if UE_BUILD_SHIPPING
+	return;
+#endif
 	AddItemInPlayerStageInventory(InItemName);
 }
 
@@ -62,40 +67,44 @@ FPlayerDatas& APlayerCharacterState::GetPlayerInfo()
 	return PlayerInfo;
 }
 
-void APlayerCharacterState::BuyItem_Implementation(const FInventoryItemData& InItemData, int32 InItemCost)
+void APlayerCharacterState::BuyItem_Implementation(FName ItemName)
 {
-	if (HasAuthority())
+	if (!HasAuthority()) return;
+
+	AMyPlayerController* PC = Cast<AMyPlayerController>(GetPlayerController());
+	if (!IsValid(PC)) return;
+
+	// result goes only through the client RPC (listen host runs it locally : one broadcast)
+	auto SendResult = [PC, ItemName](bool bSuccess, int32 SlotIndex)
 	{
-		AMyPlayerController* PC = Cast<AMyPlayerController>(GetPlayerController());
-		if (!IsValid(PC)) return;
+		PC->Client_OnReceiveBuyItemResult(ItemName, bSuccess, SlotIndex);
+	};
 
-		FPlayerDatas& Info = GetPlayerInfo();
+	// 1. purchasable, price comes from server data (DT_Weapon / DT_UseItem)
+	const UDataManagerSubsystem* DataManager = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+	const TOptional<int32> Price = DataManager ? DataManager->FindPrice(ItemName) : TOptional<int32>();
+	if (!Price.IsSet()) return SendResult(false, INDEX_NONE);
 
-		// not enough money
-		if (Info.GoldStorage < InItemCost)
-		{
-			PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, false, INDEX_NONE);
-			PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, false, INDEX_NONE);
-			return;
-		}
+	// 2. shop is only for lobby (RPC can be sent anytime, UI is not security)
+	if (PlayerPlace != EPlayerPlace::Lobby) return SendResult(false, INDEX_NONE);
 
-		// yes money try put in
-		int32 AddedSlotIndex = AddItemInPlayerStageInventory(InItemData);
-		// put > return index // no > return null
-		if (AddedSlotIndex == INDEX_NONE)
-		{
-			// full inventory
-			PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, false, INDEX_NONE);
-			PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, false, INDEX_NONE);
-			return;
-		}
+	// 3. enough gold
+	FPlayerDatas& Info = GetPlayerInfo();
+	if (Info.GoldStorage < Price.GetValue()) return SendResult(false, INDEX_NONE);
 
-		// yes money, have empty slot, not full
-		Info.GoldStorage -= InItemCost;
-		
-		PC->OnReceiveBuyItemResult.Broadcast(InItemData.ItemName, true, AddedSlotIndex);
-		PC->Client_OnReceiveBuyItemResult(InItemData.ItemName, true, AddedSlotIndex);
-	}
+	// 4. inventory space (one item per purchase)
+	FInventoryItemData PurchasedItem;
+	PurchasedItem.ItemName = ItemName;
+	PurchasedItem.ItemCount = 1;
+
+	const int32 AddedSlotIndex = AddItemInPlayerStageInventory(PurchasedItem);
+	if (AddedSlotIndex == INDEX_NONE) return SendResult(false, INDEX_NONE);
+
+	// all passed : pay
+	Info.GoldStorage -= Price.GetValue();
+	OnPlayerInfoChanged.Broadcast();
+
+	SendResult(true, AddedSlotIndex);
 }
 
 void APlayerCharacterState::SetLobbyIndex(int32 PlayerSlotIndex)
@@ -546,12 +555,18 @@ void APlayerCharacterState::SetPlayerStagePlace(EPlayerPlace InPlayerStagePlace)
 	
 void APlayerCharacterState::Server_SetGold_Implementation(int32 SetGold)
 {
+#if UE_BUILD_SHIPPING
+	return;
+#endif
 	PlayerInfo.GoldStorage = SetGold;
 }
 
 //서버 즉시갱신 이벤트 - 성윤
 void APlayerCharacterState::Server_SetStageGold_Implementation(int32 SetGold)
 {
+#if UE_BUILD_SHIPPING
+	return;
+#endif
 	const int32 OldGold = PlayerStageGold;
 
 	PlayerStageGold += SetGold;
@@ -561,6 +576,7 @@ void APlayerCharacterState::Server_SetStageGold_Implementation(int32 SetGold)
 	OnPlayerStageGoldChanged.Broadcast(OldGold, PlayerStageGold);
 	ForceNetUpdate();
 }
+#pragma endregion
 
 //힐팩갯수 줄이기 - 성윤
 bool APlayerCharacterState::ConsumeItemInPlayerStageInventory(FName ItemName, int32 ConsumeCount)
@@ -606,5 +622,4 @@ bool APlayerCharacterState::ConsumeItemInPlayerStageInventory(FName ItemName, in
 	ForceNetUpdate();
 
 	return true;
-}
-#pragma endregion 
+} 

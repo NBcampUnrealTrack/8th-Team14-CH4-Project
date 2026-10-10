@@ -55,8 +55,9 @@ public:
 	void ApplySavedDataToPlayer(FPlayerDatas ApplyPlayerData);
 	
 	FPlayerDatas& GetPlayerInfo();
+	// client sends only "what" to buy : price, amount, rules are decided by server data
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void BuyItem(const FInventoryItemData& InItemData, int32 InItemcost);
+	void BuyItem(FName ItemName);
 	
 	void ClearPlayerStageInventoryGold();
 	void ClearPlayerStageInventory();

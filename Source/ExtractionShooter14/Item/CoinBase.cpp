@@ -1,5 +1,6 @@
 #include "CoinBase.h"
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Character/PlayerCharacter.h"
 #include "Character/PlayerCharacterState.h"
 
@@ -10,6 +11,10 @@ ACoinBase::ACoinBase()
     bReplicates = true;
 
     SetReplicateMovement(true);
+
+    // same subobject name as before ("Mesh") : keeps BP_Coin component overrides
+    MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+    RootComponent = MeshComponent;
 
     SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
     SphereComponent->SetupAttachment(RootComponent);

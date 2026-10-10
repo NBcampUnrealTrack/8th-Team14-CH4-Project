@@ -3,13 +3,12 @@
 #include "CoreMinimal.h"
 #include "ItemType.generated.h"
 
+// picks the performance table a DT_ShopItem row points into
+//   Weapon  -> DT_Weapon
+//   UseItem -> DT_UseItem
 UENUM(BlueprintType)
 enum class EItemType : uint8
 {
 	Weapon		UMETA(DisplayName = "Weapon"),
-	Coin		UMETA(DisplayName = "Coin"),
-	Heal        UMETA(DisplayName = "Heal"),
-	Consumable UMETA(DisplayName = "Consumable"),
-	Quest		UMETA(DisplayName = "Quest"),
-	Etc			UMETA(DisplayName = "Etc")
+	UseItem		UMETA(DisplayName = "UseItem")
 };

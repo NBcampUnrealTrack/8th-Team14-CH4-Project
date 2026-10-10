@@ -5,6 +5,10 @@
 #include "ItemType.h"
 #include "ItemData.generated.h"
 
+// DT_ShopItem row : how a shop item is shown (name, icons, sound)
+// price and performance live in its own table, picked by ItemType, found by DataRowName
+//   Weapon  -> DT_Weapon
+//   UseItem -> DT_UseItem
 USTRUCT(BlueprintType)
 struct FItemData : public FTableRowBase
 {
@@ -12,53 +16,28 @@ struct FItemData : public FTableRowBase
 
 public:
 
-	// ������ �̸�
+	// display name
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Info")
-	FText Name;
+	FText DisplayName;
 
-	// ����
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FText Description;
+	// item category (also picks the table DataRowName points into)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Info")
+	EItemType ItemType = EItemType::Weapon;
 
-	// ������ ����
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EItemType ItemType = EItemType::Etc;
-
-	// ���忡 ���� �޽�
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UStaticMesh* Mesh = nullptr;
-
-	// �κ��丮 ������
+	// inventory / shop image
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Icon")
 	UTexture2D* Icon = nullptr;
 
-	// �ִ� ����
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Info")
-	int32 MaxStack = 1;
+	// row in DT_Weapon or DT_UseItem (decided by ItemType)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Link")
+	FName DataRowName;
 
-	// �ѱ� ������ Row (���Ⱑ �ƴ� ��� None)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName WeaponRowName;
-
-	// ���� �Ǹ� ���� ����(�ʿ� ������ ����)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Info")
-	int32 Price = 0;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Info")
-	float Damage = 0.f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Info")
-	int32 AmmoAmount = 0;
-	
-	// 회복량
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Heal")
-	float HealAmount = 0.f;
-	
+	// shop row stat icons (primary / secondary value)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Icon")
 	TObjectPtr<UTexture2D> UIIcon_1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Icon")
 	TObjectPtr<UTexture2D> UIIcon_2;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="UI|Sound")
 	TObjectPtr<USoundBase> PurchaseSound;
-
 };

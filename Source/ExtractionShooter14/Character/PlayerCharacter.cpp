@@ -19,6 +19,7 @@
 #include "MainPlayerCharacterState.h"
 #include "ESHUDWidget.h"
 #include "PlayerCharacterState.h"
+#include "Game/DataManagerSubsystem.h"
 #include "Weapon/WeaponBase.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
@@ -62,7 +63,7 @@ APlayerCharacter::APlayerCharacter()
 }
 
 //사용위해 흐름 수정
-void APlayerCharacter::ServerUseHealItem_Implementation(FName HealItemRowName, float HealAmount)
+void APlayerCharacter::ServerUseHealItem_Implementation(FName HealItemRowName)
 {
     APlayerCharacterState* PS =
         GetPlayerState<APlayerCharacterState>();
@@ -71,6 +72,10 @@ void APlayerCharacter::ServerUseHealItem_Implementation(FName HealItemRowName, f
     {
         return;
     }
+
+    const UDataManagerSubsystem* DataManager = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
+    const FUseItemData* UseItem = DataManager ? DataManager->FindUseItemForShopItem(HealItemRowName) : nullptr;
+    const float HealAmount = UseItem ? UseItem->EffectAmount : 0.f;
 
     if (HealItemRowName.IsNone() || HealAmount <= 0.0f)
     {

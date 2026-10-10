@@ -1,11 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ItemBase.h"
+#include "GameFramework/Actor.h"
 #include "CoinBase.generated.h"
 
+class UStaticMeshComponent;
+
+// drop-only currency (not a shop / inventory item, so no DataTable row)
 UCLASS()
-class EXTRACTIONSHOOTER14_API ACoinBase : public AItemBase
+class EXTRACTIONSHOOTER14_API ACoinBase : public AActor
 {
     GENERATED_BODY()
 
@@ -17,6 +20,9 @@ protected:
 
 public:
     virtual void Tick(float DeltaTime) override;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    UStaticMeshComponent* MeshComponent;
 
     UPROPERTY(VisibleAnywhere)
     class USphereComponent* SphereComponent;

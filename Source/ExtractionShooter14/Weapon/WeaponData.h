@@ -19,6 +19,10 @@ struct FWeaponData : public FTableRowBase
 
 public:
 
+	// shop price (server reads this, client never sends it)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shop")
+	int32 Price = 0;
+
 	// ���� ����
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EWeaponType WeaponType = EWeaponType::Rifle;

@@ -30,7 +30,8 @@ public class ExtractionShooter14 : ModuleRules
 		
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
-			"OnlineSubsystem", "OnlineSubsystemUtils"
+			"OnlineSubsystem", "OnlineSubsystemUtils",
+			"EngineSettings"
 		});
 
 		// Uncomment if you are using Slate UI

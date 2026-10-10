@@ -41,7 +41,8 @@ public:
 	} 
 	//RowName도 전달하기용 - 성윤
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Item")
-	void ServerUseHealItem(FName HealItemRowName, float HealAmount);
+	// client sends only which item : heal amount comes from DT_UseItem on server
+	void ServerUseHealItem(FName HealItemRowName);
 
 protected:
 
