@@ -101,6 +101,8 @@ void ATeleportTriggerBox_Timer::BeginPlay()
 	if (!IsValid(GameModeES)) return;
 
 	GameModeES->OnStageEnded.AddUObject(this, &ThisClass::CancelAllPlayerCountdowns);
+	// disconnect does not reliably fire EndOverlap with a valid controller
+	GameModeES->OnPlayerLoggedOut.AddUObject(this, &ThisClass::CancelPlayerCountdown);
 	
 }
 
@@ -156,6 +158,7 @@ void ATeleportTriggerBox_Timer::EndPlay(const EEndPlayReason::Type EndPlayReason
 		if (ATestGameMode* GameModeES =	Cast<ATestGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			GameModeES->OnStageEnded.RemoveAll(this);
+			GameModeES->OnPlayerLoggedOut.RemoveAll(this);
 		}
 
 		CancelAllPlayerCountdowns();

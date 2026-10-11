@@ -201,16 +201,26 @@ void ATestGameMode::PostLogin(APlayerController* NewPlayer)
 
 void ATestGameMode::Logout(AController* Exiting)
 {
-    APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(Exiting->GetPawn());
-    if (IsValid(PlayerCharacter)) PlayerCharacter->WeaponDelete();
-    
     APlayerCharacterState* PS =
     Exiting
     ? Exiting->GetPlayerState<APlayerCharacterState>()
     : nullptr;
 
+    if (AMyPlayerController* ExitingPlayerControllerES = Cast<AMyPlayerController>(Exiting))
+    {
+        OnPlayerLoggedOut.Broadcast(ExitingPlayerControllerES);
+    }
+
     if (IsValid(PS))
     {
+        // leaving mid-stage = same as death : quitting must not keep the gear
+        if (PS->GetPlayerStagePlace() == EPlayerPlace::Stage)
+        {
+            PS->ClearPlayerStageInventoryGold();
+            PS->ClearPlayerStageInventory();
+            PS->ClearPlayerinfoInventory();
+        }
+
         PS->SetPlayerStagePlace(EPlayerPlace::None);
         
         if (PS->GetUniqueId().IsValid())
@@ -268,6 +278,19 @@ void ATestGameMode::Logout(AController* Exiting)
         if (RemainingPlayerCount == 0)
         {
             StartNone();
+        }
+        else
+        {
+            // the leaver may have been the last one blocking a phase change
+            const EGameState Phase = GS->GetGameStatePhaseTimerData().GameStateEnum;
+            if (Phase == EGameState::Playing)
+            {
+                TryReturnToLobby();
+            }
+            else if (Phase == EGameState::LobbyWaiting)
+            {
+                HandleAllPlayerisReady();
+            }
         }
     }
 
@@ -520,6 +543,17 @@ bool ATestGameMode::CheckAllPlayerStatePlace(EPlayerPlace InPlayerPlace)
     return false;
 }
 
+void ATestGameMode::TryReturnToLobby()
+{
+    ATestGameState* GS = GetGameState<ATestGameState>();
+    if (!IsValid(GS)) return;
+    if (!CheckAllPlayerStatePlace(EPlayerPlace::Lobby)) return;
+
+    GS->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
+    GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::ClearObjects);
+    StartLobby();
+}
+
 void ATestGameMode::CheckRemainTime()
 {
     ATestGameState* GS = GetGameState<ATestGameState>();
@@ -654,14 +688,7 @@ void ATestGameMode::SetPlayerLobbyStartPoint(AMyPlayerController* TargetControll
     TargetController->Client_OpenResultUI(PlayerStateES->GetPlayerCombatInfo());
     // ======================= Player UI ===========================
     
-    if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
-    {
-        GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
-        GetWorldTimerManager().SetTimerForNextTick(
-        this, &ThisClass::ClearObjects);
-        
-        StartLobby();
-    }
+    TryReturnToLobby();
 }
 
 void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetController)
@@ -675,7 +702,6 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     APlayerCharacter* OldPawn = Cast<APlayerCharacter>(TargetController->GetPawn());
     if (!IsValid(OldPawn)) return;
     OldPawn->Destroy();
-    OldPawn->WeaponDelete();
     
     InitializePlayerStats(PlayerStateES);
     TargetController->StopPlayerMovement();
@@ -683,14 +709,7 @@ void ATestGameMode::RespawnPlayerAtLobbyStartPoint(AMyPlayerController* TargetCo
     FTransform MovePoint = GetPlayerLobbyStartPoint(TargetController);
     RestartPlayerAtTransform(TargetController, MovePoint);
     TargetController->Client_WhenMoveToLobbyUI();
-    if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
-    {
-
-        GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
-        GetWorldTimerManager().SetTimerForNextTick(
-      this, &ThisClass::ClearObjects);
-        StartLobby();
-    }
+    TryReturnToLobby();
 }
 
 void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
@@ -710,7 +729,6 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     APlayerCharacter* OldPawn = Cast<APlayerCharacter>(TargetController->GetPawn());
     if (!IsValid(OldPawn)) return;
     OldPawn->Destroy();
-    OldPawn->WeaponDelete();
     
     InitializePlayerStats(PlayerStateES);
     TargetController->StopPlayerMovement();
@@ -719,15 +737,7 @@ void ATestGameMode::TimeOutReSetPlayer(AMyPlayerController* TargetController)
     RestartPlayerAtTransform(TargetController, MovePoint);
     TargetController->Client_WhenMoveToLobbyUI();
     TargetController->Client_OpenResultUI(PlayerStateES->GetPlayerCombatInfo());
-    if (CheckAllPlayerStatePlace(EPlayerPlace::Lobby))
-    {
-
-        GameStateES->SetGameStatePhaseTimerData(EGameState::LobbyWaiting, LobbyDuration);
-        GetWorldTimerManager().SetTimerForNextTick(
-        this, &ThisClass::ClearObjects);
-        
-        StartLobby();
-    }
+    TryReturnToLobby();
 }
 
 void ATestGameMode::InitializePlayerStats(APlayerCharacterState* InPlayerState)

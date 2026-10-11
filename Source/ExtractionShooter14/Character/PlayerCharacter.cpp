@@ -388,6 +388,14 @@ void APlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
  
 }
 
+void APlayerCharacter::Destroyed()
+{
+    // attached actors are only detached when the parent is destroyed, not destroyed with it
+    WeaponDelete();
+
+    Super::Destroyed();
+}
+
 void APlayerCharacter::WeaponDelete()
 {
     if (HasAuthority() && IsValid(CurrentWeapon))

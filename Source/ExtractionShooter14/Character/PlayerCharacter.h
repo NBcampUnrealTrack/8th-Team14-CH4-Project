@@ -49,6 +49,8 @@ protected:
 	//bool EquipWeaponActor(EWeaponType NewWeaponType);
 
 	virtual void BeginPlay() override;
+	// weapon is a separate actor : destroy it with the character on every destroy path
+	virtual void Destroyed() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

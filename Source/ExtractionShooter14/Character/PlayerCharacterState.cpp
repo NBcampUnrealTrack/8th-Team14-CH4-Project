@@ -85,14 +85,11 @@ void APlayerCharacterState::BuyItem_Implementation(FName ItemName)
 	const TOptional<int32> Price = DataManager ? DataManager->FindPrice(ItemName) : TOptional<int32>();
 	if (!Price.IsSet()) return SendResult(false, INDEX_NONE);
 
-	// 2. shop is only for lobby (RPC can be sent anytime, UI is not security)
-	if (PlayerPlace != EPlayerPlace::Lobby) return SendResult(false, INDEX_NONE);
-
-	// 3. enough gold
+	// 2. enough gold
 	FPlayerDatas& Info = GetPlayerInfo();
 	if (Info.GoldStorage < Price.GetValue()) return SendResult(false, INDEX_NONE);
 
-	// 4. inventory space (one item per purchase)
+	// 3. inventory space (one item per purchase)
 	FInventoryItemData PurchasedItem;
 	PurchasedItem.ItemName = ItemName;
 	PurchasedItem.ItemCount = 1;

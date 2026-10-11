@@ -4,12 +4,14 @@
 #include "GameFramework/GameModeBase.h"
 #include "TestGameMode.generated.h"
 
+class AMyPlayerController;
+
 DECLARE_MULTICAST_DELEGATE(FOnStageEnded);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerLoggedOut, AMyPlayerController*);
 
 struct FPhaseTimerData;
 enum class EPlayerPlace : uint8;
 class APlayerCharacterState;
-class AMyPlayerController;
 
 UCLASS()
 class EXTRACTIONSHOOTER14_API ATestGameMode : public AGameModeBase
@@ -18,6 +20,8 @@ class EXTRACTIONSHOOTER14_API ATestGameMode : public AGameModeBase
 public:
 	
 	FOnStageEnded OnStageEnded;
+	// before the leaving controller is destroyed (clean up per-player state such as escape countdown)
+	FOnPlayerLoggedOut OnPlayerLoggedOut;
 	
 public:
 	ATestGameMode();
@@ -46,6 +50,8 @@ public:
 	void StartPhaseTimer();
 	
 	bool CheckAllPlayerStatePlace(EPlayerPlace InPlayerPlace);
+	// every event that changes who is in the stage (escape, death, timeout, logout) re-checks here
+	void TryReturnToLobby();
 	
 	void ClearObjects();
 
