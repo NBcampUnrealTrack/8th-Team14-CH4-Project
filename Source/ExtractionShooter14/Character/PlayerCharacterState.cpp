@@ -83,14 +83,17 @@ void APlayerCharacterState::BuyItem_Implementation(FName ItemName, int32 Quantit
 	// 1. validate the requested item and quantity
 	if (ItemName.IsNone() || Quantity <= 0) return SendResult(false, INDEX_NONE);
 
-	// 2. the server chooses the unit price; calculate the total without int32 overflow
+	// 2. the server chooses the unit price; reject overflow before multiplying int32 values
 	const UDataManagerSubsystem* DataManager = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 	const TOptional<int32> Price = DataManager ? DataManager->FindPrice(ItemName) : TOptional<int32>();
 	if (!Price.IsSet() || Price.GetValue() < 0) return SendResult(false, INDEX_NONE);
 
-	const int64 TotalPrice = static_cast<int64>(Price.GetValue()) * Quantity;
+	const int32 UnitPrice = Price.GetValue();
+	if (UnitPrice > MAX_int32 / Quantity) return SendResult(false, INDEX_NONE);
+
+	const int32 TotalPrice = UnitPrice * Quantity;
 	FPlayerDatas& Info = GetPlayerInfo();
-	if (TotalPrice > MAX_int32 || TotalPrice > Info.GoldStorage) return SendResult(false, INDEX_NONE);
+	if (TotalPrice > Info.GoldStorage) return SendResult(false, INDEX_NONE);
 
 	// 3. add the complete quantity, or reject without charging (including stack overflow)
 	FInventoryItemData PurchasedItem;
@@ -101,7 +104,7 @@ void APlayerCharacterState::BuyItem_Implementation(FName ItemName, int32 Quantit
 	if (AddedSlotIndex == INDEX_NONE) return SendResult(false, INDEX_NONE);
 
 	// all passed : pay for the complete quantity
-	Info.GoldStorage -= static_cast<int32>(TotalPrice);
+	Info.GoldStorage -= TotalPrice;
 	OnPlayerInfoChanged.Broadcast();
 
 	SendResult(true, AddedSlotIndex);
