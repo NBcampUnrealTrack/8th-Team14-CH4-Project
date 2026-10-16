@@ -67,7 +67,7 @@ FPlayerDatas& APlayerCharacterState::GetPlayerInfo()
 	return PlayerInfo;
 }
 
-void APlayerCharacterState::BuyItem_Implementation(FName ItemName)
+void APlayerCharacterState::BuyItem_Implementation(FName ItemName, int32 Quantity)
 {
 	if (!HasAuthority()) return;
 
@@ -80,25 +80,28 @@ void APlayerCharacterState::BuyItem_Implementation(FName ItemName)
 		PC->Client_OnReceiveBuyItemResult(ItemName, bSuccess, SlotIndex);
 	};
 
-	// 1. purchasable, price comes from server data (DT_Weapon / DT_UseItem)
+	// 1. validate the requested item and quantity
+	if (ItemName.IsNone() || Quantity <= 0) return SendResult(false, INDEX_NONE);
+
+	// 2. the server chooses the unit price; calculate the total without int32 overflow
 	const UDataManagerSubsystem* DataManager = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 	const TOptional<int32> Price = DataManager ? DataManager->FindPrice(ItemName) : TOptional<int32>();
-	if (!Price.IsSet()) return SendResult(false, INDEX_NONE);
+	if (!Price.IsSet() || Price.GetValue() < 0) return SendResult(false, INDEX_NONE);
 
-	// 2. enough gold
+	const int64 TotalPrice = static_cast<int64>(Price.GetValue()) * Quantity;
 	FPlayerDatas& Info = GetPlayerInfo();
-	if (Info.GoldStorage < Price.GetValue()) return SendResult(false, INDEX_NONE);
+	if (TotalPrice > MAX_int32 || TotalPrice > Info.GoldStorage) return SendResult(false, INDEX_NONE);
 
-	// 3. inventory space (one item per purchase)
+	// 3. add the complete quantity, or reject without charging (including stack overflow)
 	FInventoryItemData PurchasedItem;
 	PurchasedItem.ItemName = ItemName;
-	PurchasedItem.ItemCount = 1;
+	PurchasedItem.ItemCount = Quantity;
 
 	const int32 AddedSlotIndex = AddItemInPlayerStageInventory(PurchasedItem);
 	if (AddedSlotIndex == INDEX_NONE) return SendResult(false, INDEX_NONE);
 
-	// all passed : pay
-	Info.GoldStorage -= Price.GetValue();
+	// all passed : pay for the complete quantity
+	Info.GoldStorage -= static_cast<int32>(TotalPrice);
 	OnPlayerInfoChanged.Broadcast();
 
 	SendResult(true, AddedSlotIndex);
@@ -373,6 +376,8 @@ int32 APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemD
 {
 	if (HasAuthority())
 	{
+		if (InItemName.ItemName.IsNone() || InItemName.ItemCount <= 0) return INDEX_NONE;
+
 		int32 ChangedSlotIndex = INDEX_NONE;
 
 		int32 FoundIndex = PlayerStageInventory.IndexOfByPredicate(
@@ -384,6 +389,9 @@ int32 APlayerCharacterState::AddItemInPlayerStageInventory(const FInventoryItemD
 
 		if (FoundIndex != INDEX_NONE) // find index
 		{
+			const int32 ExistingCount = PlayerStageInventory[FoundIndex].ItemCount;
+			if (ExistingCount < 0 || InItemName.ItemCount > MAX_int32 - ExistingCount) return INDEX_NONE;
+
 			PlayerStageInventory[FoundIndex].ItemCount += InItemName.ItemCount;
 			ChangedSlotIndex = FoundIndex;
 		}
