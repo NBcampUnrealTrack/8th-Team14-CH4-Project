@@ -83,7 +83,10 @@ void APlayerCharacterState::BuyItem_Implementation(FName ItemName, int32 Quantit
 	// 1. validate the requested item and quantity
 	if (ItemName.IsNone() || Quantity <= 0) return SendResult(false, INDEX_NONE);
 
-	// 2. the server chooses the unit price; reject overflow before multiplying int32 values
+	// 2. shop is only for lobby (RPC can be sent anytime, UI is not security)
+	if (PlayerPlace != EPlayerPlace::Lobby) return SendResult(false, INDEX_NONE);
+
+	// 3. the server chooses the unit price; reject overflow before multiplying int32 values
 	const UDataManagerSubsystem* DataManager = GetGameInstance()->GetSubsystem<UDataManagerSubsystem>();
 	const TOptional<int32> Price = DataManager ? DataManager->FindPrice(ItemName) : TOptional<int32>();
 	if (!Price.IsSet() || Price.GetValue() < 0) return SendResult(false, INDEX_NONE);
@@ -95,7 +98,7 @@ void APlayerCharacterState::BuyItem_Implementation(FName ItemName, int32 Quantit
 	FPlayerDatas& Info = GetPlayerInfo();
 	if (TotalPrice > Info.GoldStorage) return SendResult(false, INDEX_NONE);
 
-	// 3. add the complete quantity, or reject without charging (including stack overflow)
+	// 4. add the complete quantity, or reject without charging (including stack overflow)
 	FInventoryItemData PurchasedItem;
 	PurchasedItem.ItemName = ItemName;
 	PurchasedItem.ItemCount = Quantity;
