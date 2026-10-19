@@ -29,13 +29,14 @@ void UEscapeProgressWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void UEscapeProgressWidget::InitializePrivateProperties(ATestGameState* GS, double InStartServerTime, float InDurationTime)
+void UEscapeProgressWidget::InitializePrivateProperties(ATestGameState* GS, float InDurationTime)
 {
 	if (!IsValid(GS)) return;
-	
-	OwningGameState = GS;
+
 	DurationTime = InDurationTime;
-	OverLappedTime = InStartServerTime;
+	// local clock : rpc arrived one-way latency after server started countdown
+	// (client estimate of server time is averaged and can lag after hitch)
+	OverLappedTime = GetWorld()->GetTimeSeconds() - GS->GetOneWayLatencySeconds();
 }
 
 void UEscapeProgressWidget::CloseEscapeProgressWidget()
@@ -56,10 +57,10 @@ void UEscapeProgressWidget::OnFadeInAnimation_Finished()
 
 void UEscapeProgressWidget::UpdateEscapeProgressBar_Text()
 {
-	if (!IsValid(OwningGameState)) return;
-	
-	const double CurrentServerTime = OwningGameState->GetSyncedServerTimeSeconds();
-	const float PassedTime = FMath::Clamp(static_cast<float>(CurrentServerTime - OverLappedTime), 0.f, DurationTime);
+	if (DurationTime <= 0.f) return;
+
+	const double CurrentTime = GetWorld()->GetTimeSeconds();
+	const float PassedTime = FMath::Clamp(static_cast<float>(CurrentTime - OverLappedTime), 0.f, DurationTime);
 	const float Ratio =	PassedTime / DurationTime;
 	
 	EscapeProgressBar->SetPercent(Ratio);

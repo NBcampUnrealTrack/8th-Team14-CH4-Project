@@ -80,6 +80,8 @@ public:
 	float GetRemainTime() const;
 	// engine client server time lags by one-way latency : add half RTT (server returns as is)
 	double GetSyncedServerTimeSeconds() const;
+	// half RTT on client, 0 on server
+	double GetOneWayLatencySeconds() const;
 
 	void SetTopPlayer(int32 InPlayerId, int32 InScore); // server
 	const FTopPlayerInfo& GetTopPlayer() const { return TopPlayer; }

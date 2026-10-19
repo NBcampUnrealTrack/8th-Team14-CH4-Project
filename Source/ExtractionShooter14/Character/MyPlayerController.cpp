@@ -359,7 +359,7 @@ void AMyPlayerController::UpdateInputMode()
     
 }
 
-void AMyPlayerController::Client_ShowEscapeProgressWidget_Implementation(double StartTime, float Duration)
+void AMyPlayerController::Client_ShowEscapeProgressWidget_Implementation(float Duration)
 {
     if (!IsLocalController()) return;
     if (!IsValid(StageWidgetInstance)) return;
@@ -376,7 +376,7 @@ void AMyPlayerController::Client_ShowEscapeProgressWidget_Implementation(double 
     ATestGameState* GameStateES = GetWorld()->GetGameState<ATestGameState>();
     if (!IsValid(GameStateES)) return;
     
-    EscapeProgressWidgetInstance->InitializePrivateProperties(GameStateES, StartTime, Duration);
+    EscapeProgressWidgetInstance->InitializePrivateProperties(GameStateES, Duration);
     
     StageWidgetInstance->CreateProgressWidget(EscapeProgressWidgetInstance);
 }

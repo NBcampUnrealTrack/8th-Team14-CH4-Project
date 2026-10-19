@@ -111,7 +111,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI|Stage")
 	TObjectPtr<UEscapeProgressWidget> EscapeProgressWidgetInstance;
 	UFUNCTION(Client, Reliable)
-	void Client_ShowEscapeProgressWidget(double StartTime, float Duration);
+	void Client_ShowEscapeProgressWidget(float Duration);
 	UFUNCTION(Client, Reliable)
 	void Client_CloseEscapeProgressWidget();
 	

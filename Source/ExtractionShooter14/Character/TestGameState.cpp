@@ -83,20 +83,22 @@ float ATestGameState::GetRemainTime() const
 
 double ATestGameState::GetSyncedServerTimeSeconds() const
 {
-	const double ServerNow = GetServerWorldTimeSeconds();
-	if (HasAuthority()) return ServerNow;
-
 	// delta = (server time when sent) - (client time when received) : behind by one-way latency
+	return GetServerWorldTimeSeconds() + GetOneWayLatencySeconds();
+}
+
+double ATestGameState::GetOneWayLatencySeconds() const
+{
+	if (HasAuthority()) return 0.0;
+
 	const UWorld* World = GetWorld();
 	const APlayerController* LocalController = World ? World->GetFirstPlayerController() : nullptr;
 	const APlayerState* LocalPlayerState = LocalController ? LocalController->PlayerState : nullptr;
-	if (!IsValid(LocalPlayerState)) return ServerNow;
+	if (!IsValid(LocalPlayerState)) return 0.0;
 
 	// ping = round trip (ms, measured by engine) > one-way latency = half of it
 	const double RoundTripSeconds = LocalPlayerState->GetPingInMilliseconds() / 1000.0;
-	const double OneWayLatencySeconds = RoundTripSeconds * 0.5;
-
-	return ServerNow + OneWayLatencySeconds;
+	return RoundTripSeconds * 0.5;
 }
 
 

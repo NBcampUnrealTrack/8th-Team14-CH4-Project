@@ -3,7 +3,6 @@
 #include "Character/PlayerCharacterState.h"
 #include "NiagaraComponent.h"
 #include "Character/TestGameMode.h"
-#include "Character/TestGameState.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -31,9 +30,7 @@ void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* 
 	if (!IsValid(PlayerControllerES)) return;
 	APlayerCharacterState* PlayerCharacterStateES = PlayerControllerES->GetPlayerState<APlayerCharacterState>();
 	if (!IsValid(PlayerCharacterStateES)) return;
-	ATestGameState* GS = GetWorld()->GetGameState<ATestGameState>();
-	if (!IsValid(GS)) return;
-	
+
 	// map에 등록되있으면 새로 타이머등록안함
 	if (CountdownPlayerListMap.Contains(PlayerControllerES)) return;
 	// player is dead > return
@@ -47,8 +44,7 @@ void ATeleportTriggerBox_Timer::MoveToLocationBeginOverlap(UPrimitiveComponent* 
 	
 	UE_LOG(LogTemp, Warning, TEXT("Player is going to Move In %.fs."), MaxTakesTime);
 	
-	const double StartServerTime = GS->GetServerWorldTimeSeconds();
-	PlayerControllerES->Client_ShowEscapeProgressWidget(StartServerTime, MaxTakesTime);
+	PlayerControllerES->Client_ShowEscapeProgressWidget(MaxTakesTime);
 	
 	GetWorldTimerManager().SetTimer(
 		CountRefInfo.TimerHandle,
